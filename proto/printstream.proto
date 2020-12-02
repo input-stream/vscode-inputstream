@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package build.stack.printstream.v1beta1;
+
+import "google/protobuf/timestamp.proto";
+
+service Users {
+    rpc CreateUser(CreateUserRequest) returns (User) {};
+    rpc GetUser(GetUserRequest) returns (User) {};
+    rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {};
+}
+
+message User {
+    string login = 1;
+    string name = 2;
+    string avatar_url = 3;
+    string bio = 4;
+    google.protobuf.Timestamp created_at = 5;
+}
+
+message CreateUserRequest {
+    User user = 1;
+}
+
+message GetUserRequest {
+    string login = 1;
+}
+
+message ListUsersRequest {
+}
+
+message ListUsersResponse {
+    repeated User user = 1;
+}
+
+service Posts {
+    rpc CreatePost(CreatePostRequest) returns (Post) {};
+    rpc GetPost(GetPostRequest) returns (Post) {};
+    rpc ListPosts(ListPostsRequest) returns (ListPostsResponse) {};
+    rpc GetPostContent(GetPostContentRequest) returns (GetPostContentResponse) {};
+}
+
+message Post {
+    enum Type {
+        TYPE_UNKNOWN = 0;
+        TYPE_MARKDOWN = 1;
+    }
+
+    // the owner of the post
+    string login = 1;
+    // a uuid for this post
+    string id = 2;
+    // title of the post
+    string title = 3;
+    // a summary of the post
+    string abstract = 4;
+    // a URL for a representative image
+    string image_url = 5;
+    // content of the post.  Typically not populated unless content is
+    // requested.
+    bytes content = 6;
+    // Date when post was created
+    google.protobuf.Timestamp created_at = 7;
+    // Date when post content was last modified
+    google.protobuf.Timestamp modified_at = 8;
+    // the type of post this is
+    Type type = 9;
+    // the post identifier (a simple number)
+    int64 pid = 10;
+}
+
+message CreatePostRequest {
+    string login = 1;
+}
+
+message GetPostRequest {
+    string login = 1;
+    string id = 2;
+}
+
+message GetPostContentRequest {
+    string login = 1;
+    string id = 2;
+}
+
+message GetPostContentResponse {
+    string login = 1;
+    string id = 2;
+    string html = 3;
+}
+
+message ListPostsRequest {
+    string login = 1;
+    string id = 2;
+    string title = 3;
+}
+
+message ListPostsResponse {
+    repeated Post post = 1;
+}

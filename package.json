@@ -1,0 +1,226 @@
+{
+    "name": "vscode-printstream",
+    "displayName": "vscode-printstream",
+    "description": "Weightless developer publishing",
+    "version": "0.5.0",
+    "publisher": "stackbuild",
+    "license": "Apache-2.0",
+    "icon": "media/logo.png",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/printstream/vscode-printstream.git"
+    },
+    "keywords": [
+        "blogging",
+        "blog",
+        "publishing",
+        "writing"
+    ],
+    "author": "stack.build authors",
+    "bugs": {
+        "url": "https://github.com/printstream/vscode-printstream/issues"
+    },
+    "homepage": "https://github.com/printstream/vscode-printstream#readme",
+    "categories": [],
+    "activationEvents": [
+        "onFileSystem:psfs",
+        "onView:print.stream.posts",
+        "onCommand:print.stream.login"
+    ],
+    "engines": {
+        "vscode": "^1.45.0"
+    },
+    "contributes": {
+        "configuration": {
+            "type": "object",
+            "title": "Printstream",
+            "properties": {
+                "print.stream.posts.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Flag to enable/disable this feature"
+                },
+                "print.stream.posts.verbose": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "The verbosity level for extra diagnostics"
+                },
+                "print.stream.posts.api.address": {
+                    "type": "string",
+                    "default": "api.print.stream:443",
+                    "description": "Address of the API server"
+                },
+                "print.stream.posts.oauth.github.relay": {
+                    "type": "string",
+                    "default": "https://print.stream/github_login",
+                    "description": "Endpoint for github oauth relay server"
+                }
+            }
+        },
+        "commands": [
+            {
+                "category": "Printstream",
+                "command": "printstream.openExtensionSetting",
+                "title": "Goto Extension Setting"
+            },
+            {
+                "category": "Printstream",
+                "command": "print.stream.posts.refresh",
+                "title": "Refresh Post List",
+                "icon": "$(refresh)"
+            },
+            {
+                "category": "Printstream",
+                "command": "print.stream.posts.create",
+                "title": "Create Post",
+                "icon": "$(add)"
+            },
+            {
+                "category": "Printstream",
+                "command": "print.stream.posts.open",
+                "title": "Open post",
+                "icon": "$(open)"
+            },
+            {
+                "category": "Printstream",
+                "command": "print.stream.login",
+                "title": "Login",
+                "icon": "$(rocket)"
+            },
+            {
+                "category": "Printstream",
+                "command": "print.stream.clippy",
+                "title": "Copy to Clipboard",
+                "icon": "$(clippy)"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "print.stream.posts.refresh",
+                "key": "ctrl+shift+cmd+l"
+            },
+            {
+                "command": "workbench.view.extension.printstream-explorer",
+                "key": "ctrl+shift+cmd+t",
+                "title": "Reveal Print.stream Explorer"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "printstream.openExtensionSetting",
+                    "when": "false"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "print.stream.posts.refresh",
+                    "when": "view == print.stream.posts",
+                    "group": "navigation"
+                },
+                {
+                    "command": "print.stream.posts.create",
+                    "when": "view == print.stream.posts",
+                    "group": "navigation"
+                }
+            ],
+            "view/item/context": []
+        },
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "printstream-explorer",
+                    "title": "Print.Stream",
+                    "icon": "media/astronaut.svg"
+                }
+            ]
+        },
+        "viewsWelcome": [
+            {
+                "view": "print.stream.posts",
+                "contents": "Login to view and create posts.\n\n[Login with GitHub](command:print.stream.login)\n\nYou will be redirected back here once authenticated."
+            }
+        ],
+        "views": {
+            "printstream-explorer": [
+                {
+                    "id": "print.stream.posts",
+                    "name": "Posts",
+                    "icon": "media/astronaut.svg",
+                    "contextualTitle": "Post List"
+                }
+            ]
+        }
+    },
+    "main": "./out/extension.js",
+    "scripts": {
+        "vscode:prepublish:webpack": "npm run clean && webpack --mode production",
+        "vscode:prepublish": "npm run clean && npm run compile",
+        "vscode-package": "vsce package --out out/extension.vsix",
+        "vscode-install": "npm run vscode-package && code --install-extension out/extension.vsix",
+        "webpack": "npm run clean && webpack --mode development",
+        "watch": "tsc -watch -p ./",
+        "compile": "tsc -p ./",
+        "lint": "eslint src --ext ts --ignore-pattern 'src/proto/**/*.ts' --fix",
+        "pretest": "npm run compile && npm run lint",
+        "test": "node ./out/test/runTest.js",
+        "clean": "rimraf out/",
+        "genproto": "node ./node_modules/@grpc/proto-loader/build/bin/proto-loader-gen-types.js --defaults --oneofs --verbose --includeComments -O ./src/proto --grpcLib @grpc/grpc-js proto/*.proto"
+    },
+    "dependencies": {
+        "@grpc/grpc-js": "1.1.1",
+        "@grpc/proto-loader": "0.6.0-pre17",
+        "fs-extra": "9.0.1",
+        "google-auth-library": "6.1.0",
+        "graceful-fs": "4.2.4",
+        "luxon": "1.24.1",
+        "mv": "^2.1.1",
+        "node-fetch": "2.6.0",
+        "protobufjs": "6.10.1",
+        "request": "2.88.2",
+        "sha256-file": "1.0.0",
+        "shiki": "^0.2.6",
+        "shiki-themes": "^0.2.6",
+        "simple-lightbox": "2.1.0",
+        "slash": "3.0.0",
+        "tail": "2.0.4",
+        "rimraf": "3.0.2",
+        "mkdirp": "1.0.4",
+        "tmp": "0.2.1",
+        "vscode-common": "1.50.0",
+        "vscode-extension-telemetry": "^0.1.6"
+    },
+    "devDependencies": {
+        "@octokit/types": "5.2.0",
+        "@types/chai-string": "1.4.2",
+        "@types/chai": "4.2.12",
+        "@types/fs-extra": "9.0.1",
+        "@types/glob": "^7.1.1",
+        "@types/graceful-fs": "4.1.2",
+        "@types/luxon": "1.24.3",
+        "@types/mocha": "^7.0.2",
+        "@types/mv": "2.1.0",
+        "@types/node-fetch": "1.6.9",
+        "@types/node": "^13.11.0",
+        "@types/request": "2.48.5",
+        "@types/sinon": "9.0.4",
+        "@types/tail": "2.0.0",
+        "@types/mkdirp": "0.5.2",
+        "@types/rimraf": "2.0.2",
+        "@types/tmp": "0.2.0",
+        "@types/vscode": "^1.45.0",
+        "@typescript-eslint/eslint-plugin": "^2.30.0",
+        "@typescript-eslint/parser": "^2.30.0",
+        "chai-string": "1.5.0",
+        "chai": "4.2.0",
+        "eslint": "^6.8.0",
+        "glob": "^7.1.6",
+        "mocha": "^7.1.2",
+        "sinon": "9.0.2",
+        "ts-loader": "^8.0.4",
+        "typescript": "^3.8.3",
+        "vscode-test": "^1.3.0",
+        "webpack-cli": "^3.3.12",
+        "webpack": "^4.44.2"
+    }
+}
