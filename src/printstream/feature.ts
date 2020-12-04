@@ -1,10 +1,7 @@
-import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
 import { IExtensionFeature } from '../common';
-import { Container } from '../container';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
-import { LoginResponse } from '../proto/build/stack/auth/v1beta1/LoginResponse';
-import { User } from '../proto/build/stack/auth/v1beta1/User';
+import { Post } from '../proto/build/stack/printstream/v1beta1/Post';
 import { PsClient as PsClient } from './client';
 import {
     createAuthServiceClient,
@@ -12,12 +9,12 @@ import {
     loadAuthProtos,
     loadPsProtos
 } from './configuration';
-import { CommandName, MementoName, ViewName } from './constants';
+import { ViewName } from './constants';
+import { DeviceLogin } from './device_login';
 import { Closeable } from './grpcclient';
 import { EmptyView } from './view/emptyview';
-import { GitHubOAuthFlow } from './view/githubOAuthFlow';
 import { PostsView } from './view/posts';
-import { PsFileSystem } from './view/psfs';
+import { PsFileExplorer } from './view/psfs';
 
 export const PsFeatureName = 'print.stream.posts';
 
@@ -28,14 +25,13 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
     private closeables: Closeable[] = [];
     private client: PsClient | undefined;
     private onDidPsClientChange = new vscode.EventEmitter<PsClient>();
-    private onDidLoginTokenChange = new vscode.EventEmitter<string>();
-    private onDidAuthUserChange = new vscode.EventEmitter<User>();
-    private githubOauth: GitHubOAuthFlow | undefined;
-
+    private onDidPostChange = new vscode.EventEmitter<Post>();
+    private authClient: AuthServiceClient | undefined;
+    private deviceLogin: DeviceLogin | undefined;
+    
     constructor() {
         this.add(this.onDidPsClientChange);
-        this.add(this.onDidLoginTokenChange);
-        this.add(this.onDidAuthUserChange);
+        this.add(this.onDidPostChange);
     }
 
     /**
@@ -46,46 +42,32 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
 
         const psProtos = loadPsProtos(cfg.printstream.protofile);
         const authProtos = loadAuthProtos(cfg.auth.protofile);
-        const authClient = createAuthServiceClient(authProtos, cfg.auth.address);
+
+        this.authClient = createAuthServiceClient(authProtos, cfg.auth.address);
+        this.authClient.getChannel().getTarget();
+        this.closeables.push(this.authClient);
         
-        this.githubOauth = this.add(
-            new GitHubOAuthFlow(cfg.printstream.githubOAuthRelayUrl),
-        );
+        this.deviceLogin = this.add(new DeviceLogin(this.authClient));
+
         this.add(
             new PostsView(
                 this.onDidPsClientChange.event,
-                this.onDidAuthUserChange.event,
+                this.deviceLogin.onDidAuthUserChange.event,
+                this.onDidPostChange,
             ),
         );
-        this.add(
-            vscode.commands.registerCommand(CommandName.Login, this.handleCommandLogin, this),
-        );
-        this.add(this.onDidLoginTokenChange.event(token => {
-            this.login(authClient, token);
+
+        this.add(this.deviceLogin.onDidLoginTokenChange.event(token => {
             this.client = this.add(
                 new PsClient(psProtos, cfg.printstream.address, token));
             this.onDidPsClientChange.fire(this.client);
         }));
 
-        this.add(new PsFileSystem());
+        this.add(new PsFileExplorer(this.onDidPostChange.event));
 
-        this.fetchLocalToken();
+        this.deviceLogin.restoreSaved();
     }
 
-    private login(client: AuthServiceClient, token: string) {
-        client.Login(
-            { token },
-            new grpc.Metadata(),
-            async (err?: grpc.ServiceError, resp?: LoginResponse) => {
-                if (err) {
-                    vscode.window.showErrorMessage(`Login error: ${err.message}`);
-                    return;
-                } else {
-                    this.onDidAuthUserChange.fire(resp?.user!);
-                }
-            });
-    }
-    
     public deactivate() {
         this.dispose();
 
@@ -99,30 +81,6 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
         return disposable;
     }
 
-    private handleCommandLogin() {
-        this.githubOauth?.getJwt()
-            .then(jwt => {
-                jwt = jwt.trim();
-                this.onDidLoginTokenChange.fire(jwt);
-                this.storeLocalToken(jwt);
-                return jwt;
-            }).catch(err => {
-                vscode.window.showErrorMessage(`Login error: ${err.message}`);
-            });
-    }
-
-    fetchLocalToken() {
-        const token = Container.context.globalState.get<string>(MementoName.APIToken);
-        if (!token) {
-            return;
-        }
-        this.onDidLoginTokenChange.fire(token.trim());
-    }
-
-    async storeLocalToken(token: string): Promise<void> {
-        return Container.context.globalState.update(MementoName.APIToken, token);
-    }
-    
     /**
      * @override
      */
@@ -138,3 +96,4 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
     }
 
 }
+

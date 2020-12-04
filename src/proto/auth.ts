@@ -13,14 +13,16 @@ export interface ProtoGrpcType {
       auth: {
         v1beta1: {
           AuthService: SubtypeConstructor<typeof grpc.Client, _build_stack_auth_v1beta1_AuthServiceClient> & { service: ServiceDefinition }
-          LoginRequest: MessageTypeDefinition
-          LoginResponse: MessageTypeDefinition
-          PasswordResetRequest: MessageTypeDefinition
-          PasswordResetResponse: MessageTypeDefinition
-          RegisterRequest: MessageTypeDefinition
+          DeviceLoginRequest: MessageTypeDefinition
+          DeviceLoginResponse: MessageTypeDefinition
           User: MessageTypeDefinition
         }
       }
+    }
+  }
+  google: {
+    protobuf: {
+      Timestamp: MessageTypeDefinition
     }
   }
 }

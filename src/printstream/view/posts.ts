@@ -19,13 +19,18 @@ export class PostsView extends PsClientTreeDataProvider<PostItem> {
     constructor(
         onDidChangePsClientChange: vscode.Event<PsClient>,
         onDidAuthUserChange: vscode.Event<User>,
+        onDidPostChange: vscode.EventEmitter<Post>,
     ) {
         super(ViewName.Posts, onDidChangePsClientChange);
-        
+
         onDidAuthUserChange(user => {
             this.user = user;
             this.clear();
         }, this, this.disposables);
+
+        this.disposables.push(vscode.commands.registerCommand(CommandName.PostOpen, (item: PostItem) => {
+            onDidPostChange.fire(item.post);
+        }));
     }
 
     registerCommands() {
@@ -43,8 +48,13 @@ export class PostsView extends PsClientTreeDataProvider<PostItem> {
         if (!this.user) {
             return undefined;
         }
-        const posts = await this.client.listPosts(this.user.login!);
-        return posts?.map(post => new PostItem(post));
+        try {
+            const posts = await this.client.listPosts(this.user.login!);
+            return posts?.map(post => new PostItem(post));
+        } catch (err) {
+            console.log(`Could not list posts: ${err.message}`);
+            return undefined;
+        }
     }
 }
 
@@ -56,11 +66,11 @@ export class PostItem extends vscode.TreeItem {
     ) {
         super(label || `"${post.title!}"`);
 
-        const createdAt: luxon.DateTime = 
+        const createdAt: luxon.DateTime =
             luxon.DateTime.fromSeconds(
-                    Long.fromValue(post.createdAt?.seconds!).toNumber());
+                Long.fromValue(post.createdAt?.seconds!).toNumber());
         let when = createdAt.toISODate() || undefined;
-    
+
         this.label = when;
         this.tooltip = `${createdAt}: "${post.title}" (${post.id})`;
         this.contextValue = ContextValue.Post;

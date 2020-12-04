@@ -2,42 +2,10 @@ syntax = "proto3";
 
 package build.stack.auth.v1beta1;
 
+import "google/protobuf/timestamp.proto";
+
 service AuthService {
-  rpc Login(LoginRequest) returns (LoginResponse) {}
-  rpc Register(RegisterRequest) returns (LoginResponse) {}
-  rpc PasswordReset(PasswordResetRequest) returns (PasswordResetResponse) {}
-}
-
-message LoginRequest {
-  // a jwt token
-  string token = 1;
-
-  // alternatively, one can use a username & password
-  string username = 2;
-  string password = 3;
-
-  // 2nd alternative is to specify only github username; it will trigger oauth
-  // flow and Login() will return only when completed.
-  string github_username = 4;
-}
-
-message RegisterRequest {
-  string name = 1;
-  string email = 2;
-  string password = 3;
-
-  bool send_confirmation_email = 4;
-}
-
-message PasswordResetRequest { string email = 2; }
-
-message PasswordResetResponse {}
-
-message LoginResponse {
-  // the user details
-  User user = 1;
-  // a jwt token that can be used for subsequent auth
-  string token = 2;
+  rpc DeviceLogin(DeviceLoginRequest) returns (stream DeviceLoginResponse) {}
 }
 
 message User {
@@ -54,4 +22,27 @@ message User {
 
   // if the email of the user has been not been confirmed yet.
   bool is_unconfirmed = 11;
+}
+
+
+message DeviceLoginRequest {
+}
+
+message DeviceLoginResponse {
+  // the URL where the user can perform oauth in the browser.
+  // this will be populated after the first stream response.
+  string oauth_url = 1;
+
+  // a boolean that signals when the device has logged in.
+  // in the case the user and token should be populated.
+  bool completed = 2;
+
+  // the user details
+  User user = 3;
+
+  // a jwt token that can be used for subsequent auth
+  string token = 4;
+
+  // date at which the token is expected to expire
+  google.protobuf.Timestamp expires_at = 5;
 }

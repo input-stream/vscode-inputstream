@@ -6,6 +6,8 @@ import { PostsClient } from '../proto/build/stack/printstream/v1beta1/Posts';
 import { ProtoGrpcType as PrintstreamProtoGrpcType } from '../proto/printstream';
 import { GRPCClient } from './grpcclient';
 
+grpc.setLogVerbosity(grpc.logVerbosity.DEBUG);
+
 export class PsClient extends GRPCClient {
     private readonly posts: PostsClient;
 
@@ -36,7 +38,7 @@ export class PsClient extends GRPCClient {
 
     async listPosts(login: string): Promise<Post[] | undefined> {
         return new Promise<Post[]>((resolve, reject) => {
-            this.posts.ListPosts(
+            this.posts.listPosts(
                 { login },
                 this.getGrpcMetadata(),
                 { deadline: this.getDeadline() },
@@ -51,7 +53,9 @@ export class PsClient extends GRPCClient {
     }
 
     getGrpcMetadata(): grpc.Metadata {
-        const md = new grpc.Metadata();
+        const md = new grpc.Metadata({
+            waitForReady: true,
+        });
         md.add('Authorization', `Bearer ${this.token}`);
         return md;
     }

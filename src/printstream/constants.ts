@@ -4,6 +4,7 @@ export const FeatureName = 'print.stream';
 
 export enum ViewName {
     Posts = 'print.stream.posts',
+    FileExplorer = 'print.stream.fileExplorer',
 }
 
 export enum Help {
@@ -54,5 +55,5 @@ export enum FileSystems {
 }
 
 export enum MementoName {
-    APIToken = 'print.stream.api.token',
+    DeviceLoginResponse = 'print.stream.api.login',
 }

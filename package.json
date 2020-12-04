@@ -25,6 +25,7 @@
     "activationEvents": [
         "onFileSystem:psfs",
         "onView:print.stream.posts",
+        "onView:print.stream.fileExplorer",
         "onCommand:print.stream.login"
     ],
     "engines": {
@@ -148,7 +149,13 @@
                     "name": "Posts",
                     "icon": "media/astronaut.svg",
                     "contextualTitle": "Post List"
+                },
+                {
+                    "id": "print.stream.fileExplorer",
+                    "name": "Files",
+                    "contextualTitle": "Filesystem for the given post"
                 }
+
             ]
         }
     },
