@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 export const FeatureName = 'print.stream';
 
 export enum ViewName {
-    Posts = 'print.stream.posts',
+    DraftExplorer = 'print.stream.draftExplorer',
     FileExplorer = 'print.stream.fileExplorer',
 }
 
@@ -23,12 +23,13 @@ export enum ConfigSection {
 
 export enum CommandName {
     RefreshSuffix = '.refresh',
-    PostCreate = 'print.stream.posts.create',
-    PostOpen = 'print.stream.posts.open',
+    PostCreate = 'print.stream.post.create',
+    PostOpen = 'print.stream.post.open',
+    PostRemove = 'print.stream.post.remove',
     Login = 'print.stream.login',
 
     PsExplorer = 'workbench.view.extension.printstream-explorer',
-    OpenSetting = 'printstream.openExtensionSetting',
+    OpenSetting = 'print.stream.openExtensionSetting',
 }
 
 export const ThemeIconCircleOutline = new vscode.ThemeIcon('circle-outline');
@@ -56,4 +57,9 @@ export enum FileSystems {
 
 export enum MementoName {
     DeviceLoginResponse = 'print.stream.api.login',
+}
+
+export enum ButtonName {
+    Confirm = 'Confirm',
+    Cancel = 'Cancel',
 }

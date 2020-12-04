@@ -35,6 +35,7 @@ message ListUsersResponse {
 
 service Posts {
     rpc CreatePost(CreatePostRequest) returns (Post) {};
+    rpc RemovePost(RemovePostRequest) returns (RemovePostResponse) {};
     rpc GetPost(GetPostRequest) returns (Post) {};
     rpc ListPosts(ListPostsRequest) returns (ListPostsResponse) {};
     rpc GetPostContent(GetPostContentRequest) returns (GetPostContentResponse) {};
@@ -71,6 +72,14 @@ message Post {
 
 message CreatePostRequest {
     string login = 1;
+}
+
+message RemovePostRequest {
+    string login = 1;
+    string id = 2;
+}
+
+message RemovePostResponse {
 }
 
 message GetPostRequest {

@@ -24,7 +24,7 @@
     "categories": [],
     "activationEvents": [
         "onFileSystem:psfs",
-        "onView:print.stream.posts",
+        "onView:print.stream.draftExplorer",
         "onView:print.stream.fileExplorer",
         "onCommand:print.stream.login"
     ],
@@ -36,96 +36,97 @@
             "type": "object",
             "title": "Printstream",
             "properties": {
-                "print.stream.posts.enabled": {
+                "print.stream.enabled": {
                     "type": "boolean",
                     "default": true,
                     "description": "Flag to enable/disable this feature"
                 },
-                "print.stream.posts.verbose": {
+                "print.stream.verbose": {
                     "type": "number",
                     "default": 0,
                     "description": "The verbosity level for extra diagnostics"
                 },
-                "print.stream.posts.api.address": {
+                "print.stream.api.address": {
                     "type": "string",
                     "default": "api.print.stream:443",
                     "description": "Address of the API server"
-                },
-                "print.stream.posts.oauth.github.relay": {
-                    "type": "string",
-                    "default": "https://print.stream/github_login",
-                    "description": "Endpoint for github oauth relay server"
                 }
             }
         },
         "commands": [
             {
                 "category": "Printstream",
-                "command": "printstream.openExtensionSetting",
+                "command": "print.stream.openExtensionSetting",
                 "title": "Goto Extension Setting"
             },
             {
                 "category": "Printstream",
-                "command": "print.stream.posts.refresh",
-                "title": "Refresh Post List",
+                "command": "print.stream.draftExplorer.refresh",
+                "title": "Refresh Drafts List",
                 "icon": "$(refresh)"
             },
             {
                 "category": "Printstream",
-                "command": "print.stream.posts.create",
-                "title": "Create Post",
+                "command": "print.stream.post.create",
+                "title": "Create Draft Post",
                 "icon": "$(add)"
             },
             {
                 "category": "Printstream",
-                "command": "print.stream.posts.open",
-                "title": "Open post",
+                "command": "print.stream.post.open",
+                "title": "Open Draft",
                 "icon": "$(open)"
+            },
+            {
+                "category": "Printstream",
+                "command": "print.stream.post.remove",
+                "title": "Remove Draft",
+                "icon": "$(remove)"
             },
             {
                 "category": "Printstream",
                 "command": "print.stream.login",
                 "title": "Login",
                 "icon": "$(rocket)"
-            },
-            {
-                "category": "Printstream",
-                "command": "print.stream.clippy",
-                "title": "Copy to Clipboard",
-                "icon": "$(clippy)"
             }
         ],
         "keybindings": [
             {
-                "command": "print.stream.posts.refresh",
+                "command": "print.stream.draftExplorer.refresh",
                 "key": "ctrl+shift+cmd+l"
             },
             {
                 "command": "workbench.view.extension.printstream-explorer",
-                "key": "ctrl+shift+cmd+t",
+                "key": "ctrl+shift+cmd+s",
                 "title": "Reveal Print.stream Explorer"
             }
         ],
         "menus": {
             "commandPalette": [
                 {
-                    "command": "printstream.openExtensionSetting",
+                    "command": "print.stream.openExtensionSetting",
                     "when": "false"
                 }
             ],
             "view/title": [
                 {
-                    "command": "print.stream.posts.refresh",
-                    "when": "view == print.stream.posts",
+                    "command": "print.stream.draftExplorer.refresh",
+                    "when": "view == print.stream.draftExplorer",
                     "group": "navigation"
                 },
                 {
-                    "command": "print.stream.posts.create",
-                    "when": "view == print.stream.posts",
+                    "command": "print.stream.post.create",
+                    "when": "view == print.stream.draftExplorer",
                     "group": "navigation"
                 }
             ],
-            "view/item/context": []
+            "view/item/context": [
+                {
+                    "command": "print.stream.post.remove",
+                    "when": "view == print.stream.draftExplorer",
+                    "group": "inline@0"
+                }
+            ]
         },
         "viewsContainers": {
             "activitybar": [
@@ -138,17 +139,17 @@
         },
         "viewsWelcome": [
             {
-                "view": "print.stream.posts",
-                "contents": "Login to view and create posts.\n\n[Login with GitHub](command:print.stream.login)\n\nYou will be redirected back here once authenticated."
+                "view": "print.stream.draftExplorer",
+                "contents": "Login to view and create posts.\n\n[Login with GitHub](command:print.stream.login)\n\nYou'll be redirected back here once authenticated."
             }
         ],
         "views": {
             "printstream-explorer": [
                 {
-                    "id": "print.stream.posts",
-                    "name": "Posts",
+                    "id": "print.stream.draftExplorer",
+                    "name": "Drafts",
                     "icon": "media/astronaut.svg",
-                    "contextualTitle": "Post List"
+                    "contextualTitle": "List of Draft Posts"
                 },
                 {
                     "id": "print.stream.fileExplorer",

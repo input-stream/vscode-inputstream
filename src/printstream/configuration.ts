@@ -34,8 +34,6 @@ export type PsServerConfiguration = {
     protofile: string,
     // address of the api server
     address: string,
-    // address of the oauth-relay endpoint
-    githubOAuthRelayUrl: string
 };
 
 export async function createPsConfiguration(
@@ -47,8 +45,6 @@ export async function createPsConfiguration(
             asAbsolutePath('./proto/printstream.proto')),
         address: config.get<string>(ConfigSection.ApiAddress,
             'api.print.stream:443'),
-        githubOAuthRelayUrl: config.get<string>(ConfigSection.OAuthGithubRelay,
-            'https://print.stream/github_login'),
     };
 
     const auth = {

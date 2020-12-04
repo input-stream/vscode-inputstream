@@ -8,6 +8,8 @@ import type { GetPostRequest as _build_stack_printstream_v1beta1_GetPostRequest,
 import type { ListPostsRequest as _build_stack_printstream_v1beta1_ListPostsRequest, ListPostsRequest__Output as _build_stack_printstream_v1beta1_ListPostsRequest__Output } from '../../../../build/stack/printstream/v1beta1/ListPostsRequest';
 import type { ListPostsResponse as _build_stack_printstream_v1beta1_ListPostsResponse, ListPostsResponse__Output as _build_stack_printstream_v1beta1_ListPostsResponse__Output } from '../../../../build/stack/printstream/v1beta1/ListPostsResponse';
 import type { Post as _build_stack_printstream_v1beta1_Post, Post__Output as _build_stack_printstream_v1beta1_Post__Output } from '../../../../build/stack/printstream/v1beta1/Post';
+import type { RemovePostRequest as _build_stack_printstream_v1beta1_RemovePostRequest, RemovePostRequest__Output as _build_stack_printstream_v1beta1_RemovePostRequest__Output } from '../../../../build/stack/printstream/v1beta1/RemovePostRequest';
+import type { RemovePostResponse as _build_stack_printstream_v1beta1_RemovePostResponse, RemovePostResponse__Output as _build_stack_printstream_v1beta1_RemovePostResponse__Output } from '../../../../build/stack/printstream/v1beta1/RemovePostResponse';
 
 export interface PostsClient extends grpc.Client {
   CreatePost(argument: _build_stack_printstream_v1beta1_CreatePostRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_printstream_v1beta1_Post__Output) => void): grpc.ClientUnaryCall;
@@ -46,6 +48,15 @@ export interface PostsClient extends grpc.Client {
   listPosts(argument: _build_stack_printstream_v1beta1_ListPostsRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_printstream_v1beta1_ListPostsResponse__Output) => void): grpc.ClientUnaryCall;
   listPosts(argument: _build_stack_printstream_v1beta1_ListPostsRequest, callback: (error?: grpc.ServiceError, result?: _build_stack_printstream_v1beta1_ListPostsResponse__Output) => void): grpc.ClientUnaryCall;
   
+  RemovePost(argument: _build_stack_printstream_v1beta1_RemovePostRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_printstream_v1beta1_RemovePostResponse__Output) => void): grpc.ClientUnaryCall;
+  RemovePost(argument: _build_stack_printstream_v1beta1_RemovePostRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _build_stack_printstream_v1beta1_RemovePostResponse__Output) => void): grpc.ClientUnaryCall;
+  RemovePost(argument: _build_stack_printstream_v1beta1_RemovePostRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_printstream_v1beta1_RemovePostResponse__Output) => void): grpc.ClientUnaryCall;
+  RemovePost(argument: _build_stack_printstream_v1beta1_RemovePostRequest, callback: (error?: grpc.ServiceError, result?: _build_stack_printstream_v1beta1_RemovePostResponse__Output) => void): grpc.ClientUnaryCall;
+  removePost(argument: _build_stack_printstream_v1beta1_RemovePostRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_printstream_v1beta1_RemovePostResponse__Output) => void): grpc.ClientUnaryCall;
+  removePost(argument: _build_stack_printstream_v1beta1_RemovePostRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _build_stack_printstream_v1beta1_RemovePostResponse__Output) => void): grpc.ClientUnaryCall;
+  removePost(argument: _build_stack_printstream_v1beta1_RemovePostRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_printstream_v1beta1_RemovePostResponse__Output) => void): grpc.ClientUnaryCall;
+  removePost(argument: _build_stack_printstream_v1beta1_RemovePostRequest, callback: (error?: grpc.ServiceError, result?: _build_stack_printstream_v1beta1_RemovePostResponse__Output) => void): grpc.ClientUnaryCall;
+  
 }
 
 export interface PostsHandlers extends grpc.UntypedServiceImplementation {
@@ -56,5 +67,7 @@ export interface PostsHandlers extends grpc.UntypedServiceImplementation {
   GetPostContent: grpc.handleUnaryCall<_build_stack_printstream_v1beta1_GetPostContentRequest__Output, _build_stack_printstream_v1beta1_GetPostContentResponse>;
   
   ListPosts: grpc.handleUnaryCall<_build_stack_printstream_v1beta1_ListPostsRequest__Output, _build_stack_printstream_v1beta1_ListPostsResponse>;
+  
+  RemovePost: grpc.handleUnaryCall<_build_stack_printstream_v1beta1_RemovePostRequest__Output, _build_stack_printstream_v1beta1_RemovePostResponse>;
   
 }

@@ -25,6 +25,8 @@ export interface ProtoGrpcType {
           ListUsersResponse: MessageTypeDefinition
           Post: MessageTypeDefinition
           Posts: SubtypeConstructor<typeof grpc.Client, _build_stack_printstream_v1beta1_PostsClient> & { service: ServiceDefinition }
+          RemovePostRequest: MessageTypeDefinition
+          RemovePostResponse: MessageTypeDefinition
           User: MessageTypeDefinition
           Users: SubtypeConstructor<typeof grpc.Client, _build_stack_printstream_v1beta1_UsersClient> & { service: ServiceDefinition }
         }

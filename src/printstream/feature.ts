@@ -9,17 +9,15 @@ import {
     loadAuthProtos,
     loadPsProtos
 } from './configuration';
-import { ViewName } from './constants';
+import { FeatureName, ViewName } from './constants';
 import { DeviceLogin } from './device_login';
 import { Closeable } from './grpcclient';
 import { EmptyView } from './view/emptyview';
 import { PostsView } from './view/posts';
 import { PsFileExplorer } from './view/psfs';
 
-export const PsFeatureName = 'print.stream.posts';
-
 export class PsFeature implements IExtensionFeature, vscode.Disposable {
-    public readonly name = PsFeatureName;
+    public readonly name = FeatureName;
 
     private disposables: vscode.Disposable[] = [];
     private closeables: Closeable[] = [];
@@ -73,7 +71,7 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
 
         // Even when deactivated/disposed we need to provide view implementations
         // declared in the package.json to avoid the 'no tree view with id ...' error.
-        new EmptyView(ViewName.Posts, this.disposables);
+        new EmptyView(ViewName.DraftExplorer, this.disposables);
     }
 
     protected add<T extends vscode.Disposable>(disposable: T): T {

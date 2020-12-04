@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { ListPostsResponse } from '../proto/build/stack/printstream/v1beta1/ListPostsResponse';
 import { Post } from '../proto/build/stack/printstream/v1beta1/Post';
 import { PostsClient } from '../proto/build/stack/printstream/v1beta1/Posts';
+import { RemovePostResponse } from '../proto/build/stack/printstream/v1beta1/RemovePostResponse';
 import { ProtoGrpcType as PrintstreamProtoGrpcType } from '../proto/printstream';
 import { GRPCClient } from './grpcclient';
 
@@ -47,6 +48,38 @@ export class PsClient extends GRPCClient {
                         reject(this.handleError(err));
                     } else {
                         resolve(resp?.post);
+                    }
+                });
+        });
+    }
+
+    async createPost(login: string): Promise<Post | undefined> {
+        return new Promise<Post>((resolve, reject) => {
+            this.posts.createPost(
+                { login },
+                this.getGrpcMetadata(),
+                { deadline: this.getDeadline() },
+                async (err?: grpc.ServiceError, resp?: Post) => {
+                    if (err) {
+                        reject(this.handleError(err));
+                    } else {
+                        resolve(resp);
+                    }
+                });
+        });
+    }
+
+    async removePost(login: string, id: string): Promise<RemovePostResponse> {
+        return new Promise<RemovePostResponse>((resolve, reject) => {
+            this.posts.removePost(
+                { login, id },
+                this.getGrpcMetadata(),
+                { deadline: this.getDeadline() },
+                async (err?: grpc.ServiceError, resp?: RemovePostResponse) => {
+                    if (err) {
+                        reject(this.handleError(err));
+                    } else {
+                        resolve(resp);
                     }
                 });
         });
