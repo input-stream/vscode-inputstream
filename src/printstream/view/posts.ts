@@ -64,7 +64,11 @@ export class PostsView extends PsClientTreeDataProvider<PostItem> {
         }
         try {
             const posts = await this.client.listPosts(this.user.login!);
-            return this.items = posts?.map(post => new PostItem(post));
+            if (!posts) {
+                return undefined;
+            }
+            sortPostsByCreateTime(posts);
+            return this.items = posts.map(post => new PostItem(post));
         } catch (err) {
             console.log(`Could not list posts: ${err.message}`);
             return undefined;
@@ -141,4 +145,15 @@ export class PostItem extends vscode.TreeItem {
     }
 }
 
-
+/**
+ * Sort the posts by creation time with most recent posts in front.
+ * Array modified in place.
+ * @param posts 
+ */
+function sortPostsByCreateTime(posts: Post[]) {
+    posts?.sort((a, b) => {
+        const tb = Long.fromValue(b.createdAt!.seconds!).toNumber();
+        const ta = Long.fromValue(a.createdAt!.seconds!).toNumber();
+        return tb - ta;
+    });
+}
