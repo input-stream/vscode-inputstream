@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package build.stack.printstream.v1beta1;
+package build.stack.inputstream.v1beta1;
 
 import "google/protobuf/timestamp.proto";
 
@@ -33,77 +33,77 @@ message ListUsersResponse {
     repeated User user = 1;
 }
 
-service Posts {
-    rpc CreatePost(CreatePostRequest) returns (Post) {};
-    rpc RemovePost(RemovePostRequest) returns (RemovePostResponse) {};
-    rpc GetPost(GetPostRequest) returns (Post) {};
-    rpc ListPosts(ListPostsRequest) returns (ListPostsResponse) {};
-    rpc GetPostContent(GetPostContentRequest) returns (GetPostContentResponse) {};
+service Inputs {
+    rpc CreateInput(CreateInputRequest) returns (Input) {};
+    rpc RemoveInput(RemoveInputRequest) returns (RemoveInputResponse) {};
+    rpc GetInput(GetInputRequest) returns (Input) {};
+    rpc ListInputs(ListInputsRequest) returns (ListInputsResponse) {};
+    rpc GetInputContent(GetInputContentRequest) returns (GetInputContentResponse) {};
 }
 
-message Post {
+message Input {
     enum Type {
         TYPE_UNKNOWN = 0;
         TYPE_MARKDOWN = 1;
     }
 
-    // the owner of the post
+    // the owner of the Input
     string login = 1;
-    // a uuid for this post
+    // a uuid for this Input
     string id = 2;
-    // title of the post
+    // title of the Input
     string title = 3;
-    // a summary of the post
+    // a summary of the Input
     string abstract = 4;
     // a URL for a representative image
     string image_url = 5;
-    // content of the post.  Typically not populated unless content is
+    // content of the Input.  Typically not populated unless content is
     // requested.
     bytes content = 6;
-    // Date when post was created
+    // Date when Input was created
     google.protobuf.Timestamp created_at = 7;
-    // Date when post content was last modified
+    // Date when Input content was last modified
     google.protobuf.Timestamp modified_at = 8;
-    // the type of post this is
+    // the type of Input this is
     Type type = 9;
-    // the post identifier (a simple number)
+    // the Input identifier (a simple number)
     int64 pid = 10;
 }
 
-message CreatePostRequest {
+message CreateInputRequest {
     string login = 1;
 }
 
-message RemovePostRequest {
-    string login = 1;
-    string id = 2;
-}
-
-message RemovePostResponse {
-}
-
-message GetPostRequest {
+message RemoveInputRequest {
     string login = 1;
     string id = 2;
 }
 
-message GetPostContentRequest {
+message RemoveInputResponse {
+}
+
+message GetInputRequest {
     string login = 1;
     string id = 2;
 }
 
-message GetPostContentResponse {
+message GetInputContentRequest {
+    string login = 1;
+    string id = 2;
+}
+
+message GetInputContentResponse {
     string login = 1;
     string id = 2;
     string html = 3;
 }
 
-message ListPostsRequest {
+message ListInputsRequest {
     string login = 1;
     string id = 2;
     string title = 3;
 }
 
-message ListPostsResponse {
-    repeated Post post = 1;
+message ListInputsResponse {
+    repeated Input input = 1;
 }

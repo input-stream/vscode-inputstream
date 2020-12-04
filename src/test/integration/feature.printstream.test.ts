@@ -9,7 +9,7 @@ import fs = require('graceful-fs');
 import os = require('os');
 import tmp = require('tmp');
 import path = require('path');
-import { FeatureName } from '../../printstream/constants';
+import { FeatureName } from '../../inputstream/constants';
 
 describe(FeatureName, function () {
 });

@@ -3,17 +3,17 @@ import * as loader from '@grpc/proto-loader';
 import * as vscode from 'vscode';
 import { ProtoGrpcType as AuthProtoType } from '../proto/auth';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
-import { PostsClient } from '../proto/build/stack/printstream/v1beta1/Posts';
-import { ProtoGrpcType as PsProtoType } from '../proto/printstream';
+import { InputsClient } from '../proto/build/stack/inputstream/v1beta1/Inputs';
+import { ProtoGrpcType as PsProtoType } from '../proto/inputstream';
 import { ConfigSection } from './constants';
 
 /**
- * Configuration for the Printstream feature.
+ * Configuration for the inputstream feature.
  */
 export type PsConfiguration = {
     verbose: number,
     auth: AuthServerConfiguration,
-    printstream: PsServerConfiguration,
+    inputstream: PsServerConfiguration,
 };
 
 /**
@@ -40,24 +40,24 @@ export async function createPsConfiguration(
     asAbsolutePath: (rel: string) => string,
     storagePath: string,
     config: vscode.WorkspaceConfiguration): Promise<PsConfiguration> {
-    const printstream: PsServerConfiguration = {
-        protofile: config.get<string>(ConfigSection.PrintstreamProto,
-            asAbsolutePath('./proto/printstream.proto')),
+    const inputstream: PsServerConfiguration = {
+        protofile: config.get<string>(ConfigSection.inputstreamProto,
+            asAbsolutePath('./proto/inputstream.proto')),
         address: config.get<string>(ConfigSection.ApiAddress,
-            'api.print.stream:443'),
+            'api.input.stream:443'),
     };
 
     const auth = {
         protofile: config.get<string>(ConfigSection.AuthProto,
             asAbsolutePath('./proto/auth.proto')),
         address: config.get<string>(ConfigSection.ApiAddress,
-            'print.stream:443'),
+            'input.stream:443'),
     };
 
     const cfg: PsConfiguration = {
         verbose: config.get<number>(ConfigSection.Verbose, 0),
         auth: auth,
-        printstream: printstream,
+        inputstream: inputstream,
     };
 
     return cfg;
@@ -89,12 +89,12 @@ function getGRPCCredentials(address: string): grpc.ChannelCredentials {
 }
 
 /**
- * Create a new client for the Posts service.
+ * Create a new client for the Inputs service.
  * 
  * @param address The address to connect.
  */
-export function createPostsClient(proto: PsProtoType, address: string): PostsClient {
-    return new proto.build.stack.printstream.v1beta1.Posts(address, getGRPCCredentials(address));
+export function createInputsClient(proto: PsProtoType, address: string): InputsClient {
+    return new proto.build.stack.inputstream.v1beta1.Inputs(address, getGRPCCredentials(address));
 }
 
 /**

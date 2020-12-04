@@ -1,6 +1,6 @@
 {
-    "name": "vscode-printstream",
-    "displayName": "vscode-printstream",
+    "name": "vscode-inputstream",
+    "displayName": "vscode-inputstream",
     "description": "Weightless developer publishing",
     "version": "0.5.0",
     "publisher": "stackbuild",
@@ -8,7 +8,7 @@
     "icon": "media/logo.png",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/printstream/vscode-printstream.git"
+        "url": "git+https://github.com/inputstream/vscode-inputstream.git"
     },
     "keywords": [
         "blogging",
@@ -18,15 +18,15 @@
     ],
     "author": "stack.build authors",
     "bugs": {
-        "url": "https://github.com/printstream/vscode-printstream/issues"
+        "url": "https://github.com/inputstream/vscode-inputstream/issues"
     },
-    "homepage": "https://github.com/printstream/vscode-printstream#readme",
+    "homepage": "https://github.com/inputstream/vscode-inputstream#readme",
     "categories": [],
     "activationEvents": [
         "onFileSystem:psfs",
-        "onView:print.stream.draftExplorer",
-        "onView:print.stream.fileExplorer",
-        "onCommand:print.stream.login"
+        "onView:input.stream.inputExplorer",
+        "onView:input.stream.fileExplorer",
+        "onCommand:input.stream.login"
     ],
     "engines": {
         "vscode": "^1.45.0"
@@ -34,96 +34,96 @@
     "contributes": {
         "configuration": {
             "type": "object",
-            "title": "Printstream",
+            "title": "inputstream",
             "properties": {
-                "print.stream.enabled": {
+                "input.stream.enabled": {
                     "type": "boolean",
                     "default": true,
                     "description": "Flag to enable/disable this feature"
                 },
-                "print.stream.verbose": {
+                "input.stream.verbose": {
                     "type": "number",
                     "default": 0,
                     "description": "The verbosity level for extra diagnostics"
                 },
-                "print.stream.api.address": {
+                "input.stream.api.address": {
                     "type": "string",
-                    "default": "api.print.stream:443",
+                    "default": "api.input.stream:443",
                     "description": "Address of the API server"
                 }
             }
         },
         "commands": [
             {
-                "category": "Printstream",
-                "command": "print.stream.openExtensionSetting",
+                "category": "inputstream",
+                "command": "input.stream.openExtensionSetting",
                 "title": "Goto Extension Setting"
             },
             {
-                "category": "Printstream",
-                "command": "print.stream.draftExplorer.refresh",
-                "title": "Refresh Drafts List",
+                "category": "inputstream",
+                "command": "input.stream.inputExplorer.refresh",
+                "title": "Refresh Inputs List",
                 "icon": "$(refresh)"
             },
             {
-                "category": "Printstream",
-                "command": "print.stream.post.create",
-                "title": "Create Draft Post",
+                "category": "inputstream",
+                "command": "input.stream.input.create",
+                "title": "Create input Input",
                 "icon": "$(add)"
             },
             {
-                "category": "Printstream",
-                "command": "print.stream.post.open",
-                "title": "Open Draft",
+                "category": "inputstream",
+                "command": "input.stream.input.open",
+                "title": "Open input",
                 "icon": "$(open)"
             },
             {
-                "category": "Printstream",
-                "command": "print.stream.post.remove",
-                "title": "Remove Draft",
+                "category": "inputstream",
+                "command": "input.stream.input.remove",
+                "title": "Remove input",
                 "icon": "$(remove)"
             },
             {
-                "category": "Printstream",
-                "command": "print.stream.login",
+                "category": "inputstream",
+                "command": "input.stream.login",
                 "title": "Login",
                 "icon": "$(rocket)"
             }
         ],
         "keybindings": [
             {
-                "command": "print.stream.draftExplorer.refresh",
+                "command": "input.stream.inputExplorer.refresh",
                 "key": "ctrl+shift+cmd+l"
             },
             {
-                "command": "workbench.view.extension.printstream-explorer",
-                "key": "ctrl+shift+cmd+s",
-                "title": "Reveal Print.stream Explorer"
+                "command": "workbench.view.extension.inputstream-explorer",
+                "key": "ctrl+shift+cmd+i",
+                "title": "Reveal input.stream Explorer"
             }
         ],
         "menus": {
             "commandPalette": [
                 {
-                    "command": "print.stream.openExtensionSetting",
+                    "command": "input.stream.openExtensionSetting",
                     "when": "false"
                 }
             ],
             "view/title": [
                 {
-                    "command": "print.stream.draftExplorer.refresh",
-                    "when": "view == print.stream.draftExplorer",
+                    "command": "input.stream.inputExplorer.refresh",
+                    "when": "view == input.stream.inputExplorer",
                     "group": "navigation"
                 },
                 {
-                    "command": "print.stream.post.create",
-                    "when": "view == print.stream.draftExplorer",
+                    "command": "input.stream.input.create",
+                    "when": "view == input.stream.inputExplorer",
                     "group": "navigation"
                 }
             ],
             "view/item/context": [
                 {
-                    "command": "print.stream.post.remove",
-                    "when": "view == print.stream.draftExplorer",
+                    "command": "input.stream.input.remove",
+                    "when": "view == input.stream.inputExplorer",
                     "group": "inline@0"
                 }
             ]
@@ -131,30 +131,30 @@
         "viewsContainers": {
             "activitybar": [
                 {
-                    "id": "printstream-explorer",
-                    "title": "Print.Stream",
+                    "id": "inputstream-explorer",
+                    "title": "input.stream",
                     "icon": "media/astronaut.svg"
                 }
             ]
         },
         "viewsWelcome": [
             {
-                "view": "print.stream.draftExplorer",
-                "contents": "Login to view and create posts.\n\n[Login with GitHub](command:print.stream.login)\n\nYou'll be redirected back here once authenticated."
+                "view": "input.stream.inputExplorer",
+                "contents": "Login to view and create Inputs.\n\n[Login with GitHub](command:input.stream.login)\n\nYou'll be redirected back here once authenticated."
             }
         ],
         "views": {
-            "printstream-explorer": [
+            "inputstream-explorer": [
                 {
-                    "id": "print.stream.draftExplorer",
-                    "name": "Drafts",
+                    "id": "input.stream.inputExplorer",
+                    "name": "Inputs",
                     "icon": "media/astronaut.svg",
-                    "contextualTitle": "List of Draft Posts"
+                    "contextualTitle": "List of Inputs"
                 },
                 {
-                    "id": "print.stream.fileExplorer",
+                    "id": "input.stream.fileExplorer",
                     "name": "Files",
-                    "contextualTitle": "Filesystem for the given post"
+                    "contextualTitle": "Filesystem for the given input"
                 }
 
             ]

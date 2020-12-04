@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 
-export const FeatureName = 'print.stream';
+export const FeatureName = 'input.stream';
 
 export enum ViewName {
-    DraftExplorer = 'print.stream.draftExplorer',
-    FileExplorer = 'print.stream.fileExplorer',
+    InputExplorer = 'input.stream.inputExplorer',
+    FileExplorer = 'input.stream.fileExplorer',
 }
 
 export enum Help {
@@ -15,21 +15,20 @@ export enum Help {
 
 export enum ConfigSection {
     AuthProto = 'auth.proto',
-    PrintstreamProto = 'printstream.proto',
+    inputstreamProto = 'inputstream.proto',
     ApiAddress = 'api.address',
-    OAuthGithubRelay = 'oauth.github.relay',
     Verbose = 'verbose',
 }
 
 export enum CommandName {
     RefreshSuffix = '.refresh',
-    PostCreate = 'print.stream.post.create',
-    PostOpen = 'print.stream.post.open',
-    PostRemove = 'print.stream.post.remove',
-    Login = 'print.stream.login',
+    InputCreate = 'input.stream.input.create',
+    InputOpen = 'input.stream.input.open',
+    InputRemove = 'input.stream.input.remove',
+    Login = 'input.stream.login',
 
-    PsExplorer = 'workbench.view.extension.printstream-explorer',
-    OpenSetting = 'print.stream.openExtensionSetting',
+    PsExplorer = 'workbench.view.extension.inputstream-explorer',
+    OpenSetting = 'input.stream.openExtensionSetting',
 }
 
 export const ThemeIconCircleOutline = new vscode.ThemeIcon('circle-outline');
@@ -48,7 +47,7 @@ export const ThemeIconSymbolInterface = new vscode.ThemeIcon('symbol-interface')
 export const ThemeIconVerified = new vscode.ThemeIcon('verified');
 
 export enum ContextValue {
-    Post = 'post',
+    Input = 'input',
 }
 
 export enum FileSystems {
@@ -56,7 +55,7 @@ export enum FileSystems {
 }
 
 export enum MementoName {
-    DeviceLoginResponse = 'print.stream.api.login',
+    DeviceLoginResponse = 'input.stream.api.login',
 }
 
 export enum ButtonName {

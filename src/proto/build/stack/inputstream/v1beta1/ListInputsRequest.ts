@@ -1,13 +1,13 @@
-// Original file: proto/printstream.proto
+// Original file: proto/inputstream.proto
 
 
-export interface ListPostsRequest {
+export interface ListInputsRequest {
   'login'?: (string);
   'id'?: (string);
   'title'?: (string);
 }
 
-export interface ListPostsRequest__Output {
+export interface ListInputsRequest__Output {
   'login': (string);
   'id': (string);
   'title': (string);

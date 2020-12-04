@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
-export const ExtensionID = 'stackbuild.vscode-printstream';
-export const ExtensionName = 'vscode-printstream';
+export const ExtensionID = 'stackbuild.vscode-inputstream';
+export const ExtensionName = 'vscode-inputstream';
 export const AIKey = 'fake-7193a682-d12f-49a5-a515-ef00ab3f0992';
 
 export enum Telemetry {
@@ -9,21 +9,6 @@ export enum Telemetry {
     ExtensionDeactivate = 'ext.deactivate',
     FeatureActivate = 'feature.activate',
     FeatureDeactivate = 'feature.deactivate',
-    SignupStart = 'signup.start',
-    SignupAuto = 'signup.auto',
-    SignupManual = 'signup.manual',
-    SignupGithub = 'signup.github',
-    SignupEmail = 'signup.email',
-    SignupLogin = 'signup.login',
-    SignupRegister = 'signup.register',
-    SignupResetPassword = 'signup.resetPassword',
-    SignupRenew = 'signup.renew',
-    SignupPlanList = 'signup.plan.list',
-    SignupPlanSelect = 'signup.plan.select',
-    SignupPayment = 'signup.payment',
-    SignupConfirm = 'signup.confirm',
-    SignupSuccess = 'signup.success',
-    SignupError = 'signup.error',
 }
 
 export enum BuiltInCommands {

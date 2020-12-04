@@ -3,8 +3,8 @@ import { API } from './api';
 import { IExtensionFeature } from './common';
 import { BuiltInCommands, Telemetry } from './constants';
 import { Container } from './container';
-import { CommandName } from './printstream/constants';
-import { PsFeature } from './printstream/feature';
+import { CommandName } from './inputstream/constants';
+import { PsFeature } from './inputstream/feature';
 
 const api = new API();
 

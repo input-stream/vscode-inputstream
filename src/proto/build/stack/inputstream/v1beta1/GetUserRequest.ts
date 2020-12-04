@@ -1,4 +1,4 @@
-// Original file: proto/printstream.proto
+// Original file: proto/inputstream.proto
 
 
 export interface GetUserRequest {

@@ -1,27 +1,27 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
-import { ListPostsResponse } from '../proto/build/stack/printstream/v1beta1/ListPostsResponse';
-import { Post } from '../proto/build/stack/printstream/v1beta1/Post';
-import { PostsClient } from '../proto/build/stack/printstream/v1beta1/Posts';
-import { RemovePostResponse } from '../proto/build/stack/printstream/v1beta1/RemovePostResponse';
-import { ProtoGrpcType as PrintstreamProtoGrpcType } from '../proto/printstream';
+import { ListInputsResponse } from '../proto/build/stack/inputstream/v1beta1/ListInputsResponse';
+import { Input } from '../proto/build/stack/inputstream/v1beta1/Input';
+import { InputsClient } from '../proto/build/stack/inputstream/v1beta1/Inputs';
+import { RemoveInputResponse } from '../proto/build/stack/inputstream/v1beta1/RemoveInputResponse';
+import { ProtoGrpcType as inputstreamProtoGrpcType } from '../proto/inputstream';
 import { GRPCClient } from './grpcclient';
 
 grpc.setLogVerbosity(grpc.logVerbosity.DEBUG);
 
 export class PsClient extends GRPCClient {
-    private readonly posts: PostsClient;
+    private readonly inputService: InputsClient;
 
     constructor(
-        readonly proto: PrintstreamProtoGrpcType,
+        readonly proto: inputstreamProtoGrpcType,
         readonly address: string,
         readonly token: string,
     ) {
         super(address);
 
-        const v1beta1 = proto.build.stack.printstream.v1beta1;
+        const v1beta1 = proto.build.stack.inputstream.v1beta1;
         const creds = this.getCredentials(address);
-        this.posts = this.add(new v1beta1.Posts(address, creds));
+        this.inputService = this.add(new v1beta1.Inputs(address, creds));
     }
 
     httpURL(): string {
@@ -37,29 +37,29 @@ export class PsClient extends GRPCClient {
         return err;
     }
 
-    async listPosts(login: string): Promise<Post[] | undefined> {
-        return new Promise<Post[]>((resolve, reject) => {
-            this.posts.listPosts(
+    async listInputs(login: string): Promise<Input[] | undefined> {
+        return new Promise<Input[]>((resolve, reject) => {
+            this.inputService.listInputs(
                 { login },
                 this.getGrpcMetadata(),
                 { deadline: this.getDeadline() },
-                async (err?: grpc.ServiceError, resp?: ListPostsResponse) => {
+                async (err?: grpc.ServiceError, resp?: ListInputsResponse) => {
                     if (err) {
                         reject(this.handleError(err));
                     } else {
-                        resolve(resp?.post);
+                        resolve(resp?.input);
                     }
                 });
         });
     }
 
-    async createPost(login: string): Promise<Post | undefined> {
-        return new Promise<Post>((resolve, reject) => {
-            this.posts.createPost(
+    async createInput(login: string): Promise<Input | undefined> {
+        return new Promise<Input>((resolve, reject) => {
+            this.inputService.createInput(
                 { login },
                 this.getGrpcMetadata(),
                 { deadline: this.getDeadline() },
-                async (err?: grpc.ServiceError, resp?: Post) => {
+                async (err?: grpc.ServiceError, resp?: Input) => {
                     if (err) {
                         reject(this.handleError(err));
                     } else {
@@ -69,13 +69,13 @@ export class PsClient extends GRPCClient {
         });
     }
 
-    async removePost(login: string, id: string): Promise<RemovePostResponse> {
-        return new Promise<RemovePostResponse>((resolve, reject) => {
-            this.posts.removePost(
+    async removeInput(login: string, id: string): Promise<RemoveInputResponse> {
+        return new Promise<RemoveInputResponse>((resolve, reject) => {
+            this.inputService.removeInput(
                 { login, id },
                 this.getGrpcMetadata(),
                 { deadline: this.getDeadline() },
-                async (err?: grpc.ServiceError, resp?: RemovePostResponse) => {
+                async (err?: grpc.ServiceError, resp?: RemoveInputResponse) => {
                     if (err) {
                         reject(this.handleError(err));
                     } else {

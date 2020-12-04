@@ -1,16 +1,16 @@
-# vscode-printstream
+# vscode-inputstream
 
 Weightless publishing.
 
-[print.stream](https://print.stream) extension for Visual Studio Code.
+[input.stream](https://input.stream) extension for Visual Studio Code.
 
 ## Documentation
 
-<https://stackb.github.io/vscode-printstream/>
+<https://stackb.github.io/vscode-inputstream/>
 
 ## Features:
 
-- View Post List
-- Create Post
-- Edit Post
-- Delete Post
+- View Input List
+- Create Input
+- Edit Input
+- Delete Input
