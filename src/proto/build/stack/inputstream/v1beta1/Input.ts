@@ -1,30 +1,44 @@
 // Original file: proto/inputstream.proto
 
+import type { InputContent as _build_stack_inputstream_v1beta1_InputContent, InputContent__Output as _build_stack_inputstream_v1beta1_InputContent__Output } from '../../../../build/stack/inputstream/v1beta1/InputContent';
 import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../../google/protobuf/Timestamp';
 import type { Long } from '@grpc/proto-loader';
 
 // Original file: proto/inputstream.proto
 
+export enum _build_stack_inputstream_v1beta1_Input_Status {
+  STATUS_UNKNOWN = 0,
+  STATUS_DRAFT = 1,
+  STATUS_PUBLISHED = 2,
+}
+
+// Original file: proto/inputstream.proto
+
 export enum _build_stack_inputstream_v1beta1_Input_Type {
   TYPE_UNKNOWN = 0,
-  TYPE_MARKDOWN = 1,
+  TYPE_ANY = 1,
+  TYPE_TWEET = 2,
+  TYPE_SHORT_POST = 3,
+  TYPE_LONG_POST = 4,
+  TYPE_IMAGE = 5,
+  TYPE_PRESENTATION = 6,
 }
 
 export interface Input {
   /**
-   * the owner of the Input
+   * the owner of the post
    */
   'login'?: (string);
   /**
-   * a uuid for this Input
+   * a uuid for this post
    */
   'id'?: (string);
   /**
-   * title of the Input
+   * title of the post
    */
   'title'?: (string);
   /**
-   * a summary of the Input
+   * a summary of the post
    */
   'abstract'?: (string);
   /**
@@ -32,43 +46,46 @@ export interface Input {
    */
   'imageUrl'?: (string);
   /**
-   * content of the Input.  Typically not populated unless content is
-   * requested.
+   * the content value, if masked
    */
-  'content'?: (Buffer | Uint8Array | string);
+  'content'?: (_build_stack_inputstream_v1beta1_InputContent);
   /**
-   * Date when Input was created
+   * Date when post was created
    */
   'createdAt'?: (_google_protobuf_Timestamp);
   /**
-   * Date when Input content was last modified
+   * Date when post content was last updated
    */
-  'modifiedAt'?: (_google_protobuf_Timestamp);
+  'updatedAt'?: (_google_protobuf_Timestamp);
   /**
-   * the type of Input this is
+   * the type of input this is
    */
   'type'?: (_build_stack_inputstream_v1beta1_Input_Type | keyof typeof _build_stack_inputstream_v1beta1_Input_Type);
   /**
-   * the Input identifier (a simple number)
+   * the post identifier (a simple number)
    */
   'pid'?: (number | string | Long);
+  /**
+   * The status of this input (published or not)
+   */
+  'status'?: (_build_stack_inputstream_v1beta1_Input_Status | keyof typeof _build_stack_inputstream_v1beta1_Input_Status);
 }
 
 export interface Input__Output {
   /**
-   * the owner of the Input
+   * the owner of the post
    */
   'login': (string);
   /**
-   * a uuid for this Input
+   * a uuid for this post
    */
   'id': (string);
   /**
-   * title of the Input
+   * title of the post
    */
   'title': (string);
   /**
-   * a summary of the Input
+   * a summary of the post
    */
   'abstract': (string);
   /**
@@ -76,24 +93,27 @@ export interface Input__Output {
    */
   'imageUrl': (string);
   /**
-   * content of the Input.  Typically not populated unless content is
-   * requested.
+   * the content value, if masked
    */
-  'content': (Buffer);
+  'content'?: (_build_stack_inputstream_v1beta1_InputContent__Output);
   /**
-   * Date when Input was created
+   * Date when post was created
    */
   'createdAt'?: (_google_protobuf_Timestamp__Output);
   /**
-   * Date when Input content was last modified
+   * Date when post content was last updated
    */
-  'modifiedAt'?: (_google_protobuf_Timestamp__Output);
+  'updatedAt'?: (_google_protobuf_Timestamp__Output);
   /**
-   * the type of Input this is
+   * the type of input this is
    */
   'type': (_build_stack_inputstream_v1beta1_Input_Type);
   /**
-   * the Input identifier (a simple number)
+   * the post identifier (a simple number)
    */
   'pid': (Long);
+  /**
+   * The status of this input (published or not)
+   */
+  'status': (_build_stack_inputstream_v1beta1_Input_Status);
 }

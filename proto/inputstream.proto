@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package build.stack.inputstream.v1beta1;
 
+import "google/protobuf/any.proto";
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
 service Users {
@@ -35,43 +37,62 @@ message ListUsersResponse {
 
 service Inputs {
     rpc CreateInput(CreateInputRequest) returns (Input) {};
+    rpc UpdateInput(UpdateInputRequest) returns (Input) {};
     rpc RemoveInput(RemoveInputRequest) returns (RemoveInputResponse) {};
     rpc GetInput(GetInputRequest) returns (Input) {};
+    rpc WatchInput(WatchInputRequest) returns (stream Input) {};
     rpc ListInputs(ListInputsRequest) returns (ListInputsResponse) {};
-    rpc GetInputContent(GetInputContentRequest) returns (GetInputContentResponse) {};
 }
 
 message Input {
     enum Type {
         TYPE_UNKNOWN = 0;
-        TYPE_MARKDOWN = 1;
+        TYPE_ANY = 1;
+        TYPE_TWEET = 2;
+        TYPE_SHORT_POST = 3;
+        TYPE_LONG_POST = 4;
+        TYPE_IMAGE = 5;
+        TYPE_PRESENTATION = 6;
     }
 
-    // the owner of the Input
+    enum Status {
+        STATUS_UNKNOWN = 0;
+        STATUS_DRAFT = 1;
+        STATUS_PUBLISHED = 2;
+    }
+
+    // the owner of the post
     string login = 1;
-    // a uuid for this Input
+    // a uuid for this post
     string id = 2;
-    // title of the Input
+    // title of the post
     string title = 3;
-    // a summary of the Input
+    // a summary of the post
     string abstract = 4;
     // a URL for a representative image
     string image_url = 5;
-    // content of the Input.  Typically not populated unless content is
-    // requested.
-    bytes content = 6;
-    // Date when Input was created
+    // the content value, if masked
+    InputContent content = 6;
+    // Date when post was created
     google.protobuf.Timestamp created_at = 7;
-    // Date when Input content was last modified
-    google.protobuf.Timestamp modified_at = 8;
-    // the type of Input this is
+    // Date when post content was last updated
+    google.protobuf.Timestamp updated_at = 8;
+    // the type of input this is
     Type type = 9;
-    // the Input identifier (a simple number)
+    // the post identifier (a simple number)
     int64 pid = 10;
+
+    // The status of this input (published or not)
+    Status status = 11;
 }
 
 message CreateInputRequest {
-    string login = 1;
+    Input input = 1;
+}
+
+message UpdateInputRequest {
+    Input input = 1;
+    google.protobuf.FieldMask mask = 2;
 }
 
 message RemoveInputRequest {
@@ -85,17 +106,16 @@ message RemoveInputResponse {
 message GetInputRequest {
     string login = 1;
     string id = 2;
+    google.protobuf.FieldMask mask = 3;
 }
 
-message GetInputContentRequest {
+message WatchInputRequest {
     string login = 1;
     string id = 2;
-}
-
-message GetInputContentResponse {
-    string login = 1;
-    string id = 2;
-    string html = 3;
+    google.protobuf.FieldMask mask = 3;
+    // The login token, in the event that the streaming endpoint does not
+    // support headers.
+    string bearer_token = 4;
 }
 
 message ListInputsRequest {
@@ -106,4 +126,18 @@ message ListInputsRequest {
 
 message ListInputsResponse {
     repeated Input input = 1;
+}
+
+message InputContent {
+    oneof value {
+        // any type, for dynamic case
+        google.protobuf.Any any = 3;
+        // short post form
+        ShortPostInputContent short_post = 4;
+    }
+}
+
+message ShortPostInputContent {
+    string markdown = 1;
+    string html = 2;
 }

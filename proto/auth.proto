@@ -24,8 +24,13 @@ message User {
   bool is_unconfirmed = 11;
 }
 
-
 message DeviceLoginRequest {
+  // The name of the client application
+  string device_name = 1;
+
+  // refresh_token can be used to request a new access token without expecting
+  // the user to have to interact with the oauth_url.
+  string refresh_token = 2;
 }
 
 message DeviceLoginResponse {
@@ -40,9 +45,13 @@ message DeviceLoginResponse {
   // the user details
   User user = 3;
 
-  // a jwt token that can be used for subsequent auth
-  string token = 4;
+  // a jwt token that can be used for subsequent access (an access_token).
+  string access_token = 4;
 
-  // date at which the token is expected to expire
+  // date at which the access_token is expected to expire
   google.protobuf.Timestamp expires_at = 5;
+
+  // a different token that can be used for retrieving new access tokens.  This
+  // is only populated by interacting with the oauth_url.
+  string refresh_token = 6;
 }

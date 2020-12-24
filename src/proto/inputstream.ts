@@ -15,11 +15,10 @@ export interface ProtoGrpcType {
         v1beta1: {
           CreateInputRequest: MessageTypeDefinition
           CreateUserRequest: MessageTypeDefinition
-          GetInputContentRequest: MessageTypeDefinition
-          GetInputContentResponse: MessageTypeDefinition
           GetInputRequest: MessageTypeDefinition
           GetUserRequest: MessageTypeDefinition
           Input: MessageTypeDefinition
+          InputContent: MessageTypeDefinition
           Inputs: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_InputsClient> & { service: ServiceDefinition }
           ListInputsRequest: MessageTypeDefinition
           ListInputsResponse: MessageTypeDefinition
@@ -27,14 +26,19 @@ export interface ProtoGrpcType {
           ListUsersResponse: MessageTypeDefinition
           RemoveInputRequest: MessageTypeDefinition
           RemoveInputResponse: MessageTypeDefinition
+          ShortPostInputContent: MessageTypeDefinition
+          UpdateInputRequest: MessageTypeDefinition
           User: MessageTypeDefinition
           Users: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_UsersClient> & { service: ServiceDefinition }
+          WatchInputRequest: MessageTypeDefinition
         }
       }
     }
   }
   google: {
     protobuf: {
+      Any: MessageTypeDefinition
+      FieldMask: MessageTypeDefinition
       Timestamp: MessageTypeDefinition
     }
   }
