@@ -68,25 +68,25 @@
             {
                 "category": "inputstream",
                 "command": "input.stream.inputExplorer.refresh",
-                "title": "Refresh Inputs List",
+                "title": "Refresh",
                 "icon": "$(refresh)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.input.create",
-                "title": "Create Input",
+                "title": "Create",
                 "icon": "$(add)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.input.update",
-                "title": "Update Input",
+                "title": "Update",
                 "icon": "$(edit)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.input.open",
-                "title": "Open input",
+                "title": "Open",
                 "icon": "$(open)"
             },
             {
@@ -98,7 +98,7 @@
             {
                 "category": "inputstream",
                 "command": "input.stream.input.remove",
-                "title": "Remove input",
+                "title": "Remove",
                 "icon": "$(remove)"
             },
             {
@@ -165,7 +165,7 @@
             "activitybar": [
                 {
                     "id": "inputstream-explorer",
-                    "title": "input.stream",
+                    "title": "https://input.stream",
                     "icon": "media/astronaut.svg"
                 }
             ]
@@ -174,9 +174,9 @@
             "inputstream-explorer": [
                 {
                     "id": "input.stream.inputExplorer",
-                    "name": "Inputs",
+                    "name": "Stream",
                     "icon": "media/astronaut.svg",
-                    "contextualTitle": "List of Inputs"
+                    "contextualTitle": "List"
                 },
                 {
                     "id": "input.stream.fileExplorer",
