@@ -57,10 +57,8 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputLink, this.handleCommandInputLink, this));
         this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputWatch, this.handleCommandInputWatch, this));
-            this.disposables.push(
-                vscode.commands.registerCommand(CommandName.InputUpdate, this.handleCommandInputUpdate, this));
-            this.disposables.push(
+            vscode.commands.registerCommand(CommandName.InputUpdate, this.handleCommandInputUpdate, this));
+        this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputRemove, this.handleCommandInputRemove, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputOpen, this.handleCommandInputOpen, this));
@@ -70,7 +68,7 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
         vscode.workspace.onDidCloseTextDocument(
             this.handleTextDocumentClose, this, this.disposables);
         vscode.workspace.onDidChangeTextDocument(
-            this.handleTextDocumentChange, this, this.disposables);        
+            this.handleTextDocumentChange, this, this.disposables);
     }
 
     handleVisibilityChange(event: vscode.TreeViewVisibilityChangeEvent) {
@@ -276,11 +274,6 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
         return vscode.commands.executeCommand(BuiltInCommands.Open, uri);
     }
 
-    async handleCommandInputWatch(item: InputItem) {
-        const uri = vscode.Uri.parse(`${this.cfg.baseURL}/@${item.input.login}/${item.input.id}/watch`);
-        return vscode.commands.executeCommand(BuiltInCommands.Open, uri);
-    }
-
     async handleCommandInputRemove(item: InputItem) {
         const title = item.input.title;
         const when = formatTimestampISODate(item.input.createdAt);
@@ -340,9 +333,9 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
             if (action === ButtonName.Watch) {
                 this.openLink(input, true);
             }
-    
+
             session = new InputSession(client, input, uri);
-            this.sessions.set(uri.fsPath, session);    
+            this.sessions.set(uri.fsPath, session);
         }
         return session;
     }

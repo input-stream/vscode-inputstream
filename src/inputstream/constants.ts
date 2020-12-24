@@ -24,7 +24,6 @@ export enum CommandName {
     InputCreate = 'input.stream.input.create',
     InputOpen = 'input.stream.input.open',
     InputLink = 'input.stream.input.link',
-    InputWatch = 'input.stream.input.watch',
     InputRemove = 'input.stream.input.remove',
     InputUpdate = 'input.stream.input.update',
     Login = 'input.stream.login',

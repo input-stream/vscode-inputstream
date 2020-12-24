@@ -97,12 +97,6 @@
             },
             {
                 "category": "inputstream",
-                "command": "input.stream.input.watch",
-                "title": "Watch on https://input.stream",
-                "icon": "$(radio-tower)"
-            },
-            {
-                "category": "inputstream",
                 "command": "input.stream.input.remove",
                 "title": "Remove input",
                 "icon": "$(remove)"
@@ -156,19 +150,14 @@
                     "group": "inline@0"
                 },
                 {
-                    "command": "input.stream.input.watch",
+                    "command": "input.stream.input.update",
                     "when": "view == input.stream.inputExplorer && viewItem == input",
                     "group": "inline@1"
                 },
                 {
-                    "command": "input.stream.input.update",
-                    "when": "view == input.stream.inputExplorer && viewItem == input",
-                    "group": "inline@2"
-                },
-                {
                     "command": "input.stream.input.remove",
                     "when": "view == input.stream.inputExplorer && viewItem == input",
-                    "group": "inline@3"
+                    "group": "inline@2"
                 }
             ]
         },
