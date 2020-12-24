@@ -190,9 +190,6 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
                     items: [{
                         label: 'Short Post',
                         type: InputType.TYPE_SHORT_POST,
-                    }, {
-                        label: 'Long Post',
-                        type: InputType.TYPE_LONG_POST,
                     }],
                     placeholder: 'Choose input type',
                     shouldResume: async () => false,
@@ -343,8 +340,10 @@ export class InputItem extends vscode.TreeItem {
         super(label || `"${input.title!}"`);
 
         let when = formatTimestampISODate(input.createdAt);
-        let type = getInputTypeName(input.type as InputType); // FIXME: why necessary?
-        this.label = `${when} ${type}`;
+        // TODO(pcj): restore type name once there are choices about it, until
+        // then it's just confusing.
+        // let type = getInputTypeName(input.type as InputType); // FIXME: why necessary?
+        this.label = `${when}`;
         this.tooltip = `${when}: "${input.title}" (${input.id})`;
         this.contextValue = ContextValue.Input;
         this.iconPath = ThemeIconFile;
