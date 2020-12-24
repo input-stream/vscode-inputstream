@@ -1,6 +1,7 @@
 import * as grpc from '@grpc/grpc-js';
 import * as loader from '@grpc/proto-loader';
 import * as vscode from 'vscode';
+import { resolveHome } from '../common';
 import { ProtoGrpcType as AuthProtoType } from '../proto/auth';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
 import { InputsClient } from '../proto/build/stack/inputstream/v1beta1/Inputs';
@@ -34,6 +35,10 @@ export type PsServerConfiguration = {
     protofile: string,
     // address of the api server
     address: string,
+    // base URL where the website lives
+    baseURL: string,
+    // base directory where to store files
+    baseDir: string,
 };
 
 export async function createPsConfiguration(
@@ -45,7 +50,11 @@ export async function createPsConfiguration(
             asAbsolutePath('./proto/inputstream.proto')),
         address: config.get<string>(ConfigSection.ApiAddress,
             'api.input.stream:443'),
-    };
+        baseURL: resolveHome(config.get<string>(ConfigSection.BaseURL,
+            'https://input.stream')),
+        baseDir: resolveHome(config.get<string>(ConfigSection.BaseDir,
+            '~/.inputstream')),
+        };
 
     const auth = {
         protofile: config.get<string>(ConfigSection.AuthProto,

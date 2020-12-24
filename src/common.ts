@@ -4,6 +4,8 @@ import * as vscode from 'vscode';
 import { types } from 'vscode-common';
 import { Timestamp } from './proto/google/protobuf/Timestamp';
 import Long = require('long');
+import { BuiltInCommands } from './constants';
+import path = require('path');
 const crypto = require('crypto');
 
 export interface IExtensionFeature {
@@ -79,4 +81,15 @@ export function formatTimestampISODate(ts: Timestamp | undefined): string {
     const createdAt: luxon.DateTime = luxon.DateTime.fromSeconds(
         Long.fromValue(ts.seconds!).toNumber());
     return createdAt.toISODate() || '';
+}
+
+export function setCommandContext<T>(key: string, value: T) {
+	return vscode.commands.executeCommand(BuiltInCommands.SetContext, key, value);
+}
+
+export function resolveHome(filepath: string) {
+    if (filepath[0] === '~') {
+        return path.join(process.env.HOME!, filepath.slice(1));
+    }
+    return filepath;
 }

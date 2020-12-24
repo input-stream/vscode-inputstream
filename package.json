@@ -5,7 +5,7 @@
     "version": "0.5.0",
     "publisher": "stackbuild",
     "license": "Apache-2.0",
-    "icon": "media/logo.png",
+    "icon": "stackb-full.png",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/inputstream/vscode-inputstream.git"
@@ -23,6 +23,7 @@
     "homepage": "https://github.com/inputstream/vscode-inputstream#readme",
     "categories": [],
     "activationEvents": [
+        "onUri",
         "onFileSystem:psfs",
         "onView:input.stream.inputExplorer",
         "onView:input.stream.fileExplorer",
@@ -50,6 +51,11 @@
                     "type": "string",
                     "default": "api.input.stream:443",
                     "description": "Address of the API server"
+                },
+                "input.stream.baseDir": {
+                    "type": "string",
+                    "default": "~/.inputstream",
+                    "description": "Base directory to stage input files"
                 }
             }
         },
@@ -76,6 +82,18 @@
                 "command": "input.stream.input.open",
                 "title": "Open input",
                 "icon": "$(open)"
+            },
+            {
+                "category": "inputstream",
+                "command": "input.stream.input.link",
+                "title": "View on https://input.stream",
+                "icon": "$(link)"
+            },
+            {
+                "category": "inputstream",
+                "command": "input.stream.input.watch",
+                "title": "Watch on https://input.stream",
+                "icon": "$(radio-tower)"
             },
             {
                 "category": "inputstream",
@@ -122,9 +140,19 @@
             ],
             "view/item/context": [
                 {
-                    "command": "input.stream.input.remove",
-                    "when": "view == input.stream.inputExplorer",
+                    "command": "input.stream.input.link",
+                    "when": "view == input.stream.inputExplorer && viewItem == input",
                     "group": "inline@0"
+                },
+                {
+                    "command": "input.stream.input.watch",
+                    "when": "view == input.stream.inputExplorer && viewItem == input",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "input.stream.input.remove",
+                    "when": "view == input.stream.inputExplorer && viewItem == input",
+                    "group": "inline@2"
                 }
             ]
         },
@@ -137,12 +165,6 @@
                 }
             ]
         },
-        "viewsWelcome": [
-            {
-                "view": "input.stream.inputExplorer",
-                "contents": "Login to view and create Inputs.\n\n[Login with GitHub](command:input.stream.login)\n\nYou'll be redirected back here once authenticated."
-            }
-        ],
         "views": {
             "inputstream-explorer": [
                 {
@@ -156,7 +178,6 @@
                     "name": "Files",
                     "contextualTitle": "Filesystem for the given input"
                 }
-
             ]
         }
     },
@@ -165,7 +186,8 @@
         "vscode:prepublish:webpack": "npm run clean && webpack --mode production",
         "vscode:prepublish": "npm run clean && npm run compile",
         "vscode-package": "vsce package --out out/extension.vsix",
-        "vscode-install": "npm run vscode-package && code --install-extension out/extension.vsix",
+        "install-extension": "npm run vscode-package && code --install-extension out/extension.vsix",
+        "uninstall-extension": "code --uninstall-extension stackbuild.vscode-inputstream",
         "webpack": "npm run clean && webpack --mode development",
         "watch": "tsc -watch -p ./",
         "compile": "tsc -p ./",

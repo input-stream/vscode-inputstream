@@ -7,27 +7,28 @@ export enum ViewName {
     FileExplorer = 'input.stream.fileExplorer',
 }
 
-export enum Help {
-    Repository = 'repository',
-    Package = 'package',
-    Workspace = 'workspace',
-}
-
 export enum ConfigSection {
     AuthProto = 'auth.proto',
     inputstreamProto = 'inputstream.proto',
     ApiAddress = 'api.address',
     Verbose = 'verbose',
+    BaseURL = 'baseURL',
+    BaseDir = 'baseDir',
 }
 
+/**
+ * Names of commands.
+ */
 export enum CommandName {
     RefreshSuffix = '.refresh',
     InputCreate = 'input.stream.input.create',
     InputOpen = 'input.stream.input.open',
+    InputLink = 'input.stream.input.link',
+    InputWatch = 'input.stream.input.watch',
     InputRemove = 'input.stream.input.remove',
     Login = 'input.stream.login',
 
-    PsExplorer = 'workbench.view.extension.inputstream-explorer',
+    ViewInputstreamExplorer = 'workbench.view.extension.inputstream-explorer',
     OpenSetting = 'input.stream.openExtensionSetting',
 }
 
@@ -46,19 +47,38 @@ export const ThemeIconSymbolEvent = new vscode.ThemeIcon('symbol-event');
 export const ThemeIconSymbolInterface = new vscode.ThemeIcon('symbol-interface');
 export const ThemeIconVerified = new vscode.ThemeIcon('verified');
 
+/**
+ * Values used in the setContext function.
+ */
+export enum ContextName {
+    LoggedIn = 'input.stream.logged-in',
+}
+
+/**
+ * Values used for view item contexts.
+ */
 export enum ContextValue {
     Input = 'input',
+    Login = 'login',
 }
 
 export enum FileSystems {
     PsFs = 'psfs',
 }
 
+/**
+ * Values used as keys in vscode memento API.
+ */
 export enum MementoName {
     DeviceLoginResponse = 'input.stream.api.login',
 }
 
+/**
+ * Values used as button names in vscode.window.showInformationMessage API.
+ */
 export enum ButtonName {
-    Confirm = 'Confirm',
     Cancel = 'Cancel',
+    Confirm = 'Confirm',
+    Retry = 'Retry',
+    Watch = 'Watch on https://input.stream',
 }

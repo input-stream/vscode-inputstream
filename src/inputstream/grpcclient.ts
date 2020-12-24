@@ -33,10 +33,24 @@ export class GRPCClient implements vscode.Disposable {
         if (err.code === grpc.status.UNAVAILABLE) {
             return this.handleErrorUnavailable(err);
         }
+        if (err.code === grpc.status.UNAUTHENTICATED) {
+            return this.handleErrorUnauthenticated(err);
+        }
+        if (err.code === grpc.status.DEADLINE_EXCEEDED) {
+            return this.handleErrorDeadlineExceeded(err);
+        }
         return err;
     }
 
     protected handleErrorUnavailable(err: grpc.ServiceError): grpc.ServiceError {
+        return err;
+    }
+
+    protected handleErrorUnauthenticated(err: grpc.ServiceError): grpc.ServiceError {
+        return err;
+    }
+
+    protected handleErrorDeadlineExceeded(err: grpc.ServiceError): grpc.ServiceError {
         return err;
     }
 

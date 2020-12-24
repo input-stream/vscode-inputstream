@@ -1,4 +1,3 @@
-import * as vscode from 'vscode';
 
 export const ExtensionID = 'stackbuild.vscode-inputstream';
 export const ExtensionName = 'vscode-inputstream';
@@ -19,8 +18,4 @@ export enum BuiltInCommands {
     OpenFolder = 'vscode.openFolder',
     OpenSettings = 'workbench.action.openSettings',
     RevealFileInOS = 'revealFileInOS',
-}
-
-export function setCommandContext(key: string, value: any) {
-	return vscode.commands.executeCommand(BuiltInCommands.SetContext, key, value);
 }
