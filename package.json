@@ -105,7 +105,7 @@
                 "category": "inputstream",
                 "command": "input.stream.login",
                 "title": "Login",
-                "icon": "$(rocket)"
+                "icon": "$(log-in)"
             }
         ],
         "keybindings": [
@@ -127,6 +127,11 @@
                 }
             ],
             "view/title": [
+                {
+                    "command": "input.stream.login",
+                    "when": "view == input.stream.inputExplorer",
+                    "group": "navigation"
+                },    
                 {
                     "command": "input.stream.inputExplorer.refresh",
                     "when": "view == input.stream.inputExplorer",
