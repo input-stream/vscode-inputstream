@@ -74,8 +74,14 @@
             {
                 "category": "inputstream",
                 "command": "input.stream.input.create",
-                "title": "Create input Input",
+                "title": "Create Input",
                 "icon": "$(add)"
+            },
+            {
+                "category": "inputstream",
+                "command": "input.stream.input.update",
+                "title": "Update Input",
+                "icon": "$(edit)"
             },
             {
                 "category": "inputstream",
@@ -155,9 +161,14 @@
                     "group": "inline@1"
                 },
                 {
-                    "command": "input.stream.input.remove",
+                    "command": "input.stream.input.update",
                     "when": "view == input.stream.inputExplorer && viewItem == input",
                     "group": "inline@2"
+                },
+                {
+                    "command": "input.stream.input.remove",
+                    "when": "view == input.stream.inputExplorer && viewItem == input",
+                    "group": "inline@3"
                 }
             ]
         },
