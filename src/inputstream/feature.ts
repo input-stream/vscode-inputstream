@@ -14,6 +14,7 @@ import {
 import { CommandName, FeatureName, ViewName } from './constants';
 import { DeviceLogin } from './device_login';
 import { Closeable } from './grpcclient';
+import { ImageSearch } from './imagesearch/imagesearch';
 import { EmptyView } from './view/emptyview';
 import { InputView } from './view/input-view';
 import { LoginTreeDataProvider } from './view/login-view';
@@ -65,6 +66,8 @@ export class PsFeature implements IExtensionFeature, vscode.UriHandler, vscode.D
         }));
 
         this.add(new PsFileExplorer(this.onDidInputChange.event));
+
+        this.add(new ImageSearch(this.onDidPsClientChange.event));
 
         this.deviceLogin.restoreSaved();
     }

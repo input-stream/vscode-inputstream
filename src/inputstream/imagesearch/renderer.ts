@@ -1,23 +1,8 @@
-import * as vscode from 'vscode';
-import { makeCommandURI } from '../../common';
-import { BuiltInCommands } from '../../constants';
 import { SearchImagesRequest } from '../../proto/build/stack/inputstream/v1beta1/SearchImagesRequest';
 import { SearchImagesResponse } from '../../proto/build/stack/inputstream/v1beta1/SearchImagesResponse';
 import { SearchImage } from '../../proto/build/stack/inputstream/v1beta1/SearchImage';
 
 export class ImageSearchRenderer {
-
-	private readonly _disposables: vscode.Disposable[] = [];
-
-	constructor() {
-	}
-
-	dispose() {
-		let item: vscode.Disposable | undefined;
-		while ((item = this._disposables.pop())) {
-			item.dispose();
-		}
-	}
 
 	public async renderSummary(request: SearchImagesRequest, response: SearchImagesResponse): Promise<string> {
 		const atLimit = response.totalImages === response.image?.length;
@@ -53,22 +38,4 @@ export class ImageSearchRenderer {
         lines.push('</div>');
 	}
 
-}
-
-function getVscodeOpenCommand(filename: string, line: number, col: number): string {
-	return makeCommandURI(BuiltInCommands.Open, vscode.Uri.file(filename).with({
-		fragment: [line, col].join(','),
-	}).toString());
-}
-
-const htmlEscapes: { [key in string]: string } = {
-	'&': '&amp;',
-	'<': '&lt;',
-	'>': '&gt;',
-	'"': '&quot;',
-	"'": '&#39;'
-};
-
-function escapeHtml(html: string): string {
-	return html.replace(/[&<>"']/g, chr => htmlEscapes[chr]);
 }
