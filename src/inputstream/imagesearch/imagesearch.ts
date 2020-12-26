@@ -10,6 +10,7 @@ import { Duration } from 'luxon';
 import { ImageSearchRenderer } from './renderer';
 import { SearchImage } from '../../proto/build/stack/inputstream/v1beta1/SearchImage';
 import { InputSession } from '../view/input-session';
+import { UnsplashImage } from '../../proto/build/stack/inputstream/v1beta1/UnsplashImage';
 
 /**
  * Controller component for image search.
@@ -68,10 +69,23 @@ export class ImageSearch implements vscode.Disposable {
     }
 
     async handleCommandSearchImageClick(image: SearchImage) {
-        if (!image) {
-            return;
+        if (image.unsplash) {
+            this.handleUnsplashImageClick(image.unsplash);
         }
-        const markdown = `![${image.user?.username}](${image.url})`;
+    }
+
+    async handleUnsplashImageClick(image: UnsplashImage) {
+        const metadata = {
+            id: image.id,
+            type: 'unsplash',
+            username: image.user?.username,
+            firstname: image.user?.firstName,
+            lastname: image.user?.lastName,
+            height: image.height,
+            width: image.width,
+        };
+        const md = JSON.stringify(metadata).slice(1, -1);
+        const markdown = `![${md}](${image.url})`;
 
         this.copyToClipboard(markdown);
     }
@@ -144,7 +158,7 @@ export class ImageSearch implements vscode.Disposable {
                 // Save the images
                 this.imagesById.clear();
                 response.image?.forEach(
-                    image => this.imagesById.set(image.id!, image));
+                    image => this.imagesById.set(image.unsplash?.id!, image));
 
                 // Update summary
                 webview.onDidChangeHTMLSummary.fire('Rendering results...');

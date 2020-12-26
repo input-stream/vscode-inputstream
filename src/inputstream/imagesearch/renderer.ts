@@ -2,6 +2,7 @@ import { SearchImagesRequest } from '../../proto/build/stack/inputstream/v1beta1
 import { SearchImagesResponse } from '../../proto/build/stack/inputstream/v1beta1/SearchImagesResponse';
 import { SearchImage } from '../../proto/build/stack/inputstream/v1beta1/SearchImage';
 import { report } from 'process';
+import { UnsplashImage } from '../../proto/build/stack/inputstream/v1beta1/UnsplashImage';
 
 export class ImageSearchRenderer {
 
@@ -24,7 +25,7 @@ export class ImageSearchRenderer {
 		let lines: string[] = [];
         lines.push('<div class="grid" data-masonry=\'{ "itemSelector": ".grid-item", "columnWidth": 200 }\'>');
 		response.image?.forEach(image => {
-			this.formatSearchImageResult(lines, image);
+			this.formatUnsplashImageResult(lines, image.unsplash);
 		});
 		lines.push('</div>');
 		if (response.nextPage) {
@@ -40,9 +41,13 @@ export class ImageSearchRenderer {
 		</button>`;
 	}
 
-	private formatSearchImageResult(lines: string[], image: SearchImage) {
+	private formatUnsplashImageResult(lines: string[], image: UnsplashImage | undefined) {
+		if (!image) {
+			return;
+		}
         lines.push(`<div class="grid-item" style="padding: 0.5rem" data-id="${image.id}" onclick="postDataElementClick('image', this)">`);
-        lines.push(`<img src="${image.url}" data-id="${image.id}">`);
+		lines.push(`<img src="${image.url}" data-id="${image.id}">`);
+		lines.push(`<div style="margin-top: -2.5rem; padding-left: 0.5rem; color: gray">${image.user?.firstName} ${image.user?.lastName} (${image.width}x${image.height}px)</div>`);
         lines.push('</div>');
 	}
 

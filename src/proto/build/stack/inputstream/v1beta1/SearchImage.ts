@@ -1,26 +1,13 @@
 // Original file: proto/inputstream.proto
 
-import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../../google/protobuf/Timestamp';
-import type { SearchUser as _build_stack_inputstream_v1beta1_SearchUser, SearchUser__Output as _build_stack_inputstream_v1beta1_SearchUser__Output } from '../../../../build/stack/inputstream/v1beta1/SearchUser';
+import type { UnsplashImage as _build_stack_inputstream_v1beta1_UnsplashImage, UnsplashImage__Output as _build_stack_inputstream_v1beta1_UnsplashImage__Output } from '../../../../build/stack/inputstream/v1beta1/UnsplashImage';
 
 export interface SearchImage {
-  'id'?: (string);
-  'url'?: (string);
-  'width'?: (number);
-  'height'?: (number);
-  'color'?: (string);
-  'createdAt'?: (_google_protobuf_Timestamp);
-  'updatedAt'?: (_google_protobuf_Timestamp);
-  'user'?: (_build_stack_inputstream_v1beta1_SearchUser);
+  'unsplash'?: (_build_stack_inputstream_v1beta1_UnsplashImage);
+  'image'?: "unsplash";
 }
 
 export interface SearchImage__Output {
-  'id': (string);
-  'url': (string);
-  'width': (number);
-  'height': (number);
-  'color': (string);
-  'createdAt'?: (_google_protobuf_Timestamp__Output);
-  'updatedAt'?: (_google_protobuf_Timestamp__Output);
-  'user'?: (_build_stack_inputstream_v1beta1_SearchUser__Output);
+  'unsplash'?: (_build_stack_inputstream_v1beta1_UnsplashImage__Output);
+  'image': "unsplash";
 }

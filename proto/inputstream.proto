@@ -147,19 +147,24 @@ service Images {
 }
 
 message SearchImage {
+    oneof image {
+        UnsplashImage unsplash = 3;
+    }
+}
+
+message UnsplashImage {
     string id = 1;
     string url = 2;
-
     int32 width = 3;
     int32 height = 4;
     string color = 5;
     google.protobuf.Timestamp created_at = 6;
     google.protobuf.Timestamp updated_at = 7;
 
-    SearchUser user = 8;
+    UnsplashUser user = 8;
 }
 
-message SearchUser {
+message UnsplashUser {
     string id = 1;
     string username = 2;
     string first_name = 3;
