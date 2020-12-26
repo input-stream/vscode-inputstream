@@ -15,7 +15,7 @@ import { mkdirpSync } from 'fs-extra';
 import { PsServerConfiguration } from '../configuration';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
 import { InputContent } from '../../proto/build/stack/inputstream/v1beta1/InputContent';
-import { ShortPostInputContent } from '../../proto/build/stack/inputstream/v1beta1/ShortPostInputContent';
+import { InputSession } from './input-session';
 
 /**
  * Renders a view for a users inputs.  Makes a call to the status
@@ -466,58 +466,6 @@ function getInputTypeName(type: InputType | undefined): string {
 
 interface InputTypeQuickPickItem extends vscode.QuickPickItem {
     type: InputType
-}
-
-/**
- * Handles updates for a single document editing session.
- */
-class InputSession implements vscode.Disposable {
-    private disposables: vscode.Disposable[] = [];
-
-    /**
-     * @param input The input post.
-     * @param uri The URI that represents the file being edited.
-     */
-    constructor(
-        private client: PsClient,
-        private input: Input,
-        private uri: vscode.Uri,
-    ) {
-        vscode.workspace.onWillSaveTextDocument(
-            this.handleTextDocumentWillSave, this, this.disposables);
-    }
-
-    async handleTextDocumentWillSave(e: vscode.TextDocumentWillSaveEvent): Promise<void> {
-        if (e.document.uri !== this.uri) {
-            return;
-        }
-        e.waitUntil(this.save(e.document.getText()));
-    }
-
-    async save(text: string): Promise<any> {
-        const short: ShortPostInputContent = {
-            markdown: text,
-        };
-        const content: InputContent = {
-            value: 'shortPost',
-            shortPost: short,
-        };
-        this.input.content = content;
-        const mask: FieldMask = {
-            paths: ['content'],
-        };
-
-        try {
-            return this.client.updateInput(this.input, mask);
-        } catch (err) {
-            vscode.window.showErrorMessage(`Could not save input content: ${err.message}`);
-        }
-    }
-
-    dispose() {
-        this.disposables.forEach(d => d.dispose());
-        this.disposables.length = 0;
-    }
 }
 
 function getContentSource(content: InputContent): string {

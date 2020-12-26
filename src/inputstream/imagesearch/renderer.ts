@@ -1,6 +1,7 @@
 import { SearchImagesRequest } from '../../proto/build/stack/inputstream/v1beta1/SearchImagesRequest';
 import { SearchImagesResponse } from '../../proto/build/stack/inputstream/v1beta1/SearchImagesResponse';
 import { SearchImage } from '../../proto/build/stack/inputstream/v1beta1/SearchImage';
+import { report } from 'process';
 
 export class ImageSearchRenderer {
 
@@ -20,20 +21,27 @@ export class ImageSearchRenderer {
 	}
 
 	public async renderResults(response: SearchImagesResponse): Promise<string> {
-
 		let lines: string[] = [];
         lines.push('<div class="grid" data-masonry=\'{ "itemSelector": ".grid-item", "columnWidth": 200 }\'>');
 		response.image?.forEach(image => {
 			this.formatSearchImageResult(lines, image);
 		});
-        lines.push('</div>');
+		lines.push('</div>');
+		if (response.nextPage) {
+			lines.push(`<div style="padding: 1rem">${this.renderNextPageButton(response.nextPage)}</div>`);
+		}
 		return lines.join('\n');
 	}
 
+	private renderNextPageButton(page: number): string {
+		return `
+		<button class="button" type="button" name="nextPage" data-page="${page}" onclick="postDataElementClick('nextPage', this)">
+			Next Page
+		</button>`;
+	}
+
 	private formatSearchImageResult(lines: string[], image: SearchImage) {
-		// const openCommand = getVscodeOpenCommand(result.path!, lineNo, 0);
         lines.push(`<div class="grid-item" style="padding: 0.5rem" data-id="${image.id}" onclick="postDataElementClick('image', this)">`);
-        // lines.push(`<img src="${image.url}" width="${image.width}" height="${image.height}" data-id="${image.id}">`);
         lines.push(`<img src="${image.url}" data-id="${image.id}">`);
         lines.push('</div>');
 	}

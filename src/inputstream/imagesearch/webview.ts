@@ -395,28 +395,6 @@ export class ImageSearchPanel implements vscode.Disposable {
                         data: data,
                     });
                 }
-
-                function getDocHeight() {
-                    const D = document;
-                    return Math.max(
-                        D.body.scrollHeight, D.documentElement.scrollHeight,
-                        D.body.offsetHeight, D.documentElement.offsetHeight,
-                        D.body.clientHeight, D.documentElement.clientHeight
-                    );
-                }
-
-                (function( w, d ) { 
-                    w.addEventListener( 'scroll', function() {
-                      if ( w.innerHeight + w.scrollY > (d.height - 300) ) { 
-                        vscode.postMessage({
-                            command: 'scroll.bottom',
-                            type: 'scroll',
-                            id: 'main',
-                        });
-                      }
-                    }); 
-                   
-                  })( window, document ); 
             </script>
         </body>`;
     }

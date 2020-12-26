@@ -9,6 +9,7 @@ import { SearchImagesRequest } from '../../proto/build/stack/inputstream/v1beta1
 import { Duration } from 'luxon';
 import { ImageSearchRenderer } from './renderer';
 import { SearchImage } from '../../proto/build/stack/inputstream/v1beta1/SearchImage';
+import { InputSession } from '../view/input-session';
 
 /**
  * Controller component for image search.
@@ -16,8 +17,10 @@ import { SearchImage } from '../../proto/build/stack/inputstream/v1beta1/SearchI
 export class ImageSearch implements vscode.Disposable {
     protected disposables: vscode.Disposable[] = [];
     protected client: PsClient | undefined;
+    protected session: InputSession | undefined;
     protected webview: ImageSearchWebview | undefined;
     protected renderer = new ImageSearchRenderer();
+    protected onDidSearchImageClick = new vscode.EventEmitter<SearchImage>();
 
     /**
      * A mapping of images keyed by their ID.  This map is used as a lookup when
@@ -29,15 +32,18 @@ export class ImageSearch implements vscode.Disposable {
         onDidPsClientChange: vscode.Event<PsClient>,
     ) {
         onDidPsClientChange(this.handlePsClientChange, this, this.disposables);
-
+        this.disposables.push(this.onDidSearchImageClick);
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.ImageSearch, this.handleCommandImageSearch, this));
-        this.disposables.push(
-            vscode.commands.registerCommand(CommandName.UpsertImageMarkdown, this.handleCommandUpsertSearchImageMarkdown, this));
+        this.onDidSearchImageClick.event(this.handleCommandSearchImageClick, this, this.disposables);
     }
 
     handlePsClientChange(client: PsClient) {
         this.client = client;
+    }
+
+    handleInputSessionChange(session: InputSession | undefined) {
+        this.session = session;
     }
 
     getOrCreateWebview(): ImageSearchWebview {
@@ -61,31 +67,41 @@ export class ImageSearch implements vscode.Disposable {
         return webview;
     }
 
-    async handleCommandUpsertSearchImageMarkdown(image: SearchImage) {
+    async handleCommandSearchImageClick(image: SearchImage) {
         if (!image) {
             return;
         }
+        const markdown = `![${image.user?.username}](${image.url})`;
 
-        // current editor
-        // const editor = vscode.window.activeTextEditor;
+        this.copyToClipboard(markdown);
+    }
+
+    async insertTextInfoActiveTextEditor(text: string): Promise<void> {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showWarningMessage('Cannot insert image markdown (no active text editor)');
             return;
         }
         const position = editor.selection.active;
-        const markdown = `![${image.user?.username}](${image.url})`;
         await editor.edit(builder => {
-            builder.insert(position, markdown);
+            builder.insert(position, text);
         });
-        editor.revealRange(new vscode.Range(position, position.translate(0, markdown.length)));
+        editor.revealRange(new vscode.Range(position, position.translate(0, text.length)));
+    }
+
+    async copyToClipboard(text: string): Promise<void> {
+        vscode.window.setStatusBarMessage(
+            `"${text}" copied to clipboard`,
+            3000
+          );
+          return vscode.env.clipboard.writeText(text);
     }
 
     async handleCommandImageSearch() {
-        this.searchImages('');
+        this.searchImages();
     }
 
-    async searchImages(queryExpression: string): Promise<void> {
+    async searchImages(): Promise<void> {
 
         const webview = this.getOrCreateWebview();
 
@@ -126,6 +142,7 @@ export class ImageSearch implements vscode.Disposable {
                 clearTimeout(timeoutID);
 
                 // Save the images
+                this.imagesById.clear();
                 response.image?.forEach(
                     image => this.imagesById.set(image.id!, image));
 
@@ -148,8 +165,6 @@ export class ImageSearch implements vscode.Disposable {
         });
 
         await this.renderWebview({}, webview, requestChangeEmitter);
-
-        webview.onDidChangeHTMLSummary.fire('Searching ' + queryExpression);
     }
 
     async renderWebview(request: SearchImagesRequest, panel: ImageSearchRenderProvider, requestChangeEmitter: vscode.EventEmitter<SearchImagesRequest>): Promise<void> {
@@ -206,7 +221,15 @@ export class ImageSearch implements vscode.Disposable {
                     if (!image) {
                         return;
                     }
-                    vscode.commands.executeCommand(CommandName.UpsertImageMarkdown, image);
+                    this.onDidSearchImageClick.fire(image);
+                },
+                'click.nextPage': (m: Message) => {
+                    if (!m.data) {
+                        return;
+                    }
+                    const nextPage = parseInt(m.data['page'], 10);
+                    request.page = nextPage;
+                    requestChangeEmitter.fire(request);
                 }
             },
         });

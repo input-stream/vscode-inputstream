@@ -27,7 +27,8 @@
         "onFileSystem:psfs",
         "onView:input.stream.inputExplorer",
         "onView:input.stream.fileExplorer",
-        "onCommand:input.stream.login"
+        "onCommand:input.stream.login",
+        "onCommand:input.stream.image.search"
     ],
     "engines": {
         "vscode": "^1.45.0"
@@ -76,12 +77,6 @@
                 "command": "input.stream.image.search",
                 "title": "Image Search",
                 "icon": "$(search)"
-            },
-            {
-                "category": "inputstream",
-                "command": "input.stream.image.upsert",
-                "title": "Update or Insert Image Markdown",
-                "icon": "$(edit)"
             },
             {
                 "category": "inputstream",

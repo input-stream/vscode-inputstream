@@ -28,7 +28,6 @@ export enum CommandName {
     InputRemove = 'input.stream.input.remove',
     InputUpdate = 'input.stream.input.update',
     Login = 'input.stream.login',
-    UpsertImageMarkdown = 'input.stream.image.upsert',
     ViewInputstreamExplorer = 'workbench.view.extension.inputstream-explorer',
     OpenSetting = 'input.stream.openExtensionSetting',
 }
