@@ -73,6 +73,18 @@
             },
             {
                 "category": "inputstream",
+                "command": "input.stream.image.search",
+                "title": "Image Search",
+                "icon": "$(search)"
+            },
+            {
+                "category": "inputstream",
+                "command": "input.stream.image.upsert",
+                "title": "Update or Insert Image Markdown",
+                "icon": "$(edit)"
+            },
+            {
+                "category": "inputstream",
                 "command": "input.stream.input.create",
                 "title": "Create",
                 "icon": "$(add)"
@@ -139,6 +151,11 @@
                 },
                 {
                     "command": "input.stream.input.create",
+                    "when": "view == input.stream.inputExplorer",
+                    "group": "navigation"
+                },
+                {
+                    "command": "input.stream.image.search",
                     "when": "view == input.stream.inputExplorer",
                     "group": "navigation"
                 }

@@ -1,6 +1,7 @@
 import type * as grpc from '@grpc/grpc-js';
 import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
 
+import type { ImagesClient as _build_stack_inputstream_v1beta1_ImagesClient } from './build/stack/inputstream/v1beta1/Images';
 import type { InputsClient as _build_stack_inputstream_v1beta1_InputsClient } from './build/stack/inputstream/v1beta1/Inputs';
 import type { UsersClient as _build_stack_inputstream_v1beta1_UsersClient } from './build/stack/inputstream/v1beta1/Users';
 
@@ -17,6 +18,7 @@ export interface ProtoGrpcType {
           CreateUserRequest: MessageTypeDefinition
           GetInputRequest: MessageTypeDefinition
           GetUserRequest: MessageTypeDefinition
+          Images: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_ImagesClient> & { service: ServiceDefinition }
           Input: MessageTypeDefinition
           InputContent: MessageTypeDefinition
           Inputs: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_InputsClient> & { service: ServiceDefinition }
@@ -26,6 +28,10 @@ export interface ProtoGrpcType {
           ListUsersResponse: MessageTypeDefinition
           RemoveInputRequest: MessageTypeDefinition
           RemoveInputResponse: MessageTypeDefinition
+          SearchImage: MessageTypeDefinition
+          SearchImagesRequest: MessageTypeDefinition
+          SearchImagesResponse: MessageTypeDefinition
+          SearchUser: MessageTypeDefinition
           ShortPostInputContent: MessageTypeDefinition
           UpdateInputRequest: MessageTypeDefinition
           User: MessageTypeDefinition

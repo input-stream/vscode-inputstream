@@ -60,7 +60,7 @@ export class PsFeature implements IExtensionFeature, vscode.UriHandler, vscode.D
 
         this.add(this.deviceLogin.onDidLoginTokenChange.event(token => {
             this.client = this.add(
-                new PsClient(psProtos, cfg.inputstream.address, token, () => this.deviceLogin.refreshAccessToken()));
+                new PsClient(psProtos, cfg.inputstream.address, token, () => this.deviceLogin!.refreshAccessToken()));
             this.onDidPsClientChange.fire(this.client);
         }));
 

@@ -141,3 +141,39 @@ message ShortPostInputContent {
     string markdown = 1;
     string html = 2;
 }
+
+service Images {
+    rpc SearchImages(SearchImagesRequest) returns (SearchImagesResponse) {};
+}
+
+message SearchImage {
+    string id = 1;
+    string url = 2;
+
+    int32 width = 3;
+    int32 height = 4;
+    string color = 5;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+
+    SearchUser user = 8;
+}
+
+message SearchUser {
+    string id = 1;
+    string username = 2;
+    string first_name = 3;
+    string last_name = 4;
+}
+
+message SearchImagesRequest {
+    string query = 1;
+    // optional pagination
+    int32 page = 2;
+}
+
+message SearchImagesResponse {
+    repeated SearchImage image = 1;
+    int32 next_page = 2;
+    int64 total_images = 3;
+}

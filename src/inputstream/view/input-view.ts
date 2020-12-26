@@ -1,8 +1,9 @@
+import * as grpc from '@grpc/grpc-js';
 import Long = require('long');
 import path = require('path');
 import fs = require('fs');
 import * as vscode from 'vscode';
-import { objects, types } from 'vscode-common';
+import { event, objects, types } from 'vscode-common';
 import { formatTimestampISODate } from '../../common';
 import { InputStep, MultiStepInput } from '../../multiStepInput';
 import { User } from '../../proto/build/stack/auth/v1beta1/User';
@@ -16,6 +17,12 @@ import { PsServerConfiguration } from '../configuration';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
 import { InputContent } from '../../proto/build/stack/inputstream/v1beta1/InputContent';
 import { ShortPostInputContent } from '../../proto/build/stack/inputstream/v1beta1/ShortPostInputContent';
+import { ImageSearchPanel, ImageSearchRenderProvider, Message } from './webpanel';
+import { Container } from '../../container';
+import { SearchImagesRequest } from '../../proto/build/stack/inputstream/v1beta1/SearchImagesRequest';
+import { Duration } from 'luxon';
+import { ImageSearchRenderer } from './imagesearchrenderer';
+import { SearchImage } from '../../proto/build/stack/inputstream/v1beta1/SearchImage';
 
 /**
  * Renders a view for a users inputs.  Makes a call to the status
@@ -25,6 +32,14 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
     private items: InputItem[] | undefined;
     private sessions: Map<string, InputSession> = new Map();
     private currentInput: Input | undefined;
+    private panel: ImageSearchPanel | undefined;
+    private renderer = new ImageSearchRenderer();
+
+    /**
+     * A mapping of images keyed by their ID.  This map is used as a lookup when
+     * clicking on an image.
+     */
+    private imagesById = new Map<string, SearchImage>();
 
     constructor(
         private cfg: PsServerConfiguration,
@@ -51,6 +66,11 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
 
     registerCommands() {
         super.registerCommands();
+
+        this.disposables.push(
+            vscode.commands.registerCommand(CommandName.ImageSearch, this.handleCommandImageSearch, this));
+        this.disposables.push(
+            vscode.commands.registerCommand(CommandName.UpsertImageMarkdown, this.handleCommandUpsertSearchImageMarkdown, this));
 
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputCreate, this.handleCommandInputCreate, this));
@@ -226,21 +246,60 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
                 paths: [],
             };
 
+            const setImageUrl: InputStep = async (msi) => {
+                const value = await msi.showInputBox({
+                    title: 'Image',
+                    totalSteps: 3,
+                    step: 3,
+                    value: input.imageUrl || '',
+                    prompt: 'Choose a header image for your article',
+                    validate: async (value: string) => {
+                        if (!value.startsWith('https://')) {
+                            return 'URL must start with "https://"';
+                        }
+                        return '';
+                    },
+                    shouldResume: async () => false,
+                });
+                if (value && input.imageUrl !== value) {
+                    input.imageUrl = value;
+                    mask.paths!.push('image_url');
+                }
+                return undefined;
+            };
+
+            const setAbstract: InputStep = async (msi) => {
+                const value = await msi.showInputBox({
+                    title: 'Subtitle',
+                    totalSteps: 3,
+                    step: 2,
+                    value: input.abstract || '',
+                    prompt: 'Choose a subtitle',
+                    validate: async (value: string) => { return ''; },
+                    shouldResume: async () => false,
+                });
+                if (value && input.abstract !== value) {
+                    input.abstract = value;
+                    mask.paths!.push('abstract');
+                }
+                return setImageUrl;
+            };
+
             const setTitle: InputStep = async (msi) => {
-                const title = await msi.showInputBox({
+                const value = await msi.showInputBox({
                     title: 'Title',
-                    totalSteps: 1,
+                    totalSteps: 3,
                     step: 1,
                     value: input.title || '',
                     prompt: 'Choose a title (you can always change it later)',
                     validate: async (value: string) => { return ''; },
                     shouldResume: async () => false,
                 });
-                if (title && input.title !== title) {
-                    input.title = title;
+                if (value && input.title !== value) {
+                    input.title = value;
                     mask.paths!.push('title');
                 }
-                return undefined;
+                return setAbstract;
             };
 
             await MultiStepInput.run(setTitle);
@@ -369,6 +428,172 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
 
     getInputItemById(id: string): InputItem | undefined {
         return this.items?.find(item => item.input.id === id);
+    }
+
+    getOrCreateSearchPanel(queryExpression: string): ImageSearchPanel {
+        if (!this.panel) {
+            this.panel = new ImageSearchPanel(
+                Container.context.extensionPath,
+                'Image Search',
+                `Imagesearch ${queryExpression}`,
+                vscode.ViewColumn.Two);
+
+            this.panel.onDidDispose(() => {
+                this.panel = undefined;
+            }, this, this.disposables);
+        }
+        return this.panel;
+    }
+
+    async handleCommandUpsertSearchImageMarkdown(image: SearchImage) {
+        if (!image) {
+            return;
+        }
+
+        // current editor
+        // const editor = vscode.window.activeTextEditor;
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showWarningMessage('Cannot insert image markdown (no active text editor)');
+            return;
+        }
+        const position = editor.selection.active;
+        const markdown = `![${image.user?.username}](${image.url})`;
+        await editor.edit(builder => {
+            builder.insert(position, markdown);
+        });
+        editor.revealRange(new vscode.Range(position, position.translate(0, markdown.length)));
+    }
+
+    async handleCommandImageSearch() {
+        this.searchImages('');
+    }
+
+    async searchImages(queryExpression: string): Promise<void> {
+
+        const panel = this.getOrCreateSearchPanel(queryExpression);
+
+        const requestChangeEmitter = new event.Emitter<SearchImagesRequest>();
+
+        const requestDidChange = event.Event.debounce(
+            requestChangeEmitter.event,
+            (last, e) => e,
+            250,
+            true,
+        );
+
+        requestDidChange(async (request) => {
+            if (!this.client) {
+                return;
+            }
+            if (!request.query) {
+                return;
+            }
+            const start = Date.now();
+
+            if (!request) {
+                panel.onDidChangeHTMLSummary.fire('Searching ' + queryExpression);
+                panel.onDidChangeHTMLResults.fire('');
+                return;
+            }
+
+            panel.onDidChangeHTMLSummary.fire('Working...');
+            panel.onDidChangeHTMLResults.fire('<progress></progress>');
+            const timeoutID = setTimeout(() => {
+                panel.onDidChangeHTMLSummary.fire('Timed out.');
+                panel.onDidChangeHTMLResults.fire('');
+            }, 1000);
+
+            try {
+                // Perform the search and clear the timeout set above.
+                const response = await this.client.searchImages(request);
+                clearTimeout(timeoutID);
+
+                // Save the images
+                response.image?.forEach(
+                    image => this.imagesById.set(image.id!, image));
+
+                // Update summary
+                panel.onDidChangeHTMLSummary.fire('Rendering results...');
+
+                // Render HTML and update event emitters.
+                const resultsHTML = await this.renderer.renderResults(response);
+                let summaryHTML = await this.renderer.renderSummary(request, response);
+                const dur = Duration.fromMillis(Date.now() - start);
+                summaryHTML += ` [${dur.milliseconds} ms]`;
+                panel.onDidChangeHTMLSummary.fire(summaryHTML);
+                panel.onDidChangeHTMLResults.fire(resultsHTML);
+            } catch (e) {
+                clearTimeout(timeoutID);
+                const err = e as grpc.ServiceError;
+                panel.onDidChangeHTMLSummary.fire(err.message);
+                panel.onDidChangeHTMLResults.fire('');
+            }
+        });
+
+        await this.renderSearchPanel({}, panel, requestChangeEmitter);
+
+        panel.onDidChangeHTMLSummary.fire('Searching ' + queryExpression);
+    }
+
+    async renderSearchPanel(request: SearchImagesRequest, panel: ImageSearchRenderProvider, requestChangeEmitter: vscode.EventEmitter<SearchImagesRequest>): Promise<void> {
+        return panel.render({
+            form: {
+                name: 'search',
+                inputs: [
+                    {
+                        label: 'Query',
+                        type: 'text',
+                        name: 'number',
+                        placeholder: 'Search expression',
+                        display: 'inline-block',
+                        size: 15,
+                        autofocus: true,
+                        style: 'width: 20rem',
+                        onchange: async (value: string) => {
+                            if (!value || value.length < 3) {
+                                request.query = '';
+                                requestChangeEmitter.fire(request);
+                                return;
+                            }
+                            request.query = value;
+                            requestChangeEmitter.fire(request);
+                            return '';
+                        },
+                    },
+                    {
+                        label: 'Page',
+                        type: 'number',
+                        name: 'page',
+                        value: '1',
+                        display: 'inline-block',
+                        size: 3,
+                        style: 'width: 8rem',
+                        onchange: async (value: string) => {
+                            if (!value) {
+                                return;
+                            }
+                            request.page = parseInt(value, 10);
+                            requestChangeEmitter.fire(request);
+                            return '';
+                        },
+                    },
+                ]
+            },
+            callbacks: {
+                'click.image': (m: Message) => {
+                    if (!m.data) {
+                        return;
+                    }
+                    const id = m.data['id'];
+                    const image = this.imagesById.get(id);
+                    if (!image) {
+                        return;
+                    }
+                    vscode.commands.executeCommand(CommandName.UpsertImageMarkdown, image);
+                }
+            },
+        });
     }
 
 }

@@ -7,13 +7,16 @@ import { RemoveInputResponse } from '../proto/build/stack/inputstream/v1beta1/Re
 import { ProtoGrpcType as inputstreamProtoGrpcType } from '../proto/inputstream';
 import { GRPCClient } from './grpcclient';
 import { FieldMask } from '../proto/google/protobuf/FieldMask';
-import { ButtonName, CommandName } from './constants';
-import { ListInputsRequest } from '../proto/build/stack/inputstream/v1beta1/ListInputsRequest';
+import { ButtonName } from './constants';
+import { ImagesClient } from '../proto/build/stack/inputstream/v1beta1/Images';
+import { SearchImagesResponse } from '../proto/build/stack/inputstream/v1beta1/SearchImagesResponse';
+import { SearchImagesRequest } from '../proto/build/stack/inputstream/v1beta1/SearchImagesRequest';
 
 grpc.setLogVerbosity(grpc.logVerbosity.DEBUG);
 
 export class PsClient extends GRPCClient {
     private readonly inputService: InputsClient;
+    private readonly imagesService: ImagesClient;
 
     constructor(
         readonly proto: inputstreamProtoGrpcType,
@@ -26,6 +29,7 @@ export class PsClient extends GRPCClient {
         const v1beta1 = proto.build.stack.inputstream.v1beta1;
         const creds = this.getCredentials(address);
         this.inputService = this.add(new v1beta1.Inputs(address, creds));
+        this.imagesService = this.add(new v1beta1.Images(address, creds));
     }
 
     httpURL(): string {
@@ -33,22 +37,6 @@ export class PsClient extends GRPCClient {
         const scheme = address.endsWith(':443') ? 'https' : 'http';
         return `${scheme}://${address}`;
     }
-
-    // protected handleErrorUnavailable(err: grpc.ServiceError): grpc.ServiceError {
-    //     vscode.window.showWarningMessage(
-    //         `The API at ${this.address} is unavailable.  Please check that the tcp connection is still valid.`,
-    //     );
-    //     return err;
-    // }
-
-    // /**
-    //  * 
-    //  * @param err Attempt to 
-    //  */
-    // protected handleErrorUnauthenticated(err: grpc.ServiceError): grpc.ServiceError {
-    //     vscode.commands.executeCommand(CommandName.Login);
-    //     return err;
-    // }
 
     /**
      * Execute a grpc unary call having response type S.  If the call fails,
@@ -187,6 +175,22 @@ export class PsClient extends GRPCClient {
                         }
                     });
             });
+        });
+    }
+
+    async searchImages(request: SearchImagesRequest): Promise<SearchImagesResponse> {
+        return new Promise<SearchImagesResponse>((resolve, reject) => {
+            this.imagesService.searchImages(
+                request,
+                this.getGrpcMetadata(),
+                { deadline: this.getDeadline() },
+                async (err?: grpc.ServiceError, resp?: SearchImagesResponse) => {
+                    if (err) {
+                        reject(this.handleError(err));
+                    } else {
+                        resolve(resp);
+                    }
+                });
         });
     }
 

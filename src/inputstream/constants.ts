@@ -21,13 +21,14 @@ export enum ConfigSection {
  */
 export enum CommandName {
     RefreshSuffix = '.refresh',
+    ImageSearch = 'input.stream.image.search',
     InputCreate = 'input.stream.input.create',
     InputOpen = 'input.stream.input.open',
     InputLink = 'input.stream.input.link',
     InputRemove = 'input.stream.input.remove',
     InputUpdate = 'input.stream.input.update',
     Login = 'input.stream.login',
-
+    UpsertImageMarkdown = 'input.stream.image.upsert',
     ViewInputstreamExplorer = 'workbench.view.extension.inputstream-explorer',
     OpenSetting = 'input.stream.openExtensionSetting',
 }
