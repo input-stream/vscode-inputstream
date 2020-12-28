@@ -11,6 +11,7 @@ import { ButtonName } from './constants';
 import { ImagesClient } from '../proto/build/stack/inputstream/v1beta1/Images';
 import { SearchImagesResponse } from '../proto/build/stack/inputstream/v1beta1/SearchImagesResponse';
 import { SearchImagesRequest } from '../proto/build/stack/inputstream/v1beta1/SearchImagesRequest';
+import { UpdateInputResponse } from '../proto/build/stack/inputstream/v1beta1/UpdateInputResponse';
 
 grpc.setLogVerbosity(grpc.logVerbosity.DEBUG);
 
@@ -142,14 +143,14 @@ export class PsClient extends GRPCClient {
         });
     }
 
-    async updateInput(input: Input, mask: FieldMask): Promise<Input> {
-        return this.unaryCall<Input>('Update Input', (): Promise<Input> => {
-            return new Promise<Input>((resolve, reject) => {
+    async updateInput(input: Input, mask: FieldMask): Promise<UpdateInputResponse> {
+        return this.unaryCall<UpdateInputResponse>('Update Input', (): Promise<UpdateInputResponse> => {
+            return new Promise<UpdateInputResponse>((resolve, reject) => {
                 this.inputService.updateInput(
                     { input, mask },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
-                    async (err?: grpc.ServiceError, resp?: Input) => {
+                    async (err?: grpc.ServiceError, resp?: UpdateInputResponse) => {
                         if (err) {
                             reject(this.handleError(err));
                         } else {

@@ -9,6 +9,7 @@ import type { ListInputsResponse as _build_stack_inputstream_v1beta1_ListInputsR
 import type { RemoveInputRequest as _build_stack_inputstream_v1beta1_RemoveInputRequest, RemoveInputRequest__Output as _build_stack_inputstream_v1beta1_RemoveInputRequest__Output } from '../../../../build/stack/inputstream/v1beta1/RemoveInputRequest';
 import type { RemoveInputResponse as _build_stack_inputstream_v1beta1_RemoveInputResponse, RemoveInputResponse__Output as _build_stack_inputstream_v1beta1_RemoveInputResponse__Output } from '../../../../build/stack/inputstream/v1beta1/RemoveInputResponse';
 import type { UpdateInputRequest as _build_stack_inputstream_v1beta1_UpdateInputRequest, UpdateInputRequest__Output as _build_stack_inputstream_v1beta1_UpdateInputRequest__Output } from '../../../../build/stack/inputstream/v1beta1/UpdateInputRequest';
+import type { UpdateInputResponse as _build_stack_inputstream_v1beta1_UpdateInputResponse, UpdateInputResponse__Output as _build_stack_inputstream_v1beta1_UpdateInputResponse__Output } from '../../../../build/stack/inputstream/v1beta1/UpdateInputResponse';
 import type { WatchInputRequest as _build_stack_inputstream_v1beta1_WatchInputRequest, WatchInputRequest__Output as _build_stack_inputstream_v1beta1_WatchInputRequest__Output } from '../../../../build/stack/inputstream/v1beta1/WatchInputRequest';
 
 export interface InputsClient extends grpc.Client {
@@ -48,14 +49,14 @@ export interface InputsClient extends grpc.Client {
   removeInput(argument: _build_stack_inputstream_v1beta1_RemoveInputRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_RemoveInputResponse__Output) => void): grpc.ClientUnaryCall;
   removeInput(argument: _build_stack_inputstream_v1beta1_RemoveInputRequest, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_RemoveInputResponse__Output) => void): grpc.ClientUnaryCall;
   
-  UpdateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_Input__Output) => void): grpc.ClientUnaryCall;
-  UpdateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_Input__Output) => void): grpc.ClientUnaryCall;
-  UpdateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_Input__Output) => void): grpc.ClientUnaryCall;
-  UpdateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_Input__Output) => void): grpc.ClientUnaryCall;
-  updateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_Input__Output) => void): grpc.ClientUnaryCall;
-  updateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_Input__Output) => void): grpc.ClientUnaryCall;
-  updateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_Input__Output) => void): grpc.ClientUnaryCall;
-  updateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_Input__Output) => void): grpc.ClientUnaryCall;
+  UpdateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_UpdateInputResponse__Output) => void): grpc.ClientUnaryCall;
+  UpdateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_UpdateInputResponse__Output) => void): grpc.ClientUnaryCall;
+  UpdateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_UpdateInputResponse__Output) => void): grpc.ClientUnaryCall;
+  UpdateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_UpdateInputResponse__Output) => void): grpc.ClientUnaryCall;
+  updateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_UpdateInputResponse__Output) => void): grpc.ClientUnaryCall;
+  updateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_UpdateInputResponse__Output) => void): grpc.ClientUnaryCall;
+  updateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_UpdateInputResponse__Output) => void): grpc.ClientUnaryCall;
+  updateInput(argument: _build_stack_inputstream_v1beta1_UpdateInputRequest, callback: (error?: grpc.ServiceError, result?: _build_stack_inputstream_v1beta1_UpdateInputResponse__Output) => void): grpc.ClientUnaryCall;
   
   WatchInput(argument: _build_stack_inputstream_v1beta1_WatchInputRequest, metadata: grpc.Metadata, options?: grpc.CallOptions): grpc.ClientReadableStream<_build_stack_inputstream_v1beta1_Input__Output>;
   WatchInput(argument: _build_stack_inputstream_v1beta1_WatchInputRequest, options?: grpc.CallOptions): grpc.ClientReadableStream<_build_stack_inputstream_v1beta1_Input__Output>;
@@ -73,7 +74,7 @@ export interface InputsHandlers extends grpc.UntypedServiceImplementation {
   
   RemoveInput: grpc.handleUnaryCall<_build_stack_inputstream_v1beta1_RemoveInputRequest__Output, _build_stack_inputstream_v1beta1_RemoveInputResponse>;
   
-  UpdateInput: grpc.handleUnaryCall<_build_stack_inputstream_v1beta1_UpdateInputRequest__Output, _build_stack_inputstream_v1beta1_Input>;
+  UpdateInput: grpc.handleUnaryCall<_build_stack_inputstream_v1beta1_UpdateInputRequest__Output, _build_stack_inputstream_v1beta1_UpdateInputResponse>;
   
   WatchInput: grpc.handleServerStreamingCall<_build_stack_inputstream_v1beta1_WatchInputRequest__Output, _build_stack_inputstream_v1beta1_Input>;
   

@@ -37,7 +37,7 @@ message ListUsersResponse {
 
 service Inputs {
     rpc CreateInput(CreateInputRequest) returns (Input) {};
-    rpc UpdateInput(UpdateInputRequest) returns (Input) {};
+    rpc UpdateInput(UpdateInputRequest) returns (UpdateInputResponse) {};
     rpc RemoveInput(RemoveInputRequest) returns (RemoveInputResponse) {};
     rpc GetInput(GetInputRequest) returns (Input) {};
     rpc WatchInput(WatchInputRequest) returns (stream Input) {};
@@ -91,6 +91,11 @@ message CreateInputRequest {
 }
 
 message UpdateInputRequest {
+    Input input = 1;
+    google.protobuf.FieldMask mask = 2;
+}
+
+message UpdateInputResponse {
     Input input = 1;
     google.protobuf.FieldMask mask = 2;
 }
