@@ -100,7 +100,7 @@
                 "category": "inputstream",
                 "command": "input.stream.input.remove",
                 "title": "Remove",
-                "icon": "$(remove)"
+                "icon": "$(trash)"
             },
             {
                 "category": "inputstream",
