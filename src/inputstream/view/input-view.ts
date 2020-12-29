@@ -8,7 +8,7 @@ import { InputStep, MultiStepInput } from '../../multiStepInput';
 import { User } from '../../proto/build/stack/auth/v1beta1/User';
 import { Input, _build_stack_inputstream_v1beta1_Input_Type as InputType, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { PsClient } from '../client';
-import { ButtonName, CommandName, ContextValue, ThemeIconRss, ThemeIconSymbolPackage, ViewName } from '../constants';
+import { ButtonName, CommandName, ContextValue, ThemeIconRss, ViewName } from '../constants';
 import { PsClientTreeDataProvider } from './psclienttreedataprovider';
 import { BuiltInCommands } from '../../constants';
 import { mkdirpSync } from 'fs-extra';
@@ -56,8 +56,6 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
             vscode.commands.registerCommand(CommandName.InputCreate, this.handleCommandInputCreate, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputLink, this.handleCommandInputLink, this));
-        this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputUpdate, this.handleCommandInputUpdate, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputRemove, this.handleCommandInputRemove, this));
         this.disposables.push(
@@ -203,93 +201,6 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
             this.refresh();
 
             vscode.commands.executeCommand(CommandName.InputOpen, input?.id);
-        } catch (err) {
-            vscode.window.showErrorMessage(`Could not create Input: ${err.message}`);
-            return undefined;
-        }
-    }
-
-
-    async handleCommandInputUpdate(item: InputItem) {
-        if (!this.client) {
-            vscode.window.showWarningMessage('could not update Input (client not connected)');
-            return;
-        }
-        if (!this.user) {
-            vscode.window.showWarningMessage('could not updated Input (user not logged in)');
-            return;
-        }
-        try {
-            let input: Input = objects.deepClone(item.input);
-            let mask: FieldMask = {
-                paths: [],
-            };
-
-            const setImageUrl: InputStep = async (msi) => {
-                const value = await msi.showInputBox({
-                    title: 'Image',
-                    totalSteps: 3,
-                    step: 3,
-                    value: input.imageUrl || '',
-                    prompt: 'Choose a header image for your article',
-                    validate: async (value: string) => {
-                        if (!value.startsWith('https://')) {
-                            return 'URL must start with "https://"';
-                        }
-                        return '';
-                    },
-                    shouldResume: async () => false,
-                });
-                if (value && input.imageUrl !== value) {
-                    input.imageUrl = value;
-                    mask.paths!.push('image_url');
-                }
-                return undefined;
-            };
-
-            const setSubtitle: InputStep = async (msi) => {
-                const value = await msi.showInputBox({
-                    title: 'Subtitle',
-                    totalSteps: 3,
-                    step: 2,
-                    value: input.subtitle || '',
-                    prompt: 'Choose a subtitle',
-                    validate: async (value: string) => { return ''; },
-                    shouldResume: async () => false,
-                });
-                if (value && input.subtitle !== value) {
-                    input.subtitle = value;
-                    mask.paths!.push('subtitle');
-                }
-                return setImageUrl;
-            };
-
-            const setTitle: InputStep = async (msi) => {
-                const value = await msi.showInputBox({
-                    title: 'Title',
-                    totalSteps: 3,
-                    step: 1,
-                    value: input.title || '',
-                    prompt: 'Choose a title (you can always change it later)',
-                    validate: async (value: string) => { return ''; },
-                    shouldResume: async () => false,
-                });
-                if (value && input.title !== value) {
-                    input.title = value;
-                    mask.paths!.push('title');
-                }
-                return setSubtitle;
-            };
-
-            await MultiStepInput.run(setTitle);
-
-            if (!mask.paths?.length) {
-                return;
-            }
-
-            await this.client.updateInput(input, mask);
-            this.refresh();
-
         } catch (err) {
             vscode.window.showErrorMessage(`Could not create Input: ${err.message}`);
             return undefined;

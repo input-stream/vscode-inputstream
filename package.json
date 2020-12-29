@@ -86,12 +86,6 @@
             },
             {
                 "category": "inputstream",
-                "command": "input.stream.input.update",
-                "title": "Update",
-                "icon": "$(edit)"
-            },
-            {
-                "category": "inputstream",
                 "command": "input.stream.input.open",
                 "title": "Open",
                 "icon": "$(open)"
@@ -160,11 +154,6 @@
                     "command": "input.stream.input.link",
                     "when": "view == input.stream.inputExplorer && viewItem == input",
                     "group": "inline@0"
-                },
-                {
-                    "command": "input.stream.input.update",
-                    "when": "view == input.stream.inputExplorer && viewItem == input",
-                    "group": "inline@1"
                 },
                 {
                     "command": "input.stream.input.remove",

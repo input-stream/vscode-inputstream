@@ -26,7 +26,6 @@ export enum CommandName {
     InputOpen = 'input.stream.input.open',
     InputLink = 'input.stream.input.link',
     InputRemove = 'input.stream.input.remove',
-    InputUpdate = 'input.stream.input.update',
     Login = 'input.stream.login',
     ViewInputstreamExplorer = 'workbench.view.extension.inputstream-explorer',
     OpenSetting = 'input.stream.openExtensionSetting',
