@@ -84,6 +84,17 @@ message Input {
 
     // The status of this input (published or not)
     Status status = 11;
+    // The user that published this item.  This is only 
+    // populated after the item is published.
+    User user = 12;
+    // The subtitle of the post
+    string subtitle = 13;
+    // Tags associated with the post
+    repeated string tag = 14;
+    // The title slug
+    string title_slug = 15;
+    // Date when post content was last published
+    google.protobuf.Timestamp published_at = 16;
 }
 
 message CreateInputRequest {
@@ -110,8 +121,12 @@ message RemoveInputResponse {
 
 message GetInputRequest {
     string login = 1;
+    // select using the input id
     string id = 2;
-    google.protobuf.FieldMask mask = 3;
+    // alternatively, get the input having the given title slug
+    string title_slug = 3;
+    // optional mask for specifying a subset of fields
+    google.protobuf.FieldMask mask = 4;
 }
 
 message WatchInputRequest {

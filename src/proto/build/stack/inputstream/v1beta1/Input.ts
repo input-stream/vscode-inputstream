@@ -2,6 +2,7 @@
 
 import type { InputContent as _build_stack_inputstream_v1beta1_InputContent, InputContent__Output as _build_stack_inputstream_v1beta1_InputContent__Output } from '../../../../build/stack/inputstream/v1beta1/InputContent';
 import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../../google/protobuf/Timestamp';
+import type { User as _build_stack_inputstream_v1beta1_User, User__Output as _build_stack_inputstream_v1beta1_User__Output } from '../../../../build/stack/inputstream/v1beta1/User';
 import type { Long } from '@grpc/proto-loader';
 
 // Original file: proto/inputstream.proto
@@ -69,6 +70,27 @@ export interface Input {
    * The status of this input (published or not)
    */
   'status'?: (_build_stack_inputstream_v1beta1_Input_Status | keyof typeof _build_stack_inputstream_v1beta1_Input_Status);
+  /**
+   * The user that published this item.  This is only
+   * populated after the item is published.
+   */
+  'user'?: (_build_stack_inputstream_v1beta1_User);
+  /**
+   * The subtitle of the post
+   */
+  'subtitle'?: (string);
+  /**
+   * Tags associated with the post
+   */
+  'tag'?: (string)[];
+  /**
+   * The title slug
+   */
+  'titleSlug'?: (string);
+  /**
+   * Date when post content was last published
+   */
+  'publishedAt'?: (_google_protobuf_Timestamp);
 }
 
 export interface Input__Output {
@@ -116,4 +138,25 @@ export interface Input__Output {
    * The status of this input (published or not)
    */
   'status': (_build_stack_inputstream_v1beta1_Input_Status);
+  /**
+   * The user that published this item.  This is only
+   * populated after the item is published.
+   */
+  'user'?: (_build_stack_inputstream_v1beta1_User__Output);
+  /**
+   * The subtitle of the post
+   */
+  'subtitle': (string);
+  /**
+   * Tags associated with the post
+   */
+  'tag': (string)[];
+  /**
+   * The title slug
+   */
+  'titleSlug': (string);
+  /**
+   * Date when post content was last published
+   */
+  'publishedAt'?: (_google_protobuf_Timestamp__Output);
 }
