@@ -215,7 +215,9 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
     }
 
     async openLink(input: Input, watch = false) {
-        let u = `${this.cfg.baseURL}/@${input.login}/${input.id}`;
+        const target = input.status === InputStatus.STATUS_PUBLISHED ? input.titleSlug : input.id;
+
+        let u = `${this.cfg.baseURL}/@${input.login}/${target}`;
         if (watch) {
             u += '/view/watch';
         }
