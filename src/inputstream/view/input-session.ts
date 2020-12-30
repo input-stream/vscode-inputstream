@@ -25,7 +25,7 @@ export class InputSession implements vscode.Disposable {
     }
 
     async handleTextDocumentWillSave(e: vscode.TextDocumentWillSaveEvent): Promise<void> {
-        if (e.document.uri !== this.uri) {
+        if (e.document.uri.fsPath !== this.uri.fsPath) {
             return;
         }
         e.waitUntil(this.save(e.document.getText()));
