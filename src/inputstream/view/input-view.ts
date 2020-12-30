@@ -198,8 +198,11 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
             await MultiStepInput.run(pickType);
 
             const input = await this.client.createInput(request);
-            this.refresh();
-
+            if (!input) {
+                return;
+            }
+            const item = new InputItem(input);
+            this.items?.push(item);
             vscode.commands.executeCommand(CommandName.InputOpen, input?.id);
         } catch (err) {
             vscode.window.showErrorMessage(`Could not create Input: ${err.message}`);

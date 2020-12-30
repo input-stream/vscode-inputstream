@@ -26,7 +26,6 @@
         "onUri",
         "onFileSystem:psfs",
         "onView:input.stream.inputExplorer",
-        "onView:input.stream.fileExplorer",
         "onCommand:input.stream.login",
         "onCommand:input.stream.image.search"
     ],
@@ -76,7 +75,10 @@
                 "category": "inputstream",
                 "command": "input.stream.image.search",
                 "title": "Image Search",
-                "icon": "$(search)"
+                "icon": {
+                    "dark": "media/unsplash-dark.svg",
+                    "light": "media/unsplash-light.svg"
+                }
             },
             {
                 "category": "inputstream",
@@ -93,8 +95,8 @@
             {
                 "category": "inputstream",
                 "command": "input.stream.input.link",
-                "title": "View on https://input.stream",
-                "icon": "$(link)"
+                "title": "Watch on https://input.stream",
+                "icon": "$(eye-watch)"
             },
             {
                 "category": "inputstream",
@@ -166,7 +168,7 @@
             "activitybar": [
                 {
                     "id": "inputstream-explorer",
-                    "title": "https://input.stream",
+                    "title": "Stream",
                     "icon": "media/astronaut.svg"
                 }
             ]
@@ -175,14 +177,9 @@
             "inputstream-explorer": [
                 {
                     "id": "input.stream.inputExplorer",
-                    "name": "Stream",
+                    "name": "Inputs",
                     "icon": "media/astronaut.svg",
-                    "contextualTitle": "List"
-                },
-                {
-                    "id": "input.stream.fileExplorer",
-                    "name": "Files",
-                    "contextualTitle": "Filesystem for the given input"
+                    "contextualTitle": "Input List"
                 }
             ]
         }

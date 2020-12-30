@@ -18,7 +18,6 @@ import { ImageSearch } from './imagesearch/imagesearch';
 import { EmptyView } from './view/emptyview';
 import { InputView } from './view/input-view';
 import { LoginTreeDataProvider } from './view/login-view';
-import { PsFileExplorer } from './view/psfs';
 import { TreeDataProvider } from './view/treedataprovider';
 
 export class PsFeature implements IExtensionFeature, vscode.UriHandler, vscode.Disposable {
@@ -64,8 +63,6 @@ export class PsFeature implements IExtensionFeature, vscode.UriHandler, vscode.D
                 new PsClient(psProtos, cfg.inputstream.address, token, () => this.deviceLogin!.refreshAccessToken()));
             this.onDidPsClientChange.fire(this.client);
         }));
-
-        this.add(new PsFileExplorer(this.onDidInputChange.event));
 
         this.add(new ImageSearch(this.onDidPsClientChange.event));
 
