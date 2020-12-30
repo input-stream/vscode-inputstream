@@ -174,14 +174,18 @@ message SearchImage {
 
 message UnsplashImage {
     string id = 1;
-    string url = 2;
-    int32 width = 3;
-    int32 height = 4;
-    string color = 5;
-    google.protobuf.Timestamp created_at = 6;
-    google.protobuf.Timestamp updated_at = 7;
+    string raw_url = 2;
+    string full_url = 3;
+    string regular_url = 4;
+    string small_url = 5;
+    string thumb_url = 6;
+    int32 width = 7;
+    int32 height = 8;
+    string color = 9;
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp updated_at = 11;
 
-    UnsplashUser user = 8;
+    UnsplashUser user = 12;
 }
 
 message UnsplashUser {

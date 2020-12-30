@@ -5,7 +5,11 @@ import type { UnsplashUser as _build_stack_inputstream_v1beta1_UnsplashUser, Uns
 
 export interface UnsplashImage {
   'id'?: (string);
-  'url'?: (string);
+  'rawUrl'?: (string);
+  'fullUrl'?: (string);
+  'regularUrl'?: (string);
+  'smallUrl'?: (string);
+  'thumbUrl'?: (string);
   'width'?: (number);
   'height'?: (number);
   'color'?: (string);
@@ -16,7 +20,11 @@ export interface UnsplashImage {
 
 export interface UnsplashImage__Output {
   'id': (string);
-  'url': (string);
+  'rawUrl': (string);
+  'fullUrl': (string);
+  'regularUrl': (string);
+  'smallUrl': (string);
+  'thumbUrl': (string);
   'width': (number);
   'height': (number);
   'color': (string);

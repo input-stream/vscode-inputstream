@@ -45,10 +45,34 @@ export class ImageSearchRenderer {
 		if (!image) {
 			return;
 		}
-        lines.push(`<div class="grid-item" style="padding: 0.5rem" data-id="${image.id}" onclick="postDataElementClick('image', this)">`);
-		lines.push(`<img src="${image.url}" data-id="${image.id}">`);
-		lines.push(`<div style="margin-top: -2.5rem; padding-left: 0.5rem; color: gray">${image.user?.firstName} ${image.user?.lastName} (${image.width}x${image.height}px)</div>`);
+		// START
+        lines.push(`<div class="grid-item" style="font-size: smaller; padding: 0.2rem" data-id="${image.id}" onclick="postDataElementClick('image', this)">`);
+		
+		// IMAGE
+		lines.push(`<img src="${image.regularUrl}" data-id="${image.id}">`);
+		
+		// URLS
+		lines.push('<div style="float: right; padding: 0.5 0.5rem 0.2">');
+		lines.push(`<a href="${image.rawUrl}" title="Copy Raw URL">Raw</a> &middot;`);
+		lines.push(`<a href="${image.fullUrl}" title="Copy Full URL">Full</a> &middot;`);
+		lines.push(`<a href="${image.regularUrl}" title="Copy Regular URL">Reg</a> &middot;`);
+		lines.push(`<a href="${image.smallUrl}" title="Copy Small URL">Sm</a> &middot;`);
+		lines.push(`<a href="${image.thumbUrl}" title="Copy Thumb URL">Thumb</a>`);
         lines.push('</div>');
+		
+		// METADATA
+		lines.push('<div style="padding-left: 0.5rem; color: gray">');
+		if (image.user?.firstName) {
+			lines.push(image.user.firstName) + ' ';
+		}
+		if (image.user?.lastName) {
+			lines.push(image.user.lastName) + ' ';
+		}
+		lines.push(` (${image.width}x${image.height}px)`);
+		lines.push('</div>');
+
+		// END
+		lines.push('</div>');
 	}
 
 }
