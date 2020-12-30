@@ -2,6 +2,7 @@
 import * as vscode from 'vscode';
 import { event } from 'vscode-common';
 import path = require('path');
+import { Container, MediaIconName } from '../../container';
 
 
 // Message is the datatype for messages serialized between the extension process
@@ -98,7 +99,10 @@ export class ImageSearchPanel implements vscode.Disposable {
             enableFindWidget: true,
             retainContextWhenHidden: true,
         });
-
+        this.panel.iconPath = {
+            dark: vscode.Uri.file(Container.mediaIconPath(MediaIconName.UnsplashDark)),
+            light: vscode.Uri.file(Container.mediaIconPath(MediaIconName.UnsplashLight)),
+        };
         this.panel.webview.onDidReceiveMessage(async (message: Message) => {
             const key = [message.command, message.type, message.id].filter(v => v).join('.');
             const callback = this.callbacks.get(key);

@@ -57,7 +57,7 @@ export class ImageSearch implements vscode.Disposable {
     createWebview(): ImageSearchWebview {
         const webview = new ImageSearchWebview(
             Container.context.extensionPath,
-            'Image Search',
+            'Seach photos on using unsplash API',
             'Image Search',
             vscode.ViewColumn.Two);
 

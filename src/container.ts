@@ -47,4 +47,6 @@ export class Container {
 
 export enum MediaIconName {
     Astronaut = 'astronaut.svg',
+    UnsplashDark = 'unsplash-dark.svg',
+    UnsplashLight = 'unsplash-light.svg',
 }

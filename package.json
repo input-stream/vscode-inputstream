@@ -74,7 +74,7 @@
             {
                 "category": "inputstream",
                 "command": "input.stream.image.search",
-                "title": "Image Search",
+                "title": "Unsplash Image Search",
                 "icon": {
                     "dark": "media/unsplash-dark.svg",
                     "light": "media/unsplash-light.svg"
@@ -83,31 +83,31 @@
             {
                 "category": "inputstream",
                 "command": "input.stream.input.create",
-                "title": "Create",
+                "title": "Create Input",
                 "icon": "$(add)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.input.open",
-                "title": "Open",
+                "title": "Open Input",
                 "icon": "$(open)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.input.link",
-                "title": "Watch on https://input.stream",
+                "title": "Watch changes on https://input.stream",
                 "icon": "$(eye-watch)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.input.remove",
-                "title": "Remove",
+                "title": "Remove Input",
                 "icon": "$(trash)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.login",
-                "title": "Login",
+                "title": "Login to https://input.stream",
                 "icon": "$(log-in)"
             }
         ],
@@ -133,22 +133,22 @@
                 {
                     "command": "input.stream.login",
                     "when": "view == input.stream.inputExplorer",
-                    "group": "navigation"
+                    "group": "navigation@0"
                 },    
-                {
-                    "command": "input.stream.inputExplorer.refresh",
-                    "when": "view == input.stream.inputExplorer",
-                    "group": "navigation"
-                },
                 {
                     "command": "input.stream.input.create",
                     "when": "view == input.stream.inputExplorer",
-                    "group": "navigation"
+                    "group": "navigation@1"
                 },
                 {
                     "command": "input.stream.image.search",
                     "when": "view == input.stream.inputExplorer",
-                    "group": "navigation"
+                    "group": "navigation@2"
+                },
+                {
+                    "command": "input.stream.inputExplorer.refresh",
+                    "when": "view == input.stream.inputExplorer",
+                    "group": "navigation@3"
                 }
             ],
             "view/item/context": [
