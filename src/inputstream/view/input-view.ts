@@ -185,7 +185,7 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
                     totalSteps: 2,
                     step: 1,
                     items: [{
-                        label: 'Short Post',
+                        label: 'Page',
                         type: InputType.TYPE_SHORT_POST,
                     }],
                     placeholder: 'Choose input type',
