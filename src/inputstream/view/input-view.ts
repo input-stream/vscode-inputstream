@@ -211,20 +211,18 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
     }
 
     async handleCommandInputLink(item: InputItem) {
-        // EXPERIMENT:
-        // const uri = await vscode.env.asExternalUri(vscode.Uri.parse(`${vscode.env.uriScheme}://${ExtensionID}/${item.input.login}/${item.input.id}`));
-        // return vscode.env.openExternal(uri);
-        return this.openLink(item.input);
+        return this.openHtmlUrl(item.input);
     }
 
-    async openLink(input: Input, watch = false) {
-        const target = input.status === InputStatus.STATUS_PUBLISHED ? input.titleSlug : input.id;
-
-        let u = `${this.cfg.baseURL}/@${input.login}/${target}`;
-        if (watch) {
-            u += '/view/watch';
+    async openHtmlUrl(input: Input, watch = false) {
+        let target = input.htmlUrl;
+        if (!target) {
+            target = input.status === InputStatus.STATUS_PUBLISHED ? input.titleSlug : input.id;
         }
-        const uri = vscode.Uri.parse(u);
+        if (watch) {
+            target += '/view/watch';
+        }
+        const uri = vscode.Uri.parse(target!);
         return vscode.commands.executeCommand(BuiltInCommands.Open, uri);
     }
 
@@ -237,6 +235,13 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
         if (action !== ButtonName.Confirm) {
             return;
         }
+
+        // TODO: close this
+        // const session = this.sessions.get(item.input.id!);
+        // if (session) {
+        //     session.close();
+        // }
+
         try {
             const input = await this.client?.removeInput(item.input.login!, item.input.id!);
             this.refresh();
@@ -285,7 +290,7 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
                 `Editing "${input.title}"`,
                 ButtonName.Watch);
             if (action === ButtonName.Watch) {
-                this.openLink(input, true);
+                this.openHtmlUrl(input, true);
             }
 
             session = new InputSession(client, input, uri);

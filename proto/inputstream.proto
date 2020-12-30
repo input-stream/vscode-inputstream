@@ -95,6 +95,8 @@ message Input {
     string title_slug = 15;
     // Date when post content was last published
     google.protobuf.Timestamp published_at = 16;
+    // the URL where the input can be viewed
+    string html_url = 17;
 }
 
 message CreateInputRequest {

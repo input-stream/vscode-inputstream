@@ -91,6 +91,10 @@ export interface Input {
    * Date when post content was last published
    */
   'publishedAt'?: (_google_protobuf_Timestamp);
+  /**
+   * the URL where the input can be viewed
+   */
+  'htmlUrl'?: (string);
 }
 
 export interface Input__Output {
@@ -159,4 +163,8 @@ export interface Input__Output {
    * Date when post content was last published
    */
   'publishedAt'?: (_google_protobuf_Timestamp__Output);
+  /**
+   * the URL where the input can be viewed
+   */
+  'htmlUrl': (string);
 }
