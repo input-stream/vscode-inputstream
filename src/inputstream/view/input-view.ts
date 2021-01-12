@@ -100,7 +100,9 @@ export class InputView extends PsClientTreeDataProvider<Input> {
             return undefined;
         }
         try {
-            const inputs = this.items = await this.client.listInputs(this.user.login!);
+            const inputs = this.items = await this.client.listInputs({
+                login: this.user.login!,
+            });
             if (!inputs) {
                 return undefined;
             }
@@ -138,7 +140,7 @@ export class InputView extends PsClientTreeDataProvider<Input> {
         };
 
         try {
-            const current = await this.client!.getInput(input.login!, input.id!, mask);
+            const current = await this.client!.getInput({ login: input.login!, id: input.id! }, mask);
             if (!current) {
                 return;
             }

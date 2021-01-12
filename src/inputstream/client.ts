@@ -12,6 +12,7 @@ import { ImagesClient } from '../proto/build/stack/inputstream/v1beta1/Images';
 import { SearchImagesResponse } from '../proto/build/stack/inputstream/v1beta1/SearchImagesResponse';
 import { SearchImagesRequest } from '../proto/build/stack/inputstream/v1beta1/SearchImagesRequest';
 import { UpdateInputResponse } from '../proto/build/stack/inputstream/v1beta1/UpdateInputResponse';
+import { InputFilterOptions } from '../proto/build/stack/inputstream/v1beta1/InputFilterOptions';
 
 grpc.setLogVerbosity(grpc.logVerbosity.DEBUG);
 
@@ -81,7 +82,7 @@ export class PsClient extends GRPCClient {
         }
     }
 
-    async listInputs(login: string): Promise<Input[] | undefined> {
+    async listInputs(filter: InputFilterOptions): Promise<Input[] | undefined> {
         return this.unaryCall<Input[] | undefined>('List Inputs', (): Promise<Input[] | undefined> => {
             return new Promise<Input[]>((resolve, reject) => {
                 if (false) {
@@ -93,7 +94,7 @@ export class PsClient extends GRPCClient {
                     } as grpc.ServiceError);
                 }
                 this.inputService.listInputs(
-                    { login },
+                    { filter},
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
                     async (err?: grpc.ServiceError, resp?: ListInputsResponse) => {
@@ -125,11 +126,11 @@ export class PsClient extends GRPCClient {
         });
     }
 
-    async getInput(login: string, id: string, mask?: FieldMask): Promise<Input | undefined> {
+    async getInput(filter: InputFilterOptions, mask?: FieldMask): Promise<Input | undefined> {
         return this.unaryCall<Input>('Get Input', (): Promise<Input> => {
             return new Promise<Input>((resolve, reject) => {
                 this.inputService.getInput(
-                    { login, id, mask },
+                    { filter, mask },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
                     async (err?: grpc.ServiceError, resp?: Input) => {

@@ -1,14 +1,11 @@
 // Original file: proto/inputstream.proto
 
+import type { InputFilterOptions as _build_stack_inputstream_v1beta1_InputFilterOptions, InputFilterOptions__Output as _build_stack_inputstream_v1beta1_InputFilterOptions__Output } from '../../../../build/stack/inputstream/v1beta1/InputFilterOptions';
 
 export interface ListInputsRequest {
-  'login'?: (string);
-  'id'?: (string);
-  'title'?: (string);
+  'filter'?: (_build_stack_inputstream_v1beta1_InputFilterOptions);
 }
 
 export interface ListInputsRequest__Output {
-  'login': (string);
-  'id': (string);
-  'title': (string);
+  'filter'?: (_build_stack_inputstream_v1beta1_InputFilterOptions__Output);
 }

@@ -122,11 +122,7 @@ message RemoveInputResponse {
 }
 
 message GetInputRequest {
-    string login = 1;
-    // select using the input id
-    string id = 2;
-    // alternatively, get the input having the given title slug
-    string title_slug = 3;
+    InputFilterOptions filter = 1;
     // optional mask for specifying a subset of fields
     google.protobuf.FieldMask mask = 4;
 }
@@ -141,9 +137,20 @@ message WatchInputRequest {
 }
 
 message ListInputsRequest {
+    InputFilterOptions filter = 1;
+}
+
+message InputFilterOptions {
+    // filter by login name
     string login = 1;
+    // filter by id
     string id = 2;
-    string title = 3;
+    // filter by title_slug
+    string title_slug = 3;
+    // filter by tag
+    string tag = 4;
+    // filter by input status
+    Input.Status status = 5;
 }
 
 message ListInputsResponse {

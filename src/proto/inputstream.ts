@@ -21,6 +21,7 @@ export interface ProtoGrpcType {
           Images: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_ImagesClient> & { service: ServiceDefinition }
           Input: MessageTypeDefinition
           InputContent: MessageTypeDefinition
+          InputFilterOptions: MessageTypeDefinition
           Inputs: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_InputsClient> & { service: ServiceDefinition }
           ListInputsRequest: MessageTypeDefinition
           ListInputsResponse: MessageTypeDefinition
