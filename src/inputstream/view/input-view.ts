@@ -2,7 +2,7 @@ import Long = require('long');
 import path = require('path');
 import fs = require('fs');
 import * as vscode from 'vscode';
-import { objects, types } from 'vscode-common';
+import { types } from 'vscode-common';
 import { formatTimestampISODate } from '../../common';
 import { InputStep, MultiStepInput } from '../../multiStepInput';
 import { User } from '../../proto/build/stack/auth/v1beta1/User';
@@ -21,8 +21,8 @@ import { InputSession } from './input-session';
  * Renders a view for a users inputs.  Makes a call to the status
  * endpoint to gather the data.
  */
-export class InputView extends PsClientTreeDataProvider<InputItem> {
-    private items: InputItem[] | undefined;
+export class InputView extends PsClientTreeDataProvider<Input> {
+    private items: Input[] | undefined;
     private sessions: Map<string, InputSession> = new Map();
     private currentInput: Input | undefined;
 
@@ -39,7 +39,7 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
 
         this.disposables.push(this.onDidChangeTreeData(() => {
             if (this.currentInput) {
-                const item = this.getInputItemById(this.currentInput.id!);
+                const item = this.getInputById(this.currentInput.id!);
                 if (item) {
                     this.view.reveal(item);
                 }
@@ -47,6 +47,8 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
         }));
 
         this.view.onDidChangeVisibility(this.handleVisibilityChange, this, this.disposables);
+
+        onDidInputChange.event(this.handleInputChange, this, this.disposables);
     }
 
     registerCommands() {
@@ -76,14 +78,21 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
         // vscode.window.showInformationMessage(`input tree view visible? ${event.visible}`);
     }
 
-    public async getParent(node?: InputItem): Promise<InputItem | undefined> {
-        if (!node) {
-            return undefined;
-        }
-        return node.parent;
+    handleInputChange(input: Input) {
+        this._onDidChangeTreeData.fire(input);
+        this.currentInput = input;
+        this.refresh();
     }
 
-    async getRootItems(): Promise<InputItem[] | undefined> {
+    public async getParent(input?: Input): Promise<Input | undefined> {
+        return undefined;
+    }
+
+    public getTreeItem(input: Input): vscode.TreeItem {
+        return new InputItem(input);
+    }
+
+    async getRootItems(): Promise<Input[] | undefined> {
         if (!this.client) {
             return undefined;
         }
@@ -91,36 +100,35 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
             return undefined;
         }
         try {
-            const inputs = await this.client.listInputs(this.user.login!);
+            const inputs = this.items = await this.client.listInputs(this.user.login!);
             if (!inputs) {
                 return undefined;
             }
             sortInputsByCreateTime(inputs);
-            return this.items = inputs.map(input => new InputItem(input));
+            return inputs;
         } catch (err) {
             console.log(`Could not list Inputs: ${err.message}`);
             return undefined;
         }
     }
 
-    async handleCommandInputOpen(item: InputItem | string): Promise<void> {
-        if (types.isString(item)) {
-            const id = path.basename(item as string);
-            const foundItem = this.getInputItemById(id);
+    async handleCommandInputOpen(input: Input | string): Promise<void> {
+        if (types.isString(input)) {
+            const id = path.basename(input as string);
+            const foundItem = this.getInputById(id);
             if (!foundItem) {
                 return;
             }
             return this.handleCommandInputOpen(foundItem);
         }
 
-        item = item as InputItem;
-        this.view.reveal(item);
-        this.onDidInputChange.fire(item.input);
+        this.view.reveal(input);
+        this.onDidInputChange.fire(input);
 
         const filename = path.join(
             this.cfg.baseDir,
-            item.input.login!,
-            item.input.id!,
+            input.login!,
+            input.id!,
             'main.md');
         const uri = vscode.Uri.file(filename);
         const dirname = path.dirname(filename);
@@ -130,7 +138,7 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
         };
 
         try {
-            const current = await this.client!.getInput(item.input.login!, item.input.id!, mask);
+            const current = await this.client!.getInput(input.login!, input.id!, mask);
             if (!current) {
                 return;
             }
@@ -201,17 +209,17 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
             if (!input) {
                 return;
             }
-            const item = new InputItem(input);
-            this.items?.push(item);
-            vscode.commands.executeCommand(CommandName.InputOpen, input?.id);
+            this.refresh();
+            this.items?.push(input);
+            vscode.commands.executeCommand(CommandName.InputOpen, input.id);
         } catch (err) {
             vscode.window.showErrorMessage(`Could not create Input: ${err.message}`);
             return undefined;
         }
     }
 
-    async handleCommandInputLink(item: InputItem) {
-        return this.openHtmlUrl(item.input);
+    async handleCommandInputLink(input: Input) {
+        return this.openHtmlUrl(input);
     }
 
     async openHtmlUrl(input: Input, watch = false) {
@@ -226,24 +234,24 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
         return vscode.commands.executeCommand(BuiltInCommands.Open, uri);
     }
 
-    async handleCommandInputRemove(item: InputItem) {
-        const title = item.input.title;
-        const when = formatTimestampISODate(item.input.createdAt);
+    async handleCommandInputRemove(input: Input) {
+        const title = input.title;
+        const when = formatTimestampISODate(input.createdAt);
         const action = await vscode.window.showInformationMessage(
-            `Are you sure you want to remove draft "${title}" (${when})`,
+            `Are you sure you want to remove "${title}" (${when})`,
             ButtonName.Confirm, ButtonName.Cancel);
         if (action !== ButtonName.Confirm) {
             return;
         }
 
-        // TODO: close this
-        // const session = this.sessions.get(item.input.id!);
-        // if (session) {
-        //     session.close();
-        // }
+        const session = this.sessions.get(input.id!);
+        if (session) {
+            this.sessions.delete(input.id!);
+            session.dispose();
+        }
 
         try {
-            const input = await this.client?.removeInput(item.input.login!, item.input.id!);
+            await this.client?.removeInput(input.login!, input.id!);
             this.refresh();
             vscode.window.showInformationMessage(`Removed draft "${title}" (${when})`);
         } catch (err) {
@@ -257,12 +265,12 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
             return;
         }
 
-        const item = this.getInputForDocumentURI(doc.uri);
-        if (!item) {
+        const input = this.getInputForDocumentURI(doc.uri);
+        if (!input) {
             return;
         }
 
-        this.ensureInputSession(this.client, item.input, doc.uri);
+        this.ensureInputSession(this.client, input, doc.uri);
     }
 
     /**
@@ -275,12 +283,12 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
             return;
         }
         const doc = event.document;
-        const item = this.getInputForDocumentURI(doc.uri);
-        if (!item) {
+        const input = this.getInputForDocumentURI(doc.uri);
+        if (!input) {
             return;
         }
 
-        this.ensureInputSession(this.client, item.input, doc.uri);
+        this.ensureInputSession(this.client, input, doc.uri);
     }
 
     async ensureInputSession(client: PsClient, input: Input, uri: vscode.Uri): Promise<InputSession> {
@@ -293,27 +301,27 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
                 this.openHtmlUrl(input, true);
             }
 
-            session = new InputSession(client, input, uri);
+            session = new InputSession(client, input, uri, this.onDidInputChange);
             this.sessions.set(uri.fsPath, session);
         }
         return session;
     }
 
-    getInputForDocumentURI(uri: vscode.Uri): InputItem | undefined {
+    getInputForDocumentURI(uri: vscode.Uri): Input | undefined {
         const inputDir = path.dirname(uri.fsPath);
-        const item = this.getInputItemById(path.basename(inputDir));
-        if (!item) {
+        const input = this.getInputById(path.basename(inputDir));
+        if (!input) {
             return;
         }
         const userDir = path.dirname(inputDir);
-        if (item.input.login !== path.basename(userDir)) {
+        if (input.login !== path.basename(userDir)) {
             return;
         }
         const baseDir = path.dirname(userDir);
         if (baseDir !== this.cfg.baseDir) {
             return;
         }
-        return item;
+        return input;
     }
 
     handleTextDocumentClose(doc: vscode.TextDocument) {
@@ -326,20 +334,20 @@ export class InputView extends PsClientTreeDataProvider<InputItem> {
         console.log(`closed doc: ${doc.uri.fsPath}`);
     }
 
-    getInputItemById(id: string): InputItem | undefined {
-        return this.items?.find(item => item.input.id === id);
+    getInputById(id: string): Input | undefined {
+        return this.items?.find(item => item.id === id);
     }
 }
 
 export class InputItem extends vscode.TreeItem {
 
     constructor(
-        public readonly input: Input,
+        public input: Input,
         public label?: string,
         public parent?: InputItem,
     ) {
         super(label || `"${input.title!}"`);
-
+        this.id = input.id;
         let when = formatTimestampISODate(input.createdAt);
         // TODO(pcj): restore type name once there are choices about it, until
         // then it's just confusing.
@@ -352,11 +360,11 @@ export class InputItem extends vscode.TreeItem {
         this.command = {
             title: 'Open File',
             command: CommandName.InputOpen,
-            arguments: [this],
+            arguments: [this.input],
         };
     }
 
-    async getChildren(): Promise<InputItem[] | undefined> {
+    async getChildren(): Promise<Input[] | undefined> {
         return undefined;
     }
 }

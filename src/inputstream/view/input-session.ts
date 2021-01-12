@@ -19,6 +19,7 @@ export class InputSession implements vscode.Disposable {
         private client: PsClient,
         private input: Input,
         private uri: vscode.Uri,
+        private onDidInputChange: vscode.EventEmitter<Input>,
     ) {
         vscode.workspace.onWillSaveTextDocument(
             this.handleTextDocumentWillSave, this, this.disposables);
@@ -45,7 +46,11 @@ export class InputSession implements vscode.Disposable {
         };
 
         try {
-            return this.client.updateInput(this.input, mask);
+            const response = await this.client.updateInput(this.input, mask);
+            if (response.input) {
+                this.onDidInputChange.fire(response.input);
+            }
+            return response;
         } catch (err) {
             vscode.window.showErrorMessage(`Could not save input content: ${err.message}`);
         }

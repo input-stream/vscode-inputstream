@@ -85,7 +85,7 @@ export class ImageSearch implements vscode.Disposable {
             width: image.width,
         };
         const md = JSON.stringify(metadata).slice(1, -1);
-        const markdown = `![${md}](${image.url})`;
+        const markdown = `![${md}](${image.regularUrl})`;
 
         this.copyToClipboard(markdown);
     }
@@ -107,8 +107,8 @@ export class ImageSearch implements vscode.Disposable {
         vscode.window.setStatusBarMessage(
             `"${text}" copied to clipboard`,
             3000
-          );
-          return vscode.env.clipboard.writeText(text);
+        );
+        return vscode.env.clipboard.writeText(text);
     }
 
     async handleCommandImageSearch() {
