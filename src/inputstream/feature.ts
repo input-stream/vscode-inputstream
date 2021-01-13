@@ -1,3 +1,4 @@
+import path = require('path');
 import * as vscode from 'vscode';
 import { IExtensionFeature } from '../common';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
@@ -52,9 +53,10 @@ export class PsFeature implements IExtensionFeature, vscode.UriHandler, vscode.D
         this.authClient.getChannel().getTarget();
         this.closeables.push(this.authClient);
 
-        this.inputView = this.add(new LoginTreeDataProvider());
-
-        this.deviceLogin = this.add(new DeviceLogin(this.authClient));
+        this.inputView = this.add(
+            new LoginTreeDataProvider());
+        this.deviceLogin = this.add(
+            new DeviceLogin(this.authClient));
 
         this.deviceLogin.onDidAuthUserChange.event(this.handleAuthUserChange, this, this.disposables);
 
@@ -64,13 +66,14 @@ export class PsFeature implements IExtensionFeature, vscode.UriHandler, vscode.D
             this.onDidPsClientChange.fire(this.client);
         }));
 
-        this.add(new ImageSearch(this.onDidPsClientChange.event));
+        this.add(
+            new ImageSearch(this.onDidPsClientChange.event));
 
         this.deviceLogin.restoreSaved();
     }
 
     /**
-     * When login occurs, dispose of the previos login view and replace it with 
+     * When login occurs, dispose of the previous login view and replace it with 
      * a new one.
      * 
      * @param user The user that logged in
@@ -78,7 +81,7 @@ export class PsFeature implements IExtensionFeature, vscode.UriHandler, vscode.D
     protected handleAuthUserChange(user: User) {
         this.inputView?.dispose();
 
-        this.add(
+        this.inputView = this.add(
             new InputView(
                 this.cfg!.inputstream,
                 user,
@@ -103,11 +106,30 @@ export class PsFeature implements IExtensionFeature, vscode.UriHandler, vscode.D
         return disposable;
     }
 
-    public async handleUri(uri: vscode.Uri) {
-        console.log(`incoming event: ${uri.path}`);
-        vscode.window.showInformationMessage(`Incoming event: ${uri.path}`);
+    public async handleUri(uri: vscode.Uri): Promise<void> {
+        vscode.window.showInformationMessage(`incoming event: ${uri.path}`);
         await vscode.commands.executeCommand(CommandName.ViewInputstreamExplorer);
-        await vscode.commands.executeCommand(CommandName.InputOpen, uri.path);
+
+        switch (uri.path) {
+            case '/init':
+                return this.handleUriInit(uri);
+            case '/open':
+                return this.handleUriOpen(uri);
+        }
+    }
+
+    private async handleUriInit(uri: vscode.Uri): Promise<void> {
+        const query = parseQuery(uri);
+        const token = query['token'];
+        if (!token) {
+            return;
+        }
+        return vscode.commands.executeCommand(CommandName.Login, token);
+    }
+
+    private async handleUriOpen(uri: vscode.Uri): Promise<void> {
+        // expecting "/open/uuid"
+        await vscode.commands.executeCommand(CommandName.InputOpen, path.basename(uri.path));
     }
 
     /**
@@ -131,3 +153,12 @@ export class UriEventHandler extends vscode.EventEmitter<vscode.Uri> implements 
         this.fire(uri);
     }
 }
+
+function parseQuery(uri: vscode.Uri): { [key: string]: string } {
+    return uri.query.split('&').reduce((prev: any, current) => {
+        const queryString = current.split('=');
+        prev[queryString[0]] = queryString[1];
+        return prev;
+    }, {});
+}
+

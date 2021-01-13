@@ -27,6 +27,7 @@ export enum CommandName {
     InputLink = 'input.stream.input.link',
     InputRemove = 'input.stream.input.remove',
     Login = 'input.stream.login',
+    DeviceLogin = 'input.stream.deviceLogin',
     ViewInputstreamExplorer = 'workbench.view.extension.inputstream-explorer',
     OpenSetting = 'input.stream.openExtensionSetting',
 }
@@ -70,7 +71,8 @@ export enum FileSystems {
  * Values used as keys in vscode memento API.
  */
 export enum MementoName {
-    DeviceLoginResponse = 'input.stream.api.login',
+    DeviceLoginResponse = 'input.stream.api.DeviceLoginResponse',
+    LoginResponse = 'input.stream.api.LoginResponse',
 }
 
 /**

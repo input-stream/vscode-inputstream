@@ -27,6 +27,7 @@
         "onFileSystem:psfs",
         "onView:input.stream.inputExplorer",
         "onCommand:input.stream.login",
+        "onCommand:input.stream.deviceLogin",
         "onCommand:input.stream.image.search"
     ],
     "engines": {
@@ -109,6 +110,12 @@
                 "command": "input.stream.login",
                 "title": "Login to https://input.stream",
                 "icon": "$(log-in)"
+            },
+            {
+                "category": "inputstream",
+                "command": "input.stream.deviceLogin",
+                "title": "Device Login to https://input.stream",
+                "icon": "$(log-in)"
             }
         ],
         "keybindings": [
@@ -131,10 +138,10 @@
             ],
             "view/title": [
                 {
-                    "command": "input.stream.login",
+                    "command": "input.stream.deviceLogin",
                     "when": "view == input.stream.inputExplorer",
                     "group": "navigation@0"
-                },    
+                },
                 {
                     "command": "input.stream.input.create",
                     "when": "view == input.stream.inputExplorer",

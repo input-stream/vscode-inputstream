@@ -51,7 +51,7 @@ export class PsClient extends GRPCClient {
     async unaryCall<S>(desc: string, fn: () => Promise<S>, limit = 2): Promise<S> {
         try {
             return await fn();
-        } catch (e: any) {
+        } catch (e) {
             const err = e as grpc.ServiceError;
 
             // Reached terminal attempt, report error and bail
@@ -65,7 +65,7 @@ export class PsClient extends GRPCClient {
                 try {
                     await this.refreshAccessToken();
                     return this.unaryCall(desc, fn, Math.max(0, limit - 1));
-                } catch (e2: any) {
+                } catch (e2) {
                     vscode.window.showWarningMessage('Could not refresh access token: ' + JSON.stringify(e2));
                 }
             }

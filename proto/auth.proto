@@ -5,7 +5,22 @@ package build.stack.auth.v1beta1;
 import "google/protobuf/timestamp.proto";
 
 service AuthService {
+  rpc Login(LoginRequest) returns (LoginResponse) {}
   rpc DeviceLogin(DeviceLoginRequest) returns (stream DeviceLoginResponse) {}
+}
+
+message LoginRequest {
+  // a jwt token
+  string token = 1;
+}
+
+message LoginResponse {
+  // the user details
+  User user = 1;
+  // a jwt token that can be used for subsequent auth
+  string token = 2;
+  // date at which the token is expected to expire
+  google.protobuf.Timestamp expires_at = 5;
 }
 
 message User {
