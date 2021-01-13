@@ -34,18 +34,6 @@ export function deactivate() {
 }
 
 function setup(context: vscode.ExtensionContext, feature: IExtensionFeature) {
-	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(async e => {
-		if (e.affectsConfiguration(feature.name)) {
-			reactivate(context, feature);
-		}
-	}));
-	reactivate(context, feature);
-}
-
-function reactivate(context: vscode.ExtensionContext, feature: IExtensionFeature) {
-
-	feature.deactivate();
-
 	const config = vscode.workspace.getConfiguration(feature.name);
 	if (!config.get<boolean>('enabled')) {
 		console.log(`skipping feature ${feature.name} (not enabled)`);

@@ -14,17 +14,17 @@
         "blogging",
         "blog",
         "publishing",
-        "writing"
+        "writing",
+        "vscode"
     ],
     "author": "stack.build authors",
     "bugs": {
         "url": "https://github.com/inputstream/vscode-inputstream/issues"
     },
     "homepage": "https://github.com/inputstream/vscode-inputstream#readme",
-    "categories": [],
+    "categories": ["Other"],
     "activationEvents": [
         "onUri",
-        "onFileSystem:psfs",
         "onView:input.stream.inputExplorer",
         "onCommand:input.stream.login",
         "onCommand:input.stream.deviceLogin",

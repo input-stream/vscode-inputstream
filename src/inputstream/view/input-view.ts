@@ -117,7 +117,10 @@ export class InputView extends PsClientTreeDataProvider<Input> {
     async handleCommandInputOpen(input: Input | string): Promise<void> {
         if (types.isString(input)) {
             const id = path.basename(input as string);
-            const foundItem = this.getInputById(id);
+            let foundItem = this.getInputById(id);
+            if (!foundItem) {
+                foundItem = await this.fetchInputById(id);
+            }
             if (!foundItem) {
                 return;
             }
@@ -339,6 +342,14 @@ export class InputView extends PsClientTreeDataProvider<Input> {
     getInputById(id: string): Input | undefined {
         return this.items?.find(item => item.id === id);
     }
+
+    async fetchInputById(id: string): Promise<Input | undefined> {
+        return this.client?.getInput({
+            login: this.user.login,
+            id: id,
+        });
+    }
+
 }
 
 export class InputItem extends vscode.TreeItem {
