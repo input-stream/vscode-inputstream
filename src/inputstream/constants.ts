@@ -4,7 +4,6 @@ export const FeatureName = 'input.stream';
 
 export enum ViewName {
     InputExplorer = 'input.stream.inputExplorer',
-    FileExplorer = 'input.stream.fileExplorer',
 }
 
 export enum ConfigSection {
@@ -61,10 +60,6 @@ export enum ContextName {
 export enum ContextValue {
     Input = 'input',
     Login = 'login',
-}
-
-export enum FileSystems {
-    PsFs = 'psfs',
 }
 
 /**

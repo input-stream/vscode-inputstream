@@ -174,13 +174,14 @@ export class InputView extends PsClientTreeDataProvider<Input> {
             let request: Input = {
                 status: 'STATUS_DRAFT',
                 login: this.user.login,
+                type: InputType.TYPE_SHORT_POST,
             };
 
             const setTitle: InputStep = async (msi) => {
                 const title = await msi.showInputBox({
                     title: 'Title',
-                    totalSteps: 2,
-                    step: 2,
+                    totalSteps: 1,
+                    step: 1,
                     value: '',
                     prompt: 'Choose a title (you can always change it later)',
                     validate: async (value: string) => { return ''; },
@@ -192,23 +193,25 @@ export class InputView extends PsClientTreeDataProvider<Input> {
                 return undefined;
             };
 
-            const pickType: InputStep = async (input) => {
-                const picked = await input.showQuickPick({
-                    title: 'Input Type',
-                    totalSteps: 2,
-                    step: 1,
-                    items: [{
-                        label: 'Page',
-                        type: InputType.TYPE_SHORT_POST,
-                    }],
-                    placeholder: 'Choose input type',
-                    shouldResume: async () => false,
-                });
-                request.type = (picked as InputTypeQuickPickItem).type;
-                return setTitle;
-            };
+            // Uncomment when we have more than one type of input.
+            //
+            // const pickType: InputStep = async (input) => {
+            //     const picked = await input.showQuickPick({
+            //         title: 'Input Type',
+            //         totalSteps: 2,
+            //         step: 1,
+            //         items: [{
+            //             label: 'Page',
+            //             type: InputType.TYPE_SHORT_POST,
+            //         }],
+            //         placeholder: 'Choose input type',
+            //         shouldResume: async () => false,
+            //     });
+            //     request.type = (picked as InputTypeQuickPickItem).type;
+            //     return setTitle;
+            // };
 
-            await MultiStepInput.run(pickType);
+            await MultiStepInput.run(setTitle);
 
             const input = await this.client.createInput(request);
             if (!input) {

@@ -116,7 +116,7 @@
             {
                 "category": "inputstream",
                 "command": "input.stream.deviceLogin",
-                "title": "Device Login to https://input.stream",
+                "title": "Login to https://input.stream",
                 "icon": "$(log-in)"
             }
         ],
@@ -140,22 +140,22 @@
             ],
             "view/title": [
                 {
-                    "command": "input.stream.deviceLogin",
+                    "command": "input.stream.inputExplorer.refresh",
                     "when": "view == input.stream.inputExplorer",
                     "group": "navigation@0"
                 },
                 {
-                    "command": "input.stream.input.create",
+                    "command": "input.stream.image.search",
                     "when": "view == input.stream.inputExplorer",
                     "group": "navigation@1"
                 },
                 {
-                    "command": "input.stream.image.search",
+                    "command": "input.stream.input.create",
                     "when": "view == input.stream.inputExplorer",
                     "group": "navigation@2"
                 },
                 {
-                    "command": "input.stream.inputExplorer.refresh",
+                    "command": "input.stream.deviceLogin",
                     "when": "view == input.stream.inputExplorer",
                     "group": "navigation@3"
                 }
@@ -186,9 +186,9 @@
             "inputstream-explorer": [
                 {
                     "id": "input.stream.inputExplorer",
-                    "name": "Inputs",
+                    "name": "Personal",
                     "icon": "media/astronaut.svg",
-                    "contextualTitle": "Input List"
+                    "contextualTitle": "Personal Input List"
                 }
             ]
         }

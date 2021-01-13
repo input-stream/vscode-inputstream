@@ -1,12 +1,9 @@
-import * as grpc from '@grpc/grpc-js';
 import * as luxon from 'luxon';
 import * as vscode from 'vscode';
-import { types } from 'vscode-common';
 import { Timestamp } from './proto/google/protobuf/Timestamp';
 import Long = require('long');
 import { BuiltInCommands } from './constants';
 import path = require('path');
-const crypto = require('crypto');
 
 export interface IExtensionFeature {
     // The name of the feature
@@ -17,9 +14,6 @@ export interface IExtensionFeature {
     deactivate(): any
 }
 
-export function isGrpcServiceError(e: any): e is grpc.ServiceError {
-    return !types.isUndefined((e as grpc.ServiceError).code);
-}
 export interface ITelemetry {
     sendTelemetryEvent(eventName: string, properties?: {
         [key: string]: string;
@@ -37,15 +31,6 @@ export interface ITelemetry {
         [key: string]: number;
     }): void;
     dispose(): Promise<any>;
-}
-
-export function md5Hash(value: string): string {
-    return crypto.createHash('md5').update(value).digest('hex');
-}
-
-export function makeCommandURI(command: string, ...args: any[]) {
-    const encoded = encodeURIComponent(JSON.stringify(args));
-    return 'command:' + command + '?' + encoded;
 }
 
 export function getRelativeDateFromTimestamp(ts: Timestamp): string {

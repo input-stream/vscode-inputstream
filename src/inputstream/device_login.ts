@@ -20,6 +20,7 @@ export class DeviceLogin implements vscode.Disposable {
     ) {
         this.disposables.push(this.onDidLoginTokenChange);
         this.disposables.push(this.onDidAuthUserChange);
+
         this.disposables.push(vscode.commands.registerCommand(
             CommandName.DeviceLogin, this.handleCommandDeviceLogin, this));
         this.disposables.push(vscode.commands.registerCommand(

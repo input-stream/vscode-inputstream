@@ -8,6 +8,9 @@ export enum Telemetry {
     ExtensionDeactivate = 'ext.deactivate',
     FeatureActivate = 'feature.activate',
     FeatureDeactivate = 'feature.deactivate',
+    Login = 'input.stream.login',
+    DeviceLogin = 'input.stream.deviceLogin',
+    Edit = 'input.edit',
 }
 
 export enum BuiltInCommands {
@@ -17,5 +20,4 @@ export enum BuiltInCommands {
     Open = 'vscode.open',
     OpenFolder = 'vscode.openFolder',
     OpenSettings = 'workbench.action.openSettings',
-    RevealFileInOS = 'revealFileInOS',
 }

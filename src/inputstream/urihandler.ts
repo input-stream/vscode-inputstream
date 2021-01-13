@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import { Telemetry } from '../constants';
+import { Container } from '../container';
 import { CommandName } from './constants';
 
 export class UriHandler implements vscode.UriHandler, vscode.Disposable {
@@ -7,27 +9,26 @@ export class UriHandler implements vscode.UriHandler, vscode.Disposable {
 
     constructor() {
         this.disposables.push(vscode.window.registerUriHandler(this));
-        vscode.window.showInformationMessage('urihandler installed');
     }
 
-    public handleUri(uri: vscode.Uri) {
-        vscode.window.showInformationMessage(`incoming event: ${uri.path}`);
-        // await vscode.commands.executeCommand(CommandName.ViewInputstreamExplorer);
+    public async handleUri(uri: vscode.Uri) {
+        await vscode.commands.executeCommand(CommandName.ViewInputstreamExplorer);
 
         switch (uri.path) {
-            case '/init':
-                return this.init(uri);
+            case '/login':
+                return this.login(uri);
             case '/edit':
                 return this.edit(uri);
         }
     }
 
-    private async init(uri: vscode.Uri): Promise<void> {
+    private async login(uri: vscode.Uri): Promise<void> {
         const query = parseQuery(uri);
         const token = query['token'];
         if (!token) {
             return;
         }
+        Container.telemetry.sendTelemetryEvent(Telemetry.Login);
         return vscode.commands.executeCommand(CommandName.Login, token);
     }
 
@@ -37,6 +38,7 @@ export class UriHandler implements vscode.UriHandler, vscode.Disposable {
         if (!inputId) {
             return;
         }
+        Container.telemetry.sendTelemetryEvent(Telemetry.Edit);
         await vscode.commands.executeCommand(CommandName.InputOpen, inputId);
     }
 
@@ -48,7 +50,6 @@ export class UriHandler implements vscode.UriHandler, vscode.Disposable {
             disposable.dispose();
         }
         this.disposables.length = 0;
-        vscode.window.showInformationMessage('urihandler disposed');
     }
 
 }

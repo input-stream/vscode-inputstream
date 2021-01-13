@@ -85,14 +85,14 @@ export class PsClient extends GRPCClient {
     async listInputs(filter: InputFilterOptions): Promise<Input[] | undefined> {
         return this.unaryCall<Input[] | undefined>('List Inputs', (): Promise<Input[] | undefined> => {
             return new Promise<Input[]>((resolve, reject) => {
-                if (false) {
-                    reject({
-                        message: 'UNAUTHENTICATED: WIP',
-                        code: grpc.status.UNAUTHENTICATED,
-                        details: 'WIP',
-                        metadata: new grpc.Metadata(),
-                    } as grpc.ServiceError);
-                }
+                // if (false) {
+                //     reject({
+                //         message: 'UNAUTHENTICATED: WIP',
+                //         code: grpc.status.UNAUTHENTICATED,
+                //         details: 'WIP',
+                //         metadata: new grpc.Metadata(),
+                //     } as grpc.ServiceError);
+                // }
                 this.inputService.listInputs(
                     { filter},
                     this.getGrpcMetadata(),
