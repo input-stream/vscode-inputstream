@@ -1,7 +1,7 @@
 
 export const ExtensionID = 'stackbuild.vscode-inputstream';
 export const ExtensionName = 'vscode-inputstream';
-export const AIKey = 'fake-7193a682-d12f-49a5-a515-ef00ab3f0992';
+export const AIKey = 'e3f8a9c5-e968-47e5-a411-341f71f67ee4';
 
 export enum Telemetry {
     ExtensionActivate = 'ext.activate',
