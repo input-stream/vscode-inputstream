@@ -40,13 +40,6 @@ export class PsClient extends GRPCClient {
         return `${scheme}://${address}`;
     }
 
-    // protected handleErrorUnauthenticated(err: grpc.ServiceError): grpc.ServiceError {
-    //     if (err.message.indexOf('Token is expired') !== -1) {
-    //         this.refreshAccessToken();
-    //     }
-    //     return err;
-    // }
-
     /**
      * Execute a grpc unary call having response type S.  If the call fails,
      * user will be prompted to retry up to the limit (defaults to 2).
