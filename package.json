@@ -2,7 +2,7 @@
     "name": "vscode-inputstream",
     "displayName": "vscode-inputstream",
     "description": "Streamlined developer publishing",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "publisher": "stackbuild",
     "license": "Apache-2.0",
     "icon": "stackb-full.png",
@@ -73,6 +73,18 @@
                 "command": "input.stream.inputExplorer.refresh",
                 "title": "Refresh",
                 "icon": "$(refresh)"
+            },
+            {
+                "category": "inputstream",
+                "command": "input.stream.input.publish",
+                "title": "Publish",
+                "icon": "$(rss)"
+            },
+            {
+                "category": "inputstream",
+                "command": "input.stream.input.unpublish",
+                "title": "UnPublish",
+                "icon": "$(shield)"
             },
             {
                 "category": "inputstream",
@@ -167,9 +179,19 @@
                     "group": "inline@0"
                 },
                 {
-                    "command": "input.stream.input.remove",
+                    "command": "input.stream.input.publish",
                     "when": "view == input.stream.inputExplorer && viewItem == input",
                     "group": "inline@2"
+                },
+                {
+                    "command": "input.stream.input.unpublish",
+                    "when": "view == input.stream.inputExplorer && viewItem == input",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "input.stream.input.remove",
+                    "when": "view == input.stream.inputExplorer && viewItem == input",
+                    "group": "inline@3"
                 }
             ]
         },

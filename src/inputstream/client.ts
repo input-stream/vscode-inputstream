@@ -94,7 +94,10 @@ export class PsClient extends GRPCClient {
                 //     } as grpc.ServiceError);
                 // }
                 this.inputService.listInputs(
-                    { filter},
+                    { 
+                        filter: filter,
+                        wantPrivate: true,
+                    },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
                     async (err?: grpc.ServiceError, resp?: ListInputsResponse) => {

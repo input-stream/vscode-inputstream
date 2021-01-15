@@ -138,6 +138,7 @@ message WatchInputRequest {
 
 message ListInputsRequest {
     InputFilterOptions filter = 1;
+    bool want_private = 2;
 }
 
 message InputFilterOptions {

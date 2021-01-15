@@ -4,8 +4,10 @@ import type { InputFilterOptions as _build_stack_inputstream_v1beta1_InputFilter
 
 export interface ListInputsRequest {
   'filter'?: (_build_stack_inputstream_v1beta1_InputFilterOptions);
+  'wantPrivate'?: (boolean);
 }
 
 export interface ListInputsRequest__Output {
   'filter'?: (_build_stack_inputstream_v1beta1_InputFilterOptions__Output);
+  'wantPrivate': (boolean);
 }

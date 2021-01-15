@@ -25,17 +25,14 @@ export class InputView extends PsClientTreeDataProvider<Input> {
     private items: Input[] | undefined;
     private sessions: Map<string, InputSession> = new Map();
     private currentInput: Input | undefined;
-
+    
     constructor(
+        onDidPsClientChange: vscode.Event<PsClient>,
         private cfg: PsServerConfiguration,
         private user: User,
-        client: PsClient | undefined,
-        onDidPsClientChange: vscode.Event<PsClient>,
         private onDidInputChange: vscode.EventEmitter<Input>,
     ) {
         super(ViewName.InputExplorer, onDidPsClientChange);
-
-        this.client = client;
 
         this.disposables.push(this.onDidChangeTreeData(() => {
             if (this.currentInput) {
@@ -62,6 +59,10 @@ export class InputView extends PsClientTreeDataProvider<Input> {
             vscode.commands.registerCommand(CommandName.InputRemove, this.handleCommandInputRemove, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputOpen, this.handleCommandInputOpen, this));
+        this.disposables.push(
+            vscode.commands.registerCommand(CommandName.InputPublish, this.handleCommandInputPublish, this));
+        this.disposables.push(
+            vscode.commands.registerCommand(CommandName.InputUnpublish, this.handleCommandInputUnpublish, this));
 
         vscode.workspace.onDidOpenTextDocument(
             this.handleTextDocumentOpen, this, this.disposables);
@@ -111,6 +112,31 @@ export class InputView extends PsClientTreeDataProvider<Input> {
         } catch (err) {
             console.log(`Could not list Inputs: ${err.message}`);
             return undefined;
+        }
+    }
+
+    async handleCommandInputPublish(input: Input): Promise<void> {
+        this.updateInputStatus(input, InputStatus.STATUS_PUBLISHED);
+    }
+
+    async handleCommandInputUnpublish(input: Input): Promise<void> {
+        this.updateInputStatus(input, InputStatus.STATUS_DRAFT);
+    }
+    
+    async updateInputStatus(input: Input, status: InputStatus) {
+        input.status = status;
+
+        const mask: FieldMask = {
+            paths: ['status'],
+        };
+
+        try {
+            const response = await this.client?.updateInput(input, mask);
+            if (response?.input) {
+                this.onDidInputChange.fire(response.input);
+            }
+        } catch (err) {
+            vscode.window.showErrorMessage(`Could not update input: ${err.message}`);
         }
     }
 
@@ -212,7 +238,9 @@ export class InputView extends PsClientTreeDataProvider<Input> {
             // };
 
             await MultiStepInput.run(setTitle);
-
+            if (!request.title) {
+                return;
+            }
             const input = await this.client.createInput(request);
             if (!input) {
                 return;

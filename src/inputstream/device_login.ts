@@ -125,13 +125,11 @@ export class DeviceLogin implements vscode.Disposable {
         }
 
         if (isTimestampPast(response.expiresAt)) {
-            this.saveDeviceLoginResponse(undefined);
+            this.saveLoginResponse(undefined);
             return false;
         }
 
-        this.onDidLoginTokenChange.fire(response.token!);
-        this.onDidAuthUserChange.fire(response.user!);
-        setCommandContext(ContextName.LoggedIn, true);
+        this.fireLogin(response.user!, response.token!);
 
         return true;
     }
@@ -150,11 +148,15 @@ export class DeviceLogin implements vscode.Disposable {
             return false;
         }
 
-        this.onDidLoginTokenChange.fire(response.accessToken!);
-        this.onDidAuthUserChange.fire(response.user!);
-        setCommandContext(ContextName.LoggedIn, true);
+        this.fireLogin(response.user!, response.accessToken!);
 
         return true;
+    }
+
+    private fireLogin(user: User, token: string) {
+        this.onDidAuthUserChange.fire(user);
+        this.onDidLoginTokenChange.fire(token);
+        setCommandContext(ContextName.LoggedIn, true);
     }
 
     private async saveDeviceLoginResponse(response: DeviceLoginResponse | undefined): Promise<void> {
