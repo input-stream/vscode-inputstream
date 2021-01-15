@@ -238,7 +238,9 @@ export class InputView extends PsClientTreeDataProvider<Input> {
             // };
 
             await MultiStepInput.run(setTitle);
-
+            if (!request.title) {
+                return;
+            }
             const input = await this.client.createInput(request);
             if (!input) {
                 return;
