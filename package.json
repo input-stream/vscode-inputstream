@@ -76,6 +76,18 @@
             },
             {
                 "category": "inputstream",
+                "command": "input.stream.input.publish",
+                "title": "Publish",
+                "icon": "$(rss)"
+            },
+            {
+                "category": "inputstream",
+                "command": "input.stream.input.unpublish",
+                "title": "UnPublish",
+                "icon": "$(shield)"
+            },
+            {
+                "category": "inputstream",
                 "command": "input.stream.image.search",
                 "title": "Unsplash Image Search",
                 "icon": {
@@ -167,9 +179,19 @@
                     "group": "inline@0"
                 },
                 {
-                    "command": "input.stream.input.remove",
+                    "command": "input.stream.input.publish",
                     "when": "view == input.stream.inputExplorer && viewItem == input",
                     "group": "inline@2"
+                },
+                {
+                    "command": "input.stream.input.unpublish",
+                    "when": "view == input.stream.inputExplorer && viewItem == input",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "input.stream.input.remove",
+                    "when": "view == input.stream.inputExplorer && viewItem == input",
+                    "group": "inline@3"
                 }
             ]
         },
