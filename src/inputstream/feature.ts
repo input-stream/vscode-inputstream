@@ -53,20 +53,19 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
         this.authClient.getChannel().getTarget();
         this.closeables.push(this.authClient);
 
+        this.add(
+            new ImageSearch(this.onDidPsClientChange.event));
         this.inputView = this.add(
             new LoginTreeDataProvider());
         this.deviceLogin = this.add(
             new DeviceLogin(this.authClient));
 
         this.deviceLogin.onDidAuthUserChange.event(this.handleAuthUserChange, this, this.disposables);
-
-        this.add(this.deviceLogin.onDidLoginTokenChange.event(token => {
+        this.deviceLogin.onDidLoginTokenChange.event(token => {
             this.client = this.add(
                 new PsClient(psProtos, cfg.inputstream.address, token, () => this.deviceLogin!.refreshAccessToken()));
             this.onDidPsClientChange.fire(this.client);
-        }));
-
-        this.add(new ImageSearch(this.onDidPsClientChange.event));
+        }, this.disposables);
 
         this.deviceLogin.restoreSaved();
     }
@@ -82,10 +81,9 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
 
         this.inputView = this.add(
             new InputView(
+                this.onDidPsClientChange.event,
                 this.cfg!.inputstream,
                 user,
-                this.client,
-                this.onDidPsClientChange.event,
                 this.onDidInputChange,
             ),
         );
