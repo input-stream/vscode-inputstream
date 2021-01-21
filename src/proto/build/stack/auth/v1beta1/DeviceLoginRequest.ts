@@ -7,10 +7,10 @@ export interface DeviceLoginRequest {
    */
   'deviceName'?: (string);
   /**
-   * refresh_token can be used to request a new access token without expecting
+   * api_token can be used to request a new access token without expecting
    * the user to have to interact with the oauth_url.
    */
-  'refreshToken'?: (string);
+  'apiToken'?: (string);
 }
 
 export interface DeviceLoginRequest__Output {
@@ -19,8 +19,8 @@ export interface DeviceLoginRequest__Output {
    */
   'deviceName': (string);
   /**
-   * refresh_token can be used to request a new access token without expecting
+   * api_token can be used to request a new access token without expecting
    * the user to have to interact with the oauth_url.
    */
-  'refreshToken': (string);
+  'apiToken': (string);
 }

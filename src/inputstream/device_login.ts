@@ -43,13 +43,13 @@ export class DeviceLogin implements vscode.Disposable {
         if (!response) {
             throw new Error('refresh token is not available');
         }
-        return this.deviceLogin(response.refreshToken);
+        return this.deviceLogin(response.apiToken);
     }
 
-    public async deviceLogin(refreshToken?: string): Promise<void> {
+    public async deviceLogin(apiToken?: string): Promise<void> {
         const stream = this.authClient.DeviceLogin({
             deviceName: ExtensionID,
-            refreshToken: refreshToken,
+            apiToken: apiToken,
         }, new grpc.Metadata());
         if (!stream) {
             vscode.window.showWarningMessage('login error: device login stream undefined');

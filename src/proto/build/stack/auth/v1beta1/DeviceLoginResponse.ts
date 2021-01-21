@@ -30,7 +30,7 @@ export interface DeviceLoginResponse {
    * a different token that can be used for retrieving new access tokens.  This
    * is only populated by interacting with the oauth_url.
    */
-  'refreshToken'?: (string);
+  'apiToken'?: (string);
 }
 
 export interface DeviceLoginResponse__Output {
@@ -60,5 +60,5 @@ export interface DeviceLoginResponse__Output {
    * a different token that can be used for retrieving new access tokens.  This
    * is only populated by interacting with the oauth_url.
    */
-  'refreshToken': (string);
+  'apiToken': (string);
 }

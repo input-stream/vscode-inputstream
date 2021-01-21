@@ -10,10 +10,6 @@ export interface User {
   'splashUrl'?: (string);
   'email'?: (string);
   'isOrg'?: (boolean);
-  /**
-   * if the email of the user has been not been confirmed yet.
-   */
-  'isUnconfirmed'?: (boolean);
 }
 
 export interface User__Output {
@@ -25,8 +21,4 @@ export interface User__Output {
   'splashUrl': (string);
   'email': (string);
   'isOrg': (boolean);
-  /**
-   * if the email of the user has been not been confirmed yet.
-   */
-  'isUnconfirmed': (boolean);
 }
