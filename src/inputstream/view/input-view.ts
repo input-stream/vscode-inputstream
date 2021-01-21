@@ -102,12 +102,11 @@ export class InputView extends PsClientTreeDataProvider<Input> {
         }
         try {
             const inputs = this.items = await this.client.listInputs({
-                login: this.user.login!,
+                owner: this.user.login!,
             });
             if (!inputs) {
                 return undefined;
             }
-            sortInputsByCreateTime(inputs);
             return inputs;
         } catch (err) {
             console.log(`Could not list Inputs: ${err.message}`);
@@ -199,6 +198,7 @@ export class InputView extends PsClientTreeDataProvider<Input> {
         try {
             let request: Input = {
                 status: 'STATUS_DRAFT',
+                owner: this.user.login,
                 login: this.user.login,
                 type: InputType.TYPE_SHORT_POST,
             };
