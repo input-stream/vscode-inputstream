@@ -72,9 +72,9 @@ export interface Input {
   'status'?: (_build_stack_inputstream_v1beta1_Input_Status | keyof typeof _build_stack_inputstream_v1beta1_Input_Status);
   /**
    * The user that published this item.  This is only
-   * populated after the item is published.
+   * populated via a get operation.
    */
-  'user'?: (_build_stack_inputstream_v1beta1_User);
+  'author'?: (_build_stack_inputstream_v1beta1_User);
   /**
    * The subtitle of the post
    */
@@ -95,6 +95,10 @@ export interface Input {
    * the URL where the input can be viewed
    */
   'htmlUrl'?: (string);
+  /**
+   * the owner of the input
+   */
+  'owner'?: (string);
 }
 
 export interface Input__Output {
@@ -144,9 +148,9 @@ export interface Input__Output {
   'status': (_build_stack_inputstream_v1beta1_Input_Status);
   /**
    * The user that published this item.  This is only
-   * populated after the item is published.
+   * populated via a get operation.
    */
-  'user'?: (_build_stack_inputstream_v1beta1_User__Output);
+  'author'?: (_build_stack_inputstream_v1beta1_User__Output);
   /**
    * The subtitle of the post
    */
@@ -167,4 +171,8 @@ export interface Input__Output {
    * the URL where the input can be viewed
    */
   'htmlUrl': (string);
+  /**
+   * the owner of the input
+   */
+  'owner': (string);
 }

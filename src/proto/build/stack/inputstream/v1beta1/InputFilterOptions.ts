@@ -4,6 +4,10 @@ import type { _build_stack_inputstream_v1beta1_Input_Status } from '../../../../
 
 export interface InputFilterOptions {
   /**
+   * filter by owner
+   */
+  'owner'?: (string);
+  /**
    * filter by login name
    */
   'login'?: (string);
@@ -26,6 +30,10 @@ export interface InputFilterOptions {
 }
 
 export interface InputFilterOptions__Output {
+  /**
+   * filter by owner
+   */
+  'owner': (string);
   /**
    * filter by login name
    */
