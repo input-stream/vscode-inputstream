@@ -287,7 +287,7 @@ export class InputView extends PsClientTreeDataProvider<Input> {
         }
 
         try {
-            await this.client?.removeInput(input.login!, input.id!);
+            await this.client?.removeInput(input.id!);
             this.refresh();
             vscode.window.showInformationMessage(`Removed draft "${title}" (${when})`);
         } catch (err) {
