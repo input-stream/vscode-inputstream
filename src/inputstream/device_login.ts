@@ -77,7 +77,7 @@ export class DeviceLogin implements vscode.Disposable {
             stream.on('error', (err: Error) => {
                 setCommandContext(ContextName.LoggedIn, false);
                 const errMsg = (err as grpc.ServiceError).message;
-                vscode.window.showErrorMessage('login error: ' + errMsg);
+                // vscode.window.showErrorMessage('login error: ' + errMsg);
                 reject(err);
             });
 
