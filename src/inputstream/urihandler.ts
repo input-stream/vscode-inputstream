@@ -19,6 +19,8 @@ export class UriHandler implements vscode.UriHandler, vscode.Disposable {
                 return this.login(uri);
             case '/edit':
                 return this.edit(uri);
+            case '/create':
+                return this.create(uri);
         }
     }
 
@@ -40,6 +42,11 @@ export class UriHandler implements vscode.UriHandler, vscode.Disposable {
         }
         Container.telemetry.sendTelemetryEvent(Telemetry.Edit);
         await vscode.commands.executeCommand(CommandName.InputOpen, inputId);
+    }
+
+    private async create(uri: vscode.Uri): Promise<void> {
+        Container.telemetry.sendTelemetryEvent(Telemetry.Create);
+        await vscode.commands.executeCommand(CommandName.InputCreate);
     }
 
     /**
