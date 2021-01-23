@@ -14,7 +14,7 @@ export class LoginTreeDataProvider extends TreeDataProvider<vscode.TreeItem> {
         item.description = 'Please click to login and edit items',
         item.command = {
             title: 'Login',
-            command: CommandName.Login,
+            command: CommandName.DeviceLogin,
         };
 
         return [item];
