@@ -2,13 +2,16 @@ import path = require('path');
 import * as vscode from 'vscode';
 import { types } from 'vscode-common';
 import { formatTimestampISODate } from '../../common';
-import { InputStep, MultiStepInput } from '../../multiStepInput';
-import { User } from '../../proto/build/stack/auth/v1beta1/User';
-import { Input, _build_stack_inputstream_v1beta1_Input_Type as InputType, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from '../../proto/build/stack/inputstream/v1beta1/Input';
-import { InputStreamClient } from '../client';
-import { ButtonName, CommandName, ContextValue, Scheme, ThemeIconRss, ViewName } from '../constants';
-import { InputStreamClientTreeDataProvider } from '../inputstreamclienttreedataprovider';
 import { BuiltInCommands } from '../../constants';
+import { User } from '../../proto/build/stack/auth/v1beta1/User';
+import {
+    Input,
+    _build_stack_inputstream_v1beta1_Input_Type as InputType,
+    _build_stack_inputstream_v1beta1_Input_Status as InputStatus
+} from '../../proto/build/stack/inputstream/v1beta1/Input';
+import { InputStreamClient } from '../client';
+import { CommandName, ContextValue, Scheme, ThemeIconRss, ViewName } from '../constants';
+import { InputStreamClientTreeDataProvider } from '../inputstreamclienttreedataprovider';
 
 /**
  * Renders a view for a user pages.
@@ -18,26 +21,24 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
     private currentInput: Input | undefined;
 
     constructor(
-        onDidInputStreamClientChange: vscode.Event<InputStreamClient>,
         private user: User,
-        private onDidInputChange: vscode.EventEmitter<Input>,
+        onDidInputStreamClientChange: vscode.Event<InputStreamClient>,
+        onDidInputChange: vscode.Event<Input>,
+        onDidInputCreate: vscode.Event<Input>,
+        onDidInputRemove: vscode.Event<Input>,
     ) {
         super(ViewName.InputExplorer, onDidInputStreamClientChange);
 
-        this.view.onDidChangeVisibility(this.handleVisibilityChange, this, this.disposables);
+        onDidInputChange(this.handleInputChange, this, this.disposables);
+        onDidInputCreate(this.handleInputCreate, this, this.disposables);
+        onDidInputRemove(this.handleInputRemove, this, this.disposables);
 
-        onDidInputChange.event(this.handleInputChange, this, this.disposables);
+        this.view.onDidChangeVisibility(this.handleVisibilityChange, this, this.disposables);
     }
 
     registerCommands() {
         super.registerCommands();
 
-        this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputCreate, this.handleCommandInputCreate, this));
-        this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputLink, this.handleCommandInputLink, this));
-        this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputRemove, this.handleCommandInputRemove, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputOpen, this.handleCommandInputOpen, this));
     }
@@ -55,6 +56,15 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
         if (shouldRefresh) {
             this.refresh();
         }
+    }
+
+    handleInputCreate(input: Input) {
+        this.refresh();
+        this.items?.push(input);
+    }
+
+    handleInputRemove(input: Input) {
+        this.refresh();
     }
 
     shouldRefreshInputList(input: Input): boolean {
@@ -102,7 +112,7 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
         }
     }
 
-    async handleCommandInputOpen(input: Input | string): Promise<void> {
+    private async handleCommandInputOpen(input: Input | string): Promise<void> {
         if (types.isString(input)) {
             const id = path.basename(input as string);
             let foundItem = this.getInputById(id);
@@ -115,135 +125,19 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
             return this.handleCommandInputOpen(foundItem);
         }
 
-        this.onDidInputChange.fire(input);
-
         const url = `${Scheme.Page}://input.stream/${input.owner}/${input.id}/${input.titleSlug}.md`;
         const uri = vscode.Uri.parse(url);
 
         return vscode.commands.executeCommand(BuiltInCommands.Open, uri);
     }
 
-    async handleCommandInputCreate() {
-        if (!this.client) {
-            vscode.window.showWarningMessage('could not create Input (client not connected)');
-            return;
-        }
-        if (!this.user) {
-            vscode.window.showWarningMessage('could not create Input (user not logged in)');
-            return;
-        }
-        try {
-            let request: Input = {
-                status: 'STATUS_DRAFT',
-                owner: this.user.login,
-                login: this.user.login,
-                type: InputType.TYPE_SHORT_POST,
-            };
-
-            const setTitle: InputStep = async (msi) => {
-                const title = await msi.showInputBox({
-                    title: 'Title',
-                    totalSteps: 1,
-                    step: 1,
-                    value: '',
-                    prompt: 'Choose a title (you can always change it later)',
-                    validate: async (value: string) => { return ''; },
-                    shouldResume: async () => false,
-                });
-                if (title) {
-                    request.title = title;
-                }
-                return undefined;
-            };
-
-            // Uncomment when we have more than one type of input.
-            //
-            // const pickType: InputStep = async (input) => {
-            //     const picked = await input.showQuickPick({
-            //         title: 'Input Type',
-            //         totalSteps: 2,
-            //         step: 1,
-            //         items: [{
-            //             label: 'Page',
-            //             type: InputType.TYPE_SHORT_POST,
-            //         }],
-            //         placeholder: 'Choose input type',
-            //         shouldResume: async () => false,
-            //     });
-            //     request.type = (picked as InputTypeQuickPickItem).type;
-            //     return setTitle;
-            // };
-
-            await MultiStepInput.run(setTitle);
-            if (!request.title) {
-                return;
-            }
-            const input = await this.client.createInput(request);
-            if (!input) {
-                return;
-            }
-            this.refresh();
-            this.items?.push(input);
-            vscode.commands.executeCommand(CommandName.InputOpen, input.id);
-        } catch (err) {
-            vscode.window.showErrorMessage(`Could not create Input: ${err.message}`);
-            return undefined;
-        }
-    }
-
-    async handleCommandInputLink(input: Input) {
-        return this.openHtmlUrl(input);
-    }
-
-    async openHtmlUrl(input: Input, watch = false) {
-        let target = input.htmlUrl;
-        if (!target) {
-            target = input.status === InputStatus.STATUS_PUBLISHED ? input.titleSlug : input.id;
-        }
-        if (watch) {
-            target += '/view/watch';
-        }
-        const uri = vscode.Uri.parse(target!);
-        return vscode.commands.executeCommand(BuiltInCommands.Open, uri);
-    }
-
-    async handleCommandInputRemove(input: Input) {
-        const title = input.title;
-        const when = formatTimestampISODate(input.createdAt);
-        const action = await vscode.window.showInformationMessage(
-            `Are you sure you want to remove "${title}" (${when})`,
-            ButtonName.Confirm, ButtonName.Cancel);
-        if (action !== ButtonName.Confirm) {
-            return;
-        }
-
-        try {
-            await this.client?.removeInput(input.id!);
-            this.refresh();
-        } catch (err) {
-            vscode.window.showErrorMessage(`Could not create Input: ${err.message}`);
-            return undefined;
-        }
-    }
-
-    getInputForDocumentURI(uri: vscode.Uri): Input | undefined {
-        if (uri.scheme !== Scheme.Page) {
-            return;
-        }
-        const input = this.getInputById(path.basename(uri.path));
-        if (!input) {
-            return;
-        }
-        return input;
-    }
-
-    getInputById(id: string): Input | undefined {
+    private getInputById(id: string): Input | undefined {
         return this.items?.find(item => item.id === id);
     }
 
-    async fetchInputById(id: string): Promise<Input | undefined> {
+    private async fetchInputById(id: string): Promise<Input | undefined> {
         return this.client?.getInput({
-            login: this.user.login,
+            owner: this.user.login,
             id: id,
         });
     }
@@ -257,11 +151,10 @@ export class InputItem extends vscode.TreeItem {
         public parent?: InputItem,
     ) {
         super(label || `"${input.title!}"`);
-        this.id = input.id;
+
         let when = formatTimestampISODate(input.createdAt);
-        // TODO(pcj): restore type name once there are choices about it, until
-        // then it's just confusing.
-        // let type = getInputTypeName(input.type as InputType); // FIXME: why necessary?
+
+        this.id = input.id;
         this.label = `${when}`;
         this.tooltip = `${when}: "${input.title}" (${input.id})`;
         this.contextValue = ContextValue.Input;
@@ -278,18 +171,3 @@ export class InputItem extends vscode.TreeItem {
         return undefined;
     }
 }
-
-function getInputTypeName(type: InputType | undefined): string {
-    switch (type) {
-        case InputType.TYPE_ANY: return 'any';
-        case InputType.TYPE_SHORT_POST: return 'short';
-        case InputType.TYPE_LONG_POST: return 'long';
-        case InputType.TYPE_IMAGE: return 'image';
-        default: return 'unknown';
-    }
-}
-
-interface InputTypeQuickPickItem extends vscode.QuickPickItem {
-    type: InputType
-}
-

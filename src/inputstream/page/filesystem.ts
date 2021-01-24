@@ -9,7 +9,8 @@ import { InputStreamClient } from '../client';
 import { CommandName, Scheme } from '../constants';
 
 /**
- * Document content provider for input pages.  Modeled after https://github.com/microsoft/vscode-extension-samples/blob/9b8701dceac5fab83345356743170bca609c87f9/fsprovider-sample/src/fileSystemProvider.ts
+ * Document content provider for input pages.  
+ * Modeled after https://github.com/microsoft/vscode-extension-samples/blob/9b8701dceac5fab83345356743170bca609c87f9/fsprovider-sample/src/fileSystemProvider.ts
  */
 export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSystemProvider {
     protected disposables: vscode.Disposable[] = [];
@@ -26,13 +27,6 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         onDidInputStreamClientChange(this.handleInputStreamClientChange, this, this.disposables);
         vscode.workspace.onDidCloseTextDocument(this.handleTextDocumentClose, this, this.disposables);
         this.disposables.push(vscode.workspace.registerFileSystemProvider(Scheme.Page, this, { isCaseSensitive: true }));
-
-        this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputLink, this.handleCommandInputLink, this));
-        this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputPublish, this.handleCommandInputPublish, this));
-        this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputUnpublish, this.handleCommandInputUnpublish, this));
     }
 
     private handleInputStreamClientChange(client: InputStreamClient) {
@@ -42,51 +36,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     private handleTextDocumentClose(doc: vscode.TextDocument) {
     }
 
-    async handleCommandInputPublish(uri: vscode.Uri): Promise<void> {
-        const file = await this.getFile(uri);
-        this.updateInputStatus(file.input, InputStatus.STATUS_PUBLISHED);
-    }
-
-    async handleCommandInputUnpublish(uri: vscode.Uri): Promise<void> {
-        const file = await this.getFile(uri);
-        this.updateInputStatus(file.input, InputStatus.STATUS_DRAFT);
-    }
-
-    async handleCommandInputLink(uri: vscode.Uri) {
-        const file = await this.getFile(uri);
-        return this.openHtmlUrl(file.input);
-    }
-
-    async openHtmlUrl(input: Input, watch = false) {
-        let target = input.htmlUrl;
-        if (!target) {
-            target = input.status === InputStatus.STATUS_PUBLISHED ? input.titleSlug : input.id;
-        }
-        if (watch) {
-            target += '/view/watch';
-        }
-        const uri = vscode.Uri.parse(target!);
-        return vscode.commands.executeCommand(BuiltInCommands.Open, uri);
-    }
-
-    async updateInputStatus(input: Input, status: InputStatus) {
-        input.status = status;
-
-        const mask: FieldMask = {
-            paths: ['status'],
-        };
-
-        try {
-            const response = await this.client?.updateInput(input, mask);
-            if (response?.input) {
-                this.onDidInputChange.fire(response.input);
-            }
-        } catch (err) {
-            vscode.window.showErrorMessage(`Could not update input: ${err.message}`);
-        }
-    }
-
-    protected async getFile(uri: vscode.Uri): Promise<InputFile> {
+    public async getFile(uri: vscode.Uri): Promise<InputFile> {
         let file = this.files.get(uri.path);
         if (!file) {
             file = await this.openFile(uri);
@@ -121,7 +71,6 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     }
 
     protected async createFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
-        // const file = await this.openFile(uri);
         return this.updateFile(uri, content);
     }
 
@@ -143,8 +92,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         };
 
         const response = await this.client.updateInput(file.input, mask);
-        file.input = response!.input!;
-        // this.onDidInputChange.fire(response.input);
+        this.onDidInputChange.fire(file.input);
     }
 
     public async stat(uri: vscode.Uri): Promise<vscode.FileStat> {

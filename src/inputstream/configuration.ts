@@ -5,7 +5,7 @@ import { resolveHome } from '../common';
 import { ProtoGrpcType as AuthProtoType } from '../proto/auth';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
 import { InputsClient } from '../proto/build/stack/inputstream/v1beta1/Inputs';
-import { ProtoGrpcType as PsProtoType } from '../proto/inputstream';
+import { ProtoGrpcType as InputStreamProtoType } from '../proto/inputstream';
 import { ConfigSection } from './constants';
 
 /**
@@ -81,13 +81,13 @@ export function loadAuthProtos(protofile: string): AuthProtoType {
     return grpc.loadPackageDefinition(protoPackage) as unknown as AuthProtoType;
 }
 
-export function loadPsProtos(protofile: string): PsProtoType {
+export function loadInputStreamProtos(protofile: string): InputStreamProtoType {
     const protoPackage = loader.loadSync(protofile, {
         keepCase: false,
         defaults: false,
         oneofs: true
     });
-    return grpc.loadPackageDefinition(protoPackage) as unknown as PsProtoType;
+    return grpc.loadPackageDefinition(protoPackage) as unknown as InputStreamProtoType;
 }
 
 function getGRPCCredentials(address: string): grpc.ChannelCredentials {
@@ -102,7 +102,7 @@ function getGRPCCredentials(address: string): grpc.ChannelCredentials {
  * 
  * @param address The address to connect.
  */
-export function createInputsClient(proto: PsProtoType, address: string): InputsClient {
+export function createInputsClient(proto: InputStreamProtoType, address: string): InputsClient {
     return new proto.build.stack.inputstream.v1beta1.Inputs(address, getGRPCCredentials(address));
 }
 

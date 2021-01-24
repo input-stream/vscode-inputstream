@@ -8,7 +8,7 @@ import {
     createAuthServiceClient,
     createInputStreamConfiguration,
     loadAuthProtos,
-    loadPsProtos,
+    loadInputStreamProtos,
 } from './configuration';
 import { FeatureName, ViewName } from './constants';
 import { DeviceLogin } from './device_login';
@@ -20,6 +20,7 @@ import { PageFileSystemProvider } from './page/filesystem';
 import { PageTreeView } from './page/treeview';
 import { LoginTreeDataProvider } from './login/treeview';
 import { TreeDataProvider } from './treedataprovider';
+import { PageController } from './page/controller';
 
 export class InputStreamFeature implements IExtensionFeature, vscode.Disposable {
     public readonly name = FeatureName;
@@ -29,13 +30,18 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
     private client: InputStreamClient | undefined;
     private onDidInputStreamClientChange = new vscode.EventEmitter<InputStreamClient>();
     private onDidInputChange = new vscode.EventEmitter<Input>();
+    private onDidInputCreate = new vscode.EventEmitter<Input>();
+    private onDidInputRemove = new vscode.EventEmitter<Input>();
     private authClient: AuthServiceClient | undefined;
     private deviceLogin: DeviceLogin | undefined;
     private pageTreeView: TreeDataProvider<any> | undefined;
+    private pageController: PageController | undefined;
 
     constructor() {
         this.add(this.onDidInputStreamClientChange);
         this.add(this.onDidInputChange);
+        this.add(this.onDidInputCreate);
+        this.add(this.onDidInputRemove);
         this.add(new UriHandler());
     }
 
@@ -45,18 +51,13 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
     async activate(ctx: vscode.ExtensionContext, config: vscode.WorkspaceConfiguration): Promise<any> {
         const cfg = await createInputStreamConfiguration(ctx.asAbsolutePath.bind(ctx), ctx.globalStoragePath, config);
 
-        const psProtos = loadPsProtos(cfg.inputstream.protofile);
+        const inputStreamProtos = loadInputStreamProtos(cfg.inputstream.protofile);
         const authProtos = loadAuthProtos(cfg.auth.protofile);
 
         this.authClient = createAuthServiceClient(authProtos, cfg.auth.address);
         this.authClient.getChannel().getTarget();
         this.closeables.push(this.authClient);
 
-        this.add(
-            new PageFileSystemProvider(
-                this.onDidInputStreamClientChange.event,
-                this.onDidInputChange,
-            ));
         this.add(
             new ImageSearch(this.onDidInputStreamClientChange.event));
         this.pageTreeView = this.add(
@@ -67,7 +68,7 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
         this.deviceLogin.onDidAuthUserChange.event(this.handleAuthUserChange, this, this.disposables);
         this.deviceLogin.onDidLoginTokenChange.event(token => {
             this.client = this.add(
-                new InputStreamClient(psProtos, cfg.inputstream.address, token, () => this.deviceLogin!.refreshAccessToken()));
+                new InputStreamClient(inputStreamProtos, cfg.inputstream.address, token, () => this.deviceLogin!.refreshAccessToken()));
             this.onDidInputStreamClientChange.fire(this.client);
         }, this.disposables);
 
@@ -82,12 +83,24 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
      */
     protected handleAuthUserChange(user: User) {
         this.pageTreeView?.dispose();
+        this.pageController?.dispose();
+
+        this.pageController = this.add(
+            new PageController(
+                user,
+                this.onDidInputStreamClientChange,
+                this.onDidInputChange,
+                this.onDidInputCreate,
+                this.onDidInputRemove,
+            ));
 
         this.pageTreeView = this.add(
             new PageTreeView(
-                this.onDidInputStreamClientChange.event,
                 user,
-                this.onDidInputChange,
+                this.onDidInputStreamClientChange.event,
+                this.onDidInputChange.event,
+                this.onDidInputCreate.event,
+                this.onDidInputRemove.event,
             ),
         );
     }
