@@ -66,30 +66,30 @@
             {
                 "category": "inputstream",
                 "command": "input.stream.openExtensionSetting",
-                "title": "Goto Extension Setting"
+                "title": "Stream: Goto Extension Setting"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.inputExplorer.refresh",
-                "title": "Refresh",
+                "title": "Stream: Refresh Pages",
                 "icon": "$(refresh)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.input.publish",
-                "title": "Publish",
+                "title": "Stream: Publish Page",
                 "icon": "$(rss)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.input.unpublish",
-                "title": "UnPublish",
+                "title": "Stream: UnPublish Page",
                 "icon": "$(shield)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.image.search",
-                "title": "Unsplash Image Search",
+                "title": "Stream: Unsplash Image Search",
                 "icon": {
                     "dark": "media/unsplash-dark.svg",
                     "light": "media/unsplash-light.svg"
@@ -98,37 +98,37 @@
             {
                 "category": "inputstream",
                 "command": "input.stream.input.create",
-                "title": "Create Input",
+                "title": "Stream: Create New Page",
                 "icon": "$(add)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.input.open",
-                "title": "Open Input",
+                "title": "Stream: Open Page",
                 "icon": "$(open)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.input.link",
-                "title": "Watch changes on https://input.stream",
+                "title": "Stream: Watch changes on https://input.stream",
                 "icon": "$(eye-watch)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.input.remove",
-                "title": "Remove Input",
+                "title": "Stream: Remove Input",
                 "icon": "$(trash)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.login",
-                "title": "Login to https://input.stream",
+                "title": "Stream: Login to https://input.stream",
                 "icon": "$(log-in)"
             },
             {
                 "category": "inputstream",
                 "command": "input.stream.deviceLogin",
-                "title": "Login to https://input.stream",
+                "title": "Stream: Login to https://input.stream",
                 "icon": "$(log-in)"
             }
         ],
@@ -177,21 +177,28 @@
                     "command": "input.stream.input.link",
                     "when": "view == input.stream.inputExplorer && viewItem == input",
                     "group": "inline@0"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "input.stream.input.link",
+                    "group": "page",
+                    "when": "editorTextFocus"
                 },
                 {
                     "command": "input.stream.input.publish",
-                    "when": "view == input.stream.inputExplorer && viewItem == input",
-                    "group": "inline@2"
+                    "group": "page",
+                    "when": "editorTextFocus"
                 },
                 {
                     "command": "input.stream.input.unpublish",
-                    "when": "view == input.stream.inputExplorer && viewItem == input",
-                    "group": "inline@1"
+                    "group": "page",
+                    "when": "editorTextFocus"
                 },
                 {
                     "command": "input.stream.input.remove",
-                    "when": "view == input.stream.inputExplorer && viewItem == input",
-                    "group": "inline@3"
+                    "group": "page",
+                    "when": "editorTextFocus"
                 }
             ]
         },

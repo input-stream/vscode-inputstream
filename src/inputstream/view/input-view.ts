@@ -1,6 +1,5 @@
 import Long = require('long');
 import path = require('path');
-import fs = require('fs');
 import * as vscode from 'vscode';
 import { types } from 'vscode-common';
 import { formatTimestampISODate } from '../../common';
@@ -8,10 +7,9 @@ import { InputStep, MultiStepInput } from '../../multiStepInput';
 import { User } from '../../proto/build/stack/auth/v1beta1/User';
 import { Input, _build_stack_inputstream_v1beta1_Input_Type as InputType, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { PsClient } from '../client';
-import { ButtonName, CommandName, ContextValue, ThemeIconRss, ViewName } from '../constants';
+import { ButtonName, CommandName, ContextValue, Scheme, ThemeIconRss, ViewName } from '../constants';
 import { PsClientTreeDataProvider } from './psclienttreedataprovider';
 import { BuiltInCommands } from '../../constants';
-import { mkdirpSync } from 'fs-extra';
 import { PsServerConfiguration } from '../configuration';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
 import { InputContent } from '../../proto/build/stack/inputstream/v1beta1/InputContent';
@@ -174,35 +172,10 @@ export class InputView extends PsClientTreeDataProvider<Input> {
         this.view.reveal(input);
         this.onDidInputChange.fire(input);
 
-        const filename = path.join(
-            this.cfg.baseDir,
-            input.login!,
-            input.id!,
-            'main.md');
-        const uri = vscode.Uri.file(filename);
-        const dirname = path.dirname(filename);
+        const url = `${Scheme.Page}://input.stream/${input.owner}/${input.id}/${input.titleSlug}.md`;
+        const uri = vscode.Uri.parse(url);
 
-        const mask: FieldMask = {
-            paths: ['content'],
-        };
-
-        try {
-            const current = await this.client!.getInput({ login: input.login!, id: input.id! }, mask);
-            if (!current) {
-                return;
-            }
-            if (!current.content) {
-                return;
-            }
-            const markdown = getContentSource(current.content);
-
-            mkdirpSync(dirname);
-            fs.writeFileSync(uri.fsPath, markdown);
-            return vscode.commands.executeCommand(BuiltInCommands.Open, uri);
-
-        } catch (err) {
-            vscode.window.showErrorMessage(`could not open ${uri.fsPath}: ${err.message}`);
-        }
+        return vscode.commands.executeCommand(BuiltInCommands.Open, uri);
     }
 
     async handleCommandInputCreate() {
@@ -362,17 +335,11 @@ export class InputView extends PsClientTreeDataProvider<Input> {
     }
 
     getInputForDocumentURI(uri: vscode.Uri): Input | undefined {
-        const inputDir = path.dirname(uri.fsPath);
-        const input = this.getInputById(path.basename(inputDir));
+        if (uri.scheme !== Scheme.Page) {
+            return;
+        }
+        const input = this.getInputById(path.basename(uri.path));
         if (!input) {
-            return;
-        }
-        const userDir = path.dirname(inputDir);
-        if (input.login !== path.basename(userDir)) {
-            return;
-        }
-        const baseDir = path.dirname(userDir);
-        if (baseDir !== this.cfg.baseDir) {
             return;
         }
         return input;
@@ -385,6 +352,7 @@ export class InputView extends PsClientTreeDataProvider<Input> {
         }
         session.dispose();
         this.sessions.delete(doc.uri.fsPath);
+
         console.log(`closed doc: ${doc.uri.fsPath}`);
     }
 
