@@ -1,4 +1,3 @@
-import Long = require('long');
 import path = require('path');
 import * as vscode from 'vscode';
 import { types } from 'vscode-common';
@@ -11,14 +10,12 @@ import { ButtonName, CommandName, ContextValue, Scheme, ThemeIconRss, ViewName }
 import { InputStreamClientTreeDataProvider } from '../inputstreamclienttreedataprovider';
 import { BuiltInCommands } from '../../constants';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
-import { PageSession } from './session';
 
 /**
  * Renders a view for a user pages.
  */
 export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
     private items: Input[] | undefined;
-    private sessions: Map<string, PageSession> = new Map();
     private currentInput: Input | undefined;
 
     constructor(
@@ -57,13 +54,6 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
             vscode.commands.registerCommand(CommandName.InputPublish, this.handleCommandInputPublish, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputUnpublish, this.handleCommandInputUnpublish, this));
-
-        vscode.workspace.onDidOpenTextDocument(
-            this.handleTextDocumentOpen, this, this.disposables);
-        vscode.workspace.onDidCloseTextDocument(
-            this.handleTextDocumentClose, this, this.disposables);
-        vscode.workspace.onDidChangeTextDocument(
-            this.handleTextDocumentChange, this, this.disposables);
     }
 
     handleVisibilityChange(event: vscode.TreeViewVisibilityChangeEvent) {
@@ -267,12 +257,6 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
             return;
         }
 
-        const session = this.sessions.get(input.id!);
-        if (session) {
-            this.sessions.delete(input.id!);
-            session.dispose();
-        }
-
         try {
             await this.client?.removeInput(input.id!);
             this.refresh();
@@ -280,53 +264,6 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
             vscode.window.showErrorMessage(`Could not create Input: ${err.message}`);
             return undefined;
         }
-    }
-
-    handleTextDocumentOpen(doc: vscode.TextDocument) {
-        if (!this.client) {
-            return;
-        }
-
-        const input = this.getInputForDocumentURI(doc.uri);
-        if (!input) {
-            return;
-        }
-
-        this.ensureInputSession(this.client, input, doc.uri);
-    }
-
-    /**
-     * handleTextDocumentChange monitors edits and checks that we have on
-     * ongoing session for docs whose tabs are open.
-     * @param event 
-     */
-    handleTextDocumentChange(event: vscode.TextDocumentChangeEvent) {
-        if (!this.client) {
-            return;
-        }
-        const doc = event.document;
-        const input = this.getInputForDocumentURI(doc.uri);
-        if (!input) {
-            return;
-        }
-
-        this.ensureInputSession(this.client, input, doc.uri);
-    }
-
-    async ensureInputSession(client: InputStreamClient, input: Input, uri: vscode.Uri): Promise<PageSession> {
-        let session = this.sessions.get(uri.fsPath);
-        if (!session) {
-            const action = await vscode.window.showInformationMessage(
-                `Editing "${input.title}"`,
-                ButtonName.Watch);
-            if (action === ButtonName.Watch) {
-                this.openHtmlUrl(input, true);
-            }
-
-            session = new PageSession(client, input, uri, this.onDidInputChange);
-            this.sessions.set(uri.fsPath, session);
-        }
-        return session;
     }
 
     getInputForDocumentURI(uri: vscode.Uri): Input | undefined {
@@ -338,17 +275,6 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
             return;
         }
         return input;
-    }
-
-    handleTextDocumentClose(doc: vscode.TextDocument) {
-        const session = this.sessions.get(doc.uri.fsPath);
-        if (!session) {
-            return;
-        }
-        session.dispose();
-        this.sessions.delete(doc.uri.fsPath);
-
-        console.log(`closed doc: ${doc.uri.fsPath}`);
     }
 
     getInputById(id: string): Input | undefined {

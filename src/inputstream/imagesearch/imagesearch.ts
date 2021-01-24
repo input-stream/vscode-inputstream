@@ -9,7 +9,6 @@ import { SearchImagesRequest } from '../../proto/build/stack/inputstream/v1beta1
 import { Duration } from 'luxon';
 import { ImageSearchRenderer } from './renderer';
 import { SearchImage } from '../../proto/build/stack/inputstream/v1beta1/SearchImage';
-import { PageSession } from '../page/session';
 import { UnsplashImage } from '../../proto/build/stack/inputstream/v1beta1/UnsplashImage';
 
 /**
@@ -18,7 +17,6 @@ import { UnsplashImage } from '../../proto/build/stack/inputstream/v1beta1/Unspl
 export class ImageSearch implements vscode.Disposable {
     protected disposables: vscode.Disposable[] = [];
     protected client: InputStreamClient | undefined;
-    protected session: PageSession | undefined;
     protected webview: ImageSearchWebview | undefined;
     protected renderer = new ImageSearchRenderer();
     protected onDidSearchImageClick = new vscode.EventEmitter<SearchImage>();
@@ -30,21 +28,17 @@ export class ImageSearch implements vscode.Disposable {
     private imagesById = new Map<string, SearchImage>();
 
     constructor(
-        onDidPsClientChange: vscode.Event<InputStreamClient>,
+        onDidInputStreamClientChange: vscode.Event<InputStreamClient>,
     ) {
-        onDidPsClientChange(this.handlePsClientChange, this, this.disposables);
+        onDidInputStreamClientChange(this.handleInputStreamClientChange, this, this.disposables);
         this.disposables.push(this.onDidSearchImageClick);
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.ImageSearch, this.handleCommandImageSearch, this));
         this.onDidSearchImageClick.event(this.handleCommandSearchImageClick, this, this.disposables);
     }
 
-    handlePsClientChange(client: InputStreamClient) {
+    handleInputStreamClientChange(client: InputStreamClient) {
         this.client = client;
-    }
-
-    handlePageSessionChange(session: PageSession | undefined) {
-        this.session = session;
     }
 
     getOrCreateWebview(): ImageSearchWebview {
