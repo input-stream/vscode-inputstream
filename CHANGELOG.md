@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.5.2 (Jan 23, 2021)
+
+- Updates to proto API
+
 ## 0.5.1 (Jan 15, 2021)
 
 - Authentication improvements and other fixes
