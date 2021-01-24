@@ -25,15 +25,6 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
     ) {
         super(ViewName.InputExplorer, onDidInputStreamClientChange);
 
-        this.disposables.push(this.onDidChangeTreeData(() => {
-            if (this.currentInput) {
-                const item = this.getInputById(this.currentInput.id!);
-                if (item) {
-                    this.view.reveal(item);
-                }
-            }
-        }));
-
         this.view.onDidChangeVisibility(this.handleVisibilityChange, this, this.disposables);
 
         onDidInputChange.event(this.handleInputChange, this, this.disposables);
@@ -154,7 +145,6 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
             return this.handleCommandInputOpen(foundItem);
         }
 
-        this.view.reveal(input);
         this.onDidInputChange.fire(input);
 
         const url = `${Scheme.Page}://input.stream/${input.owner}/${input.id}/${input.titleSlug}.md`;
