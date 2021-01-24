@@ -98,6 +98,9 @@ export class InputView extends PsClientTreeDataProvider<Input> {
         if (this.currentInput.title !== input.title) {
             return true;
         }
+        if (this.currentInput.status !== input.status) {
+            return true;
+        }
         return false;
     }
 
