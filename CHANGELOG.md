@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.6.0 (Jan 24, 2021)
+
+- Switch to FileSystemProvider.
+- Change Login Flow (again).
+
 ## 0.5.2 (Jan 23, 2021)
 
 - Updates to proto API
