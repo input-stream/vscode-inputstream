@@ -37,6 +37,7 @@ export interface ProtoGrpcType {
           UnsplashUser: MessageTypeDefinition
           UpdateInputRequest: MessageTypeDefinition
           UpdateInputResponse: MessageTypeDefinition
+          UpdateUserRequest: MessageTypeDefinition
           User: MessageTypeDefinition
           Users: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_UsersClient> & { service: ServiceDefinition }
           WatchInputRequest: MessageTypeDefinition

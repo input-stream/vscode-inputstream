@@ -11,6 +11,7 @@ export enum Telemetry {
     Login = 'input.stream.login',
     DeviceLogin = 'input.stream.deviceLogin',
     Edit = 'input.edit',
+    Create = 'input.create',
 }
 
 export enum BuiltInCommands {

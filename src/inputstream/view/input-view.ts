@@ -25,7 +25,7 @@ export class InputView extends PsClientTreeDataProvider<Input> {
     private items: Input[] | undefined;
     private sessions: Map<string, InputSession> = new Map();
     private currentInput: Input | undefined;
-    
+
     constructor(
         onDidPsClientChange: vscode.Event<PsClient>,
         private cfg: PsServerConfiguration,
@@ -81,8 +81,24 @@ export class InputView extends PsClientTreeDataProvider<Input> {
 
     handleInputChange(input: Input) {
         this._onDidChangeTreeData.fire(input);
+        const shouldRefresh = this.shouldRefreshInputList(input);
         this.currentInput = input;
-        this.refresh();
+        if (shouldRefresh) {
+            this.refresh();
+        }
+    }
+
+    shouldRefreshInputList(input: Input): boolean {
+        if (!this.currentInput) {
+            return false;
+        }
+        if (this.currentInput.id !== input.id) {
+            return false;
+        }
+        if (this.currentInput.title !== input.title) {
+            return true;
+        }
+        return false;
     }
 
     public async getParent(input?: Input): Promise<Input | undefined> {
@@ -102,12 +118,11 @@ export class InputView extends PsClientTreeDataProvider<Input> {
         }
         try {
             const inputs = this.items = await this.client.listInputs({
-                login: this.user.login!,
+                owner: this.user.login!,
             });
             if (!inputs) {
                 return undefined;
             }
-            sortInputsByCreateTime(inputs);
             return inputs;
         } catch (err) {
             console.log(`Could not list Inputs: ${err.message}`);
@@ -122,7 +137,7 @@ export class InputView extends PsClientTreeDataProvider<Input> {
     async handleCommandInputUnpublish(input: Input): Promise<void> {
         this.updateInputStatus(input, InputStatus.STATUS_DRAFT);
     }
-    
+
     async updateInputStatus(input: Input, status: InputStatus) {
         input.status = status;
 
@@ -199,6 +214,7 @@ export class InputView extends PsClientTreeDataProvider<Input> {
         try {
             let request: Input = {
                 status: 'STATUS_DRAFT',
+                owner: this.user.login,
                 login: this.user.login,
                 type: InputType.TYPE_SHORT_POST,
             };
@@ -287,9 +303,8 @@ export class InputView extends PsClientTreeDataProvider<Input> {
         }
 
         try {
-            await this.client?.removeInput(input.login!, input.id!);
+            await this.client?.removeInput(input.id!);
             this.refresh();
-            vscode.window.showInformationMessage(`Removed draft "${title}" (${when})`);
         } catch (err) {
             vscode.window.showErrorMessage(`Could not create Input: ${err.message}`);
             return undefined;

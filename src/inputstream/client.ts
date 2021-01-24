@@ -165,11 +165,11 @@ export class PsClient extends GRPCClient {
         });
     }
 
-    async removeInput(login: string, id: string): Promise<RemoveInputResponse> {
+    async removeInput(id: string): Promise<RemoveInputResponse> {
         return this.unaryCall<Input>('Remove Input', (): Promise<Input> => {
             return new Promise<RemoveInputResponse>((resolve, reject) => {
                 this.inputService.removeInput(
-                    { login, id },
+                    { id },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
                     async (err?: grpc.ServiceError, resp?: RemoveInputResponse) => {

@@ -3,7 +3,7 @@
 import type { FieldMask as _google_protobuf_FieldMask, FieldMask__Output as _google_protobuf_FieldMask__Output } from '../../../../google/protobuf/FieldMask';
 
 export interface WatchInputRequest {
-  'login'?: (string);
+  'owner'?: (string);
   'id'?: (string);
   'mask'?: (_google_protobuf_FieldMask);
   /**
@@ -14,7 +14,7 @@ export interface WatchInputRequest {
 }
 
 export interface WatchInputRequest__Output {
-  'login': (string);
+  'owner': (string);
   'id': (string);
   'mask'?: (_google_protobuf_FieldMask__Output);
   /**

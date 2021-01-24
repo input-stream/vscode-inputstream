@@ -4,10 +4,18 @@ import type { InputFilterOptions as _build_stack_inputstream_v1beta1_InputFilter
 
 export interface ListInputsRequest {
   'filter'?: (_build_stack_inputstream_v1beta1_InputFilterOptions);
+  /**
+   * flag to indicate that the caller would like non-published items.  It is
+   * an error to request this without proper metadata credentials.
+   */
   'wantPrivate'?: (boolean);
 }
 
 export interface ListInputsRequest__Output {
   'filter'?: (_build_stack_inputstream_v1beta1_InputFilterOptions__Output);
+  /**
+   * flag to indicate that the caller would like non-published items.  It is
+   * an error to request this without proper metadata credentials.
+   */
   'wantPrivate': (boolean);
 }

@@ -23,29 +23,13 @@ message LoginResponse {
   google.protobuf.Timestamp expires_at = 5;
 }
 
-message User {
-  string handle = 1;
-  string domain = 2;
-  string login = 3;
-  string name = 4;
-  string avatar_url = 5;
-  string splash_url = 6;
-  string email = 7;
-  bool is_org = 8;
-
-  reserved 9, 10; // was deprecated "customer_id" field
-
-  // if the email of the user has been not been confirmed yet.
-  bool is_unconfirmed = 11;
-}
-
 message DeviceLoginRequest {
   // The name of the client application
   string device_name = 1;
 
-  // refresh_token can be used to request a new access token without expecting
+  // api_token can be used to request a new access token without expecting
   // the user to have to interact with the oauth_url.
-  string refresh_token = 2;
+  string api_token = 2;
 }
 
 message DeviceLoginResponse {
@@ -68,5 +52,18 @@ message DeviceLoginResponse {
 
   // a different token that can be used for retrieving new access tokens.  This
   // is only populated by interacting with the oauth_url.
-  string refresh_token = 6;
+  string api_token = 6;
+}
+
+message User {
+  string handle = 1;
+  string domain = 2;
+  string login = 3;
+  string name = 4;
+  string avatar_url = 5;
+  string splash_url = 6;
+  string email = 7;
+  bool is_org = 8;
+
+  reserved 9, 10; // was deprecated "customer_id" field
 }

@@ -7,8 +7,8 @@ import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
 service Users {
-    rpc CreateUser(CreateUserRequest) returns (User) {};
     rpc GetUser(GetUserRequest) returns (User) {};
+    rpc UpdateUser(UpdateUserRequest) returns (User) {};
     rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {};
 }
 
@@ -35,12 +35,17 @@ message ListUsersResponse {
     repeated User user = 1;
 }
 
+message UpdateUserRequest {
+    User user = 1;
+    google.protobuf.FieldMask mask = 2;
+}
+
 service Inputs {
     rpc CreateInput(CreateInputRequest) returns (Input) {};
+    rpc WatchInput(WatchInputRequest) returns (stream Input) {};
     rpc UpdateInput(UpdateInputRequest) returns (UpdateInputResponse) {};
     rpc RemoveInput(RemoveInputRequest) returns (RemoveInputResponse) {};
     rpc GetInput(GetInputRequest) returns (Input) {};
-    rpc WatchInput(WatchInputRequest) returns (stream Input) {};
     rpc ListInputs(ListInputsRequest) returns (ListInputsResponse) {};
 }
 
@@ -81,12 +86,11 @@ message Input {
     Type type = 9;
     // the post identifier (a simple number)
     int64 pid = 10;
-
     // The status of this input (published or not)
     Status status = 11;
     // The user that published this item.  This is only 
-    // populated after the item is published.
-    User user = 12;
+    // populated via a get operation.
+    User author = 12;
     // The subtitle of the post
     string subtitle = 13;
     // Tags associated with the post
@@ -97,6 +101,8 @@ message Input {
     google.protobuf.Timestamp published_at = 16;
     // the URL where the input can be viewed
     string html_url = 17;
+    // the owner of the input
+    string owner = 18;
 }
 
 message CreateInputRequest {
@@ -114,8 +120,7 @@ message UpdateInputResponse {
 }
 
 message RemoveInputRequest {
-    string login = 1;
-    string id = 2;
+    string id = 1;
 }
 
 message RemoveInputResponse {
@@ -128,9 +133,10 @@ message GetInputRequest {
 }
 
 message WatchInputRequest {
-    string login = 1;
+    string owner = 1;
     string id = 2;
     google.protobuf.FieldMask mask = 3;
+
     // The login token, in the event that the streaming endpoint does not
     // support headers.
     string bearer_token = 4;
@@ -138,20 +144,24 @@ message WatchInputRequest {
 
 message ListInputsRequest {
     InputFilterOptions filter = 1;
+    // flag to indicate that the caller would like non-published items.  It is
+    // an error to request this without proper metadata credentials.
     bool want_private = 2;
 }
 
 message InputFilterOptions {
+    // filter by owner
+    string owner = 1;
     // filter by login name
-    string login = 1;
+    string login = 2;
     // filter by id
-    string id = 2;
+    string id = 3;
     // filter by title_slug
-    string title_slug = 3;
+    string title_slug = 4;
     // filter by tag
-    string tag = 4;
+    string tag = 5;
     // filter by input status
-    Input.Status status = 5;
+    Input.Status status = 6;
 }
 
 message ListInputsResponse {
