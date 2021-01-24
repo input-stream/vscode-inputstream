@@ -9,7 +9,6 @@ import {
     createPsConfiguration,
     loadAuthProtos,
     loadPsProtos,
-    PsConfiguration
 } from './configuration';
 import { FeatureName, ViewName } from './constants';
 import { DeviceLogin } from './device_login';
@@ -18,7 +17,7 @@ import { ImageSearch } from './imagesearch/imagesearch';
 import { UriHandler } from './urihandler';
 import { EmptyView } from './emptyview';
 import { PageFileSystemProvider } from './page/filesystem';
-import { InputView } from './page/treeview';
+import { PageTreeView } from './page/treeview';
 import { LoginTreeDataProvider } from './login/treeview';
 import { TreeDataProvider } from './treedataprovider';
 
@@ -27,13 +26,12 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
 
     private disposables: vscode.Disposable[] = [];
     private closeables: Closeable[] = [];
-    private cfg: PsConfiguration | undefined;
     private client: PsClient | undefined;
     private onDidPsClientChange = new vscode.EventEmitter<PsClient>();
     private onDidInputChange = new vscode.EventEmitter<Input>();
     private authClient: AuthServiceClient | undefined;
     private deviceLogin: DeviceLogin | undefined;
-    private inputView: TreeDataProvider<any> | undefined;
+    private pageTreeView: TreeDataProvider<any> | undefined;
 
     constructor() {
         this.add(this.onDidPsClientChange);
@@ -45,7 +43,7 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
      * @override
      */
     async activate(ctx: vscode.ExtensionContext, config: vscode.WorkspaceConfiguration): Promise<any> {
-        const cfg = this.cfg = await createPsConfiguration(ctx.asAbsolutePath.bind(ctx), ctx.globalStoragePath, config);
+        const cfg = await createPsConfiguration(ctx.asAbsolutePath.bind(ctx), ctx.globalStoragePath, config);
 
         const psProtos = loadPsProtos(cfg.inputstream.protofile);
         const authProtos = loadAuthProtos(cfg.auth.protofile);
@@ -58,7 +56,7 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
             new PageFileSystemProvider(this.onDidPsClientChange.event));
         this.add(
             new ImageSearch(this.onDidPsClientChange.event));
-        this.inputView = this.add(
+        this.pageTreeView = this.add(
             new LoginTreeDataProvider());
         this.deviceLogin = this.add(
             new DeviceLogin(this.authClient));
@@ -80,12 +78,11 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
      * @param user The user that logged in
      */
     protected handleAuthUserChange(user: User) {
-        this.inputView?.dispose();
+        this.pageTreeView?.dispose();
 
-        this.inputView = this.add(
-            new InputView(
+        this.pageTreeView = this.add(
+            new PageTreeView(
                 this.onDidPsClientChange.event,
-                this.cfg!.inputstream,
                 user,
                 this.onDidInputChange,
             ),

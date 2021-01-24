@@ -16,17 +16,15 @@ import { InputContent } from '../../proto/build/stack/inputstream/v1beta1/InputC
 import { PageSession } from './session';
 
 /**
- * Renders a view for a users inputs.  Makes a call to the status
- * endpoint to gather the data.
+ * Renders a view for a user pages.
  */
-export class InputView extends PsClientTreeDataProvider<Input> {
+export class PageTreeView extends PsClientTreeDataProvider<Input> {
     private items: Input[] | undefined;
     private sessions: Map<string, PageSession> = new Map();
     private currentInput: Input | undefined;
 
     constructor(
         onDidPsClientChange: vscode.Event<PsClient>,
-        private cfg: PsServerConfiguration,
         private user: User,
         private onDidInputChange: vscode.EventEmitter<Input>,
     ) {
@@ -74,7 +72,6 @@ export class InputView extends PsClientTreeDataProvider<Input> {
         if (event.visible) {
             this.refresh();
         }
-        // vscode.window.showInformationMessage(`input tree view visible? ${event.visible}`);
     }
 
     handleInputChange(input: Input) {
@@ -426,9 +423,3 @@ interface InputTypeQuickPickItem extends vscode.QuickPickItem {
     type: InputType
 }
 
-function getContentSource(content: InputContent): string {
-    if (content.shortPost) {
-        return content.shortPost.markdown || '';
-    }
-    return '';
-}
