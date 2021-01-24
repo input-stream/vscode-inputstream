@@ -9,7 +9,7 @@ import { SearchImagesRequest } from '../../proto/build/stack/inputstream/v1beta1
 import { Duration } from 'luxon';
 import { ImageSearchRenderer } from './renderer';
 import { SearchImage } from '../../proto/build/stack/inputstream/v1beta1/SearchImage';
-import { InputSession } from '../view/input-session';
+import { InputSession } from '../page/session';
 import { UnsplashImage } from '../../proto/build/stack/inputstream/v1beta1/UnsplashImage';
 
 /**

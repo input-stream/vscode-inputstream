@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { PsClient } from '../client';
+import { PsClient } from './client';
 import { TreeDataProvider } from './treedataprovider';
 
 /**

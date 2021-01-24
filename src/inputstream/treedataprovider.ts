@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CommandName } from '../constants';
+import { CommandName } from './constants';
 
 /**
  * Base class for a tree view with a refresh command.

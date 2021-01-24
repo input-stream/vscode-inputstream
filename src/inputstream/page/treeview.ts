@@ -8,12 +8,12 @@ import { User } from '../../proto/build/stack/auth/v1beta1/User';
 import { Input, _build_stack_inputstream_v1beta1_Input_Type as InputType, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { PsClient } from '../client';
 import { ButtonName, CommandName, ContextValue, Scheme, ThemeIconRss, ViewName } from '../constants';
-import { PsClientTreeDataProvider } from './psclienttreedataprovider';
+import { PsClientTreeDataProvider } from '../psclienttreedataprovider';
 import { BuiltInCommands } from '../../constants';
 import { PsServerConfiguration } from '../configuration';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
 import { InputContent } from '../../proto/build/stack/inputstream/v1beta1/InputContent';
-import { InputSession } from './input-session';
+import { InputSession } from './session';
 
 /**
  * Renders a view for a users inputs.  Makes a call to the status

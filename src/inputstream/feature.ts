@@ -16,11 +16,11 @@ import { DeviceLogin } from './device_login';
 import { Closeable } from './grpcclient';
 import { ImageSearch } from './imagesearch/imagesearch';
 import { UriHandler } from './urihandler';
-import { EmptyView } from './view/emptyview';
-import { InputContentProvider } from './view/input-editor';
-import { InputView } from './view/input-view';
-import { LoginTreeDataProvider } from './view/login-view';
-import { TreeDataProvider } from './view/treedataprovider';
+import { EmptyView } from './emptyview';
+import { InputContentProvider } from './page/filesystem';
+import { InputView } from './page/treeview';
+import { LoginTreeDataProvider } from './login/treeview';
+import { TreeDataProvider } from './treedataprovider';
 
 export class PsFeature implements IExtensionFeature, vscode.Disposable {
     public readonly name = FeatureName;

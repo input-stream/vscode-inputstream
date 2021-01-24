@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { CommandName, ContextValue, ViewName } from '../constants';
-import { TreeDataProvider } from './treedataprovider';
+import { TreeDataProvider } from '../treedataprovider';
 
 export class LoginTreeDataProvider extends TreeDataProvider<vscode.TreeItem> {
     constructor() {
