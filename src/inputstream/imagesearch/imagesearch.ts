@@ -1,7 +1,7 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
 import { event } from 'vscode-common';
-import { PsClient } from '../client';
+import { InputStreamClient } from '../client';
 import { CommandName } from '../constants';
 import { ImageSearchPanel as ImageSearchWebview, ImageSearchRenderProvider, Message } from './webview';
 import { Container } from '../../container';
@@ -17,7 +17,7 @@ import { UnsplashImage } from '../../proto/build/stack/inputstream/v1beta1/Unspl
  */
 export class ImageSearch implements vscode.Disposable {
     protected disposables: vscode.Disposable[] = [];
-    protected client: PsClient | undefined;
+    protected client: InputStreamClient | undefined;
     protected session: PageSession | undefined;
     protected webview: ImageSearchWebview | undefined;
     protected renderer = new ImageSearchRenderer();
@@ -30,7 +30,7 @@ export class ImageSearch implements vscode.Disposable {
     private imagesById = new Map<string, SearchImage>();
 
     constructor(
-        onDidPsClientChange: vscode.Event<PsClient>,
+        onDidPsClientChange: vscode.Event<InputStreamClient>,
     ) {
         onDidPsClientChange(this.handlePsClientChange, this, this.disposables);
         this.disposables.push(this.onDidSearchImageClick);
@@ -39,7 +39,7 @@ export class ImageSearch implements vscode.Disposable {
         this.onDidSearchImageClick.event(this.handleCommandSearchImageClick, this, this.disposables);
     }
 
-    handlePsClientChange(client: PsClient) {
+    handlePsClientChange(client: InputStreamClient) {
         this.client = client;
     }
 

@@ -6,29 +6,27 @@ import { formatTimestampISODate } from '../../common';
 import { InputStep, MultiStepInput } from '../../multiStepInput';
 import { User } from '../../proto/build/stack/auth/v1beta1/User';
 import { Input, _build_stack_inputstream_v1beta1_Input_Type as InputType, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from '../../proto/build/stack/inputstream/v1beta1/Input';
-import { PsClient } from '../client';
+import { InputStreamClient } from '../client';
 import { ButtonName, CommandName, ContextValue, Scheme, ThemeIconRss, ViewName } from '../constants';
-import { PsClientTreeDataProvider } from '../psclienttreedataprovider';
+import { InputStreamClientTreeDataProvider } from '../inputstreamclienttreedataprovider';
 import { BuiltInCommands } from '../../constants';
-import { PsServerConfiguration } from '../configuration';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
-import { InputContent } from '../../proto/build/stack/inputstream/v1beta1/InputContent';
 import { PageSession } from './session';
 
 /**
  * Renders a view for a user pages.
  */
-export class PageTreeView extends PsClientTreeDataProvider<Input> {
+export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
     private items: Input[] | undefined;
     private sessions: Map<string, PageSession> = new Map();
     private currentInput: Input | undefined;
 
     constructor(
-        onDidPsClientChange: vscode.Event<PsClient>,
+        onDidInputStreamClientChange: vscode.Event<InputStreamClient>,
         private user: User,
         private onDidInputChange: vscode.EventEmitter<Input>,
     ) {
-        super(ViewName.InputExplorer, onDidPsClientChange);
+        super(ViewName.InputExplorer, onDidInputStreamClientChange);
 
         this.disposables.push(this.onDidChangeTreeData(() => {
             if (this.currentInput) {
@@ -315,7 +313,7 @@ export class PageTreeView extends PsClientTreeDataProvider<Input> {
         this.ensureInputSession(this.client, input, doc.uri);
     }
 
-    async ensureInputSession(client: PsClient, input: Input, uri: vscode.Uri): Promise<PageSession> {
+    async ensureInputSession(client: InputStreamClient, input: Input, uri: vscode.Uri): Promise<PageSession> {
         let session = this.sessions.get(uri.fsPath);
         if (!session) {
             const action = await vscode.window.showInformationMessage(
@@ -363,7 +361,6 @@ export class PageTreeView extends PsClientTreeDataProvider<Input> {
             id: id,
         });
     }
-
 }
 
 export class InputItem extends vscode.TreeItem {
@@ -394,19 +391,6 @@ export class InputItem extends vscode.TreeItem {
     async getChildren(): Promise<Input[] | undefined> {
         return undefined;
     }
-}
-
-/**
- * Sort the Inputs by creation time with most recent Inputs in front.
- * Array modified in place.
- * @param inputs 
- */
-function sortInputsByCreateTime(inputs: Input[]) {
-    inputs?.sort((a, b) => {
-        const tb = Long.fromValue(b.createdAt!.seconds!).toNumber();
-        const ta = Long.fromValue(a.createdAt!.seconds!).toNumber();
-        return tb - ta;
-    });
 }
 
 function getInputTypeName(type: InputType | undefined): string {

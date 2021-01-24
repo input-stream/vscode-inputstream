@@ -11,10 +11,10 @@ import { ConfigSection } from './constants';
 /**
  * Configuration for the inputstream feature.
  */
-export type PsConfiguration = {
+export type InputStreamConfiguration = {
     verbose: number,
     auth: AuthServerConfiguration,
-    inputstream: PsServerConfiguration,
+    inputstream: InputStreamServerConfiguration,
 };
 
 /**
@@ -30,7 +30,7 @@ export type AuthServerConfiguration = {
 /**
  * Configuration for the license server integration.
  */
-export type PsServerConfiguration = {
+export type InputStreamServerConfiguration = {
     // filename of the license.proto file.
     protofile: string,
     // address of the api server
@@ -41,11 +41,11 @@ export type PsServerConfiguration = {
     baseDir: string,
 };
 
-export async function createPsConfiguration(
+export async function createInputStreamConfiguration(
     asAbsolutePath: (rel: string) => string,
     storagePath: string,
-    config: vscode.WorkspaceConfiguration): Promise<PsConfiguration> {
-    const inputstream: PsServerConfiguration = {
+    config: vscode.WorkspaceConfiguration): Promise<InputStreamConfiguration> {
+    const inputstream: InputStreamServerConfiguration = {
         protofile: config.get<string>(ConfigSection.inputstreamProto,
             asAbsolutePath('./proto/inputstream.proto')),
         address: config.get<string>(ConfigSection.ApiAddress,
@@ -63,7 +63,7 @@ export async function createPsConfiguration(
             'input.stream:443'),
     };
 
-    const cfg: PsConfiguration = {
+    const cfg: InputStreamConfiguration = {
         verbose: config.get<number>(ConfigSection.Verbose, 0),
         auth: auth,
         inputstream: inputstream,

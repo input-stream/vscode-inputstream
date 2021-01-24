@@ -16,7 +16,7 @@ import { InputFilterOptions } from '../proto/build/stack/inputstream/v1beta1/Inp
 
 grpc.setLogVerbosity(grpc.logVerbosity.DEBUG);
 
-export class PsClient extends GRPCClient {
+export class InputStreamClient extends GRPCClient {
     private readonly inputService: InputsClient;
     private readonly imagesService: ImagesClient;
 

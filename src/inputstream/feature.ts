@@ -3,10 +3,10 @@ import { IExtensionFeature } from '../common';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
 import { User } from '../proto/build/stack/auth/v1beta1/User';
 import { Input } from '../proto/build/stack/inputstream/v1beta1/Input';
-import { PsClient as PsClient } from './client';
+import { InputStreamClient as InputStreamClient } from './client';
 import {
     createAuthServiceClient,
-    createPsConfiguration,
+    createInputStreamConfiguration,
     loadAuthProtos,
     loadPsProtos,
 } from './configuration';
@@ -21,20 +21,20 @@ import { PageTreeView } from './page/treeview';
 import { LoginTreeDataProvider } from './login/treeview';
 import { TreeDataProvider } from './treedataprovider';
 
-export class PsFeature implements IExtensionFeature, vscode.Disposable {
+export class InputStreamFeature implements IExtensionFeature, vscode.Disposable {
     public readonly name = FeatureName;
 
     private disposables: vscode.Disposable[] = [];
     private closeables: Closeable[] = [];
-    private client: PsClient | undefined;
-    private onDidPsClientChange = new vscode.EventEmitter<PsClient>();
+    private client: InputStreamClient | undefined;
+    private onDidInputStreamClientChange = new vscode.EventEmitter<InputStreamClient>();
     private onDidInputChange = new vscode.EventEmitter<Input>();
     private authClient: AuthServiceClient | undefined;
     private deviceLogin: DeviceLogin | undefined;
     private pageTreeView: TreeDataProvider<any> | undefined;
 
     constructor() {
-        this.add(this.onDidPsClientChange);
+        this.add(this.onDidInputStreamClientChange);
         this.add(this.onDidInputChange);
         this.add(new UriHandler());
     }
@@ -43,7 +43,7 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
      * @override
      */
     async activate(ctx: vscode.ExtensionContext, config: vscode.WorkspaceConfiguration): Promise<any> {
-        const cfg = await createPsConfiguration(ctx.asAbsolutePath.bind(ctx), ctx.globalStoragePath, config);
+        const cfg = await createInputStreamConfiguration(ctx.asAbsolutePath.bind(ctx), ctx.globalStoragePath, config);
 
         const psProtos = loadPsProtos(cfg.inputstream.protofile);
         const authProtos = loadAuthProtos(cfg.auth.protofile);
@@ -53,9 +53,9 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
         this.closeables.push(this.authClient);
 
         this.add(
-            new PageFileSystemProvider(this.onDidPsClientChange.event));
+            new PageFileSystemProvider(this.onDidInputStreamClientChange.event));
         this.add(
-            new ImageSearch(this.onDidPsClientChange.event));
+            new ImageSearch(this.onDidInputStreamClientChange.event));
         this.pageTreeView = this.add(
             new LoginTreeDataProvider());
         this.deviceLogin = this.add(
@@ -64,8 +64,8 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
         this.deviceLogin.onDidAuthUserChange.event(this.handleAuthUserChange, this, this.disposables);
         this.deviceLogin.onDidLoginTokenChange.event(token => {
             this.client = this.add(
-                new PsClient(psProtos, cfg.inputstream.address, token, () => this.deviceLogin!.refreshAccessToken()));
-            this.onDidPsClientChange.fire(this.client);
+                new InputStreamClient(psProtos, cfg.inputstream.address, token, () => this.deviceLogin!.refreshAccessToken()));
+            this.onDidInputStreamClientChange.fire(this.client);
         }, this.disposables);
 
         this.deviceLogin.restoreSaved();
@@ -82,7 +82,7 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
 
         this.pageTreeView = this.add(
             new PageTreeView(
-                this.onDidPsClientChange.event,
+                this.onDidInputStreamClientChange.event,
                 user,
                 this.onDidInputChange,
             ),

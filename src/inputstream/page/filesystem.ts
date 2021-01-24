@@ -4,32 +4,29 @@ import * as vscode from 'vscode';
 import { Input } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { ShortPostInputContent } from '../../proto/build/stack/inputstream/v1beta1/ShortPostInputContent';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
-import { PsClient } from '../client';
+import { InputStreamClient } from '../client';
 import { Scheme } from '../constants';
 
 /**
- * Document content provider for input pages.
+ * Document content provider for input pages.  Modeled after https://github.com/microsoft/vscode-extension-samples/blob/9b8701dceac5fab83345356743170bca609c87f9/fsprovider-sample/src/fileSystemProvider.ts
  */
 export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSystemProvider {
     protected disposables: vscode.Disposable[] = [];
-    protected client: PsClient | undefined;
+    protected client: InputStreamClient | undefined;
     protected files: Map<string,InputFile> = new Map();
-
     private _emitter = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
-    private _bufferedEvents: vscode.FileChangeEvent[] = [];
-    private _fireSoonHandle?: NodeJS.Timer;
 
     readonly onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = this._emitter.event;
 
     constructor(
-        onDidPsClientChange: vscode.Event<PsClient>,
+        onDidInputStreamClientChange: vscode.Event<InputStreamClient>,
     ) {
-        onDidPsClientChange(this.handlePsClientChange, this, this.disposables);
+        onDidInputStreamClientChange(this.handleInputStreamClientChange, this, this.disposables);
         vscode.workspace.onDidCloseTextDocument(this.handleTextDocumentClose, this, this.disposables);
         this.disposables.push(vscode.workspace.registerFileSystemProvider(Scheme.Page, this, { isCaseSensitive: true }));
     }
 
-    private handlePsClientChange(client: PsClient) {
+    private handleInputStreamClientChange(client: InputStreamClient) {
         this.client = client;
     }
     

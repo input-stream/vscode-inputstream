@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { Input } from '../../proto/build/stack/inputstream/v1beta1/Input';
-import { PsClient } from '../client';
+import { InputStreamClient } from '../client';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
 import { InputContent } from '../../proto/build/stack/inputstream/v1beta1/InputContent';
 import { ShortPostInputContent } from '../../proto/build/stack/inputstream/v1beta1/ShortPostInputContent';
@@ -16,7 +16,7 @@ export class PageSession implements vscode.Disposable {
      * @param uri The URI that represents the file being edited.
      */
     constructor(
-        private client: PsClient,
+        private client: InputStreamClient,
         private input: Input,
         private uri: vscode.Uri,
         private onDidInputChange: vscode.EventEmitter<Input>,
