@@ -9,7 +9,6 @@ import { InputStreamClient } from '../client';
 import { ButtonName, CommandName, ContextValue, Scheme, ThemeIconRss, ViewName } from '../constants';
 import { InputStreamClientTreeDataProvider } from '../inputstreamclienttreedataprovider';
 import { BuiltInCommands } from '../../constants';
-import { FieldMask } from '../../proto/google/protobuf/FieldMask';
 
 /**
  * Renders a view for a user pages.
@@ -41,10 +40,6 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
             vscode.commands.registerCommand(CommandName.InputRemove, this.handleCommandInputRemove, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputOpen, this.handleCommandInputOpen, this));
-        this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputPublish, this.handleCommandInputPublish, this));
-        this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputUnpublish, this.handleCommandInputUnpublish, this));
     }
 
     handleVisibilityChange(event: vscode.TreeViewVisibilityChangeEvent) {
@@ -104,31 +99,6 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
         } catch (err) {
             console.log(`Could not list Inputs: ${err.message}`);
             return undefined;
-        }
-    }
-
-    async handleCommandInputPublish(input: Input): Promise<void> {
-        this.updateInputStatus(input, InputStatus.STATUS_PUBLISHED);
-    }
-
-    async handleCommandInputUnpublish(input: Input): Promise<void> {
-        this.updateInputStatus(input, InputStatus.STATUS_DRAFT);
-    }
-
-    async updateInputStatus(input: Input, status: InputStatus) {
-        input.status = status;
-
-        const mask: FieldMask = {
-            paths: ['status'],
-        };
-
-        try {
-            const response = await this.client?.updateInput(input, mask);
-            if (response?.input) {
-                this.onDidInputChange.fire(response.input);
-            }
-        } catch (err) {
-            vscode.window.showErrorMessage(`Could not update input: ${err.message}`);
         }
     }
 

@@ -53,7 +53,10 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
         this.closeables.push(this.authClient);
 
         this.add(
-            new PageFileSystemProvider(this.onDidInputStreamClientChange.event));
+            new PageFileSystemProvider(
+                this.onDidInputStreamClientChange.event,
+                this.onDidInputChange,
+            ));
         this.add(
             new ImageSearch(this.onDidInputStreamClientChange.event));
         this.pageTreeView = this.add(
