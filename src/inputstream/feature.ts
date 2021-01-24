@@ -16,7 +16,6 @@ import { Closeable } from './grpcclient';
 import { ImageSearch } from './imagesearch/imagesearch';
 import { UriHandler } from './urihandler';
 import { EmptyView } from './emptyview';
-import { PageFileSystemProvider } from './page/filesystem';
 import { PageTreeView } from './page/treeview';
 import { LoginTreeDataProvider } from './login/treeview';
 import { TreeDataProvider } from './treedataprovider';
@@ -55,7 +54,8 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
         const authProtos = loadAuthProtos(cfg.auth.protofile);
 
         this.authClient = createAuthServiceClient(authProtos, cfg.auth.address);
-        this.authClient.getChannel().getTarget();
+        // const target = this.authClient.getChannel().getTarget();
+        // vscode.window.showInformationMessage(`auth target: ${target} (address=${cfg.auth.address})`);
         this.closeables.push(this.authClient);
 
         this.add(

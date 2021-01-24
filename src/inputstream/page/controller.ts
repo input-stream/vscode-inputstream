@@ -149,7 +149,7 @@ export class PageController implements vscode.Disposable {
         return this.openHtmlUrl(file.input);
     }
 
-    async openHtmlUrl(input: Input, watch = false) {
+    async openHtmlUrl(input: Input, watch = true) {
         let target = input.htmlUrl;
         if (!target) {
             target = input.status === InputStatus.STATUS_PUBLISHED ? input.titleSlug : input.id;

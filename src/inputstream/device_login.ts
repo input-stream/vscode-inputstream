@@ -1,7 +1,7 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
 import { isTimestampPast, setCommandContext } from '../common';
-import { ExtensionID } from '../constants';
+import { BuiltInCommands, ExtensionID } from '../constants';
 import { Container } from '../container';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
 import { DeviceLoginResponse } from '../proto/build/stack/auth/v1beta1/DeviceLoginResponse';
@@ -28,9 +28,17 @@ export class DeviceLogin implements vscode.Disposable {
     }
 
     private handleCommandDeviceLogin() {
-        this.deviceLogin();
+        const loginUri = vscode.Uri.parse('https://input.stream/settings/extensions/stackbuild.vscode-inputstream/login');
+        vscode.commands.executeCommand(BuiltInCommands.Open, loginUri);
+        // this.deviceLogin();
     }
 
+    /**
+     * handleCommandLogin responds to the login command; this is typically
+     * triggered by the urihandler for URIs like
+     * vscode://StackBuild.vscode-inputstream/login?token=...
+     * @param token 
+     */
     private handleCommandLogin(token: string) {
         if (!token) {
             return;
@@ -110,8 +118,7 @@ export class DeviceLogin implements vscode.Disposable {
     }
 
     public restoreSaved(): boolean {
-        return this.restoreSavedLoginResponse() ||
-            this.restoreSavedDeviceLoginResponse();
+        return this.restoreSavedLoginResponse();
     }
 
     private restoreSavedLoginResponse(): boolean {

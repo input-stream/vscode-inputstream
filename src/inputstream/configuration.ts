@@ -90,7 +90,7 @@ export function loadInputStreamProtos(protofile: string): InputStreamProtoType {
     return grpc.loadPackageDefinition(protoPackage) as unknown as InputStreamProtoType;
 }
 
-function getGRPCCredentials(address: string): grpc.ChannelCredentials {
+function getChannelCredentials(address: string): grpc.ChannelCredentials {
     if (address.endsWith(':443')) {
         return grpc.credentials.createSsl();
     }
@@ -103,7 +103,7 @@ function getGRPCCredentials(address: string): grpc.ChannelCredentials {
  * @param address The address to connect.
  */
 export function createInputsClient(proto: InputStreamProtoType, address: string): InputsClient {
-    return new proto.build.stack.inputstream.v1beta1.Inputs(address, getGRPCCredentials(address));
+    return new proto.build.stack.inputstream.v1beta1.Inputs(address, getChannelCredentials(address));
 }
 
 /**
@@ -112,6 +112,6 @@ export function createInputsClient(proto: InputStreamProtoType, address: string)
  * @param address The address to connect.
  */
 export function createAuthServiceClient(proto: AuthProtoType, address: string): AuthServiceClient {
-    return new proto.build.stack.auth.v1beta1.AuthService(address, getGRPCCredentials(address));
+    return new proto.build.stack.auth.v1beta1.AuthService(address, getChannelCredentials(address));
 }
 
