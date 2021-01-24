@@ -17,7 +17,7 @@ import { Closeable } from './grpcclient';
 import { ImageSearch } from './imagesearch/imagesearch';
 import { UriHandler } from './urihandler';
 import { EmptyView } from './emptyview';
-import { InputContentProvider } from './page/filesystem';
+import { PageFileSystemProvider } from './page/filesystem';
 import { InputView } from './page/treeview';
 import { LoginTreeDataProvider } from './login/treeview';
 import { TreeDataProvider } from './treedataprovider';
@@ -55,7 +55,7 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
         this.closeables.push(this.authClient);
 
         this.add(
-            new InputContentProvider(this.onDidPsClientChange.event));
+            new PageFileSystemProvider(this.onDidPsClientChange.event));
         this.add(
             new ImageSearch(this.onDidPsClientChange.event));
         this.inputView = this.add(
