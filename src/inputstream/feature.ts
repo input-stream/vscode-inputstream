@@ -3,40 +3,44 @@ import { IExtensionFeature } from '../common';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
 import { User } from '../proto/build/stack/auth/v1beta1/User';
 import { Input } from '../proto/build/stack/inputstream/v1beta1/Input';
-import { PsClient as PsClient } from './client';
+import { InputStreamClient as InputStreamClient } from './client';
 import {
     createAuthServiceClient,
-    createPsConfiguration,
+    createInputStreamConfiguration,
     loadAuthProtos,
-    loadPsProtos,
-    PsConfiguration
+    loadInputStreamProtos,
 } from './configuration';
 import { FeatureName, ViewName } from './constants';
 import { DeviceLogin } from './device_login';
 import { Closeable } from './grpcclient';
 import { ImageSearch } from './imagesearch/imagesearch';
 import { UriHandler } from './urihandler';
-import { EmptyView } from './view/emptyview';
-import { InputView } from './view/input-view';
-import { LoginTreeDataProvider } from './view/login-view';
-import { TreeDataProvider } from './view/treedataprovider';
+import { EmptyView } from './emptyview';
+import { PageTreeView } from './page/treeview';
+import { LoginTreeDataProvider } from './login/treeview';
+import { TreeDataProvider } from './treedataprovider';
+import { PageController } from './page/controller';
 
-export class PsFeature implements IExtensionFeature, vscode.Disposable {
+export class InputStreamFeature implements IExtensionFeature, vscode.Disposable {
     public readonly name = FeatureName;
 
     private disposables: vscode.Disposable[] = [];
     private closeables: Closeable[] = [];
-    private cfg: PsConfiguration | undefined;
-    private client: PsClient | undefined;
-    private onDidPsClientChange = new vscode.EventEmitter<PsClient>();
+    private client: InputStreamClient | undefined;
+    private onDidInputStreamClientChange = new vscode.EventEmitter<InputStreamClient>();
     private onDidInputChange = new vscode.EventEmitter<Input>();
+    private onDidInputCreate = new vscode.EventEmitter<Input>();
+    private onDidInputRemove = new vscode.EventEmitter<Input>();
     private authClient: AuthServiceClient | undefined;
     private deviceLogin: DeviceLogin | undefined;
-    private inputView: TreeDataProvider<any> | undefined;
+    private pageTreeView: TreeDataProvider<any> | undefined;
+    private pageController: PageController | undefined;
 
     constructor() {
-        this.add(this.onDidPsClientChange);
+        this.add(this.onDidInputStreamClientChange);
         this.add(this.onDidInputChange);
+        this.add(this.onDidInputCreate);
+        this.add(this.onDidInputRemove);
         this.add(new UriHandler());
     }
 
@@ -44,18 +48,19 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
      * @override
      */
     async activate(ctx: vscode.ExtensionContext, config: vscode.WorkspaceConfiguration): Promise<any> {
-        const cfg = this.cfg = await createPsConfiguration(ctx.asAbsolutePath.bind(ctx), ctx.globalStoragePath, config);
+        const cfg = await createInputStreamConfiguration(ctx.asAbsolutePath.bind(ctx), ctx.globalStoragePath, config);
 
-        const psProtos = loadPsProtos(cfg.inputstream.protofile);
+        const inputStreamProtos = loadInputStreamProtos(cfg.inputstream.protofile);
         const authProtos = loadAuthProtos(cfg.auth.protofile);
 
         this.authClient = createAuthServiceClient(authProtos, cfg.auth.address);
-        this.authClient.getChannel().getTarget();
+        // const target = this.authClient.getChannel().getTarget();
+        // vscode.window.showInformationMessage(`auth target: ${target} (address=${cfg.auth.address})`);
         this.closeables.push(this.authClient);
 
         this.add(
-            new ImageSearch(this.onDidPsClientChange.event));
-        this.inputView = this.add(
+            new ImageSearch(this.onDidInputStreamClientChange.event));
+        this.pageTreeView = this.add(
             new LoginTreeDataProvider());
         this.deviceLogin = this.add(
             new DeviceLogin(this.authClient));
@@ -63,8 +68,8 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
         this.deviceLogin.onDidAuthUserChange.event(this.handleAuthUserChange, this, this.disposables);
         this.deviceLogin.onDidLoginTokenChange.event(token => {
             this.client = this.add(
-                new PsClient(psProtos, cfg.inputstream.address, token, () => this.deviceLogin!.refreshAccessToken()));
-            this.onDidPsClientChange.fire(this.client);
+                new InputStreamClient(inputStreamProtos, cfg.inputstream.address, token, () => this.deviceLogin!.refreshAccessToken()));
+            this.onDidInputStreamClientChange.fire(this.client);
         }, this.disposables);
 
         this.deviceLogin.restoreSaved();
@@ -77,14 +82,25 @@ export class PsFeature implements IExtensionFeature, vscode.Disposable {
      * @param user The user that logged in
      */
     protected handleAuthUserChange(user: User) {
-        this.inputView?.dispose();
+        this.pageTreeView?.dispose();
+        this.pageController?.dispose();
 
-        this.inputView = this.add(
-            new InputView(
-                this.onDidPsClientChange.event,
-                this.cfg!.inputstream,
+        this.pageController = this.add(
+            new PageController(
                 user,
+                this.onDidInputStreamClientChange,
                 this.onDidInputChange,
+                this.onDidInputCreate,
+                this.onDidInputRemove,
+            ));
+
+        this.pageTreeView = this.add(
+            new PageTreeView(
+                user,
+                this.onDidInputStreamClientChange.event,
+                this.onDidInputChange.event,
+                this.onDidInputCreate.event,
+                this.onDidInputRemove.event,
             ),
         );
     }

@@ -4,12 +4,12 @@ import { IExtensionFeature } from './common';
 import { BuiltInCommands, Telemetry } from './constants';
 import { Container } from './container';
 import { CommandName } from './inputstream/constants';
-import { PsFeature } from './inputstream/feature';
+import { InputStreamFeature } from './inputstream/feature';
 
 const api = new API();
 
 const features: IExtensionFeature[] = [
-	new PsFeature(),
+	new InputStreamFeature(),
 ];
 
 export function activate(ctx: vscode.ExtensionContext) {

@@ -6,6 +6,10 @@ export enum ViewName {
     InputExplorer = 'input.stream.inputExplorer',
 }
 
+export enum Scheme {
+    Page = 'page',
+}
+
 export enum ConfigSection {
     AuthProto = 'auth.proto',
     inputstreamProto = 'inputstream.proto',

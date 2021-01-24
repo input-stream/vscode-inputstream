@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
-import { CommandName, ContextValue, ViewName } from '../constants';
-import { TreeDataProvider } from './treedataprovider';
+import { BuiltInCommands } from '../../constants';
+import { ContextValue, ViewName } from '../constants';
+import { TreeDataProvider } from '../treedataprovider';
 
 export class LoginTreeDataProvider extends TreeDataProvider<vscode.TreeItem> {
     constructor() {
@@ -8,13 +9,16 @@ export class LoginTreeDataProvider extends TreeDataProvider<vscode.TreeItem> {
     }
 
     async getRootItems(): Promise<vscode.TreeItem[]> {
+        const loginUri = vscode.Uri.parse('https://input.stream/settings/extensions/stackbuild.vscode-inputstream/login');
+
         const item = new vscode.TreeItem('Login');
         item.contextValue = ContextValue.Login,
         item.label = 'Login',
-        item.description = 'Please click to login and edit items',
+        item.description = 'Click to login',
         item.command = {
             title: 'Login',
-            command: CommandName.DeviceLogin,
+            command: BuiltInCommands.Open,
+            arguments: [loginUri],
         };
 
         return [item];

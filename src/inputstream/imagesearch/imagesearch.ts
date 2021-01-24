@@ -1,7 +1,7 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
 import { event } from 'vscode-common';
-import { PsClient } from '../client';
+import { InputStreamClient } from '../client';
 import { CommandName } from '../constants';
 import { ImageSearchPanel as ImageSearchWebview, ImageSearchRenderProvider, Message } from './webview';
 import { Container } from '../../container';
@@ -9,7 +9,6 @@ import { SearchImagesRequest } from '../../proto/build/stack/inputstream/v1beta1
 import { Duration } from 'luxon';
 import { ImageSearchRenderer } from './renderer';
 import { SearchImage } from '../../proto/build/stack/inputstream/v1beta1/SearchImage';
-import { InputSession } from '../view/input-session';
 import { UnsplashImage } from '../../proto/build/stack/inputstream/v1beta1/UnsplashImage';
 
 /**
@@ -17,8 +16,7 @@ import { UnsplashImage } from '../../proto/build/stack/inputstream/v1beta1/Unspl
  */
 export class ImageSearch implements vscode.Disposable {
     protected disposables: vscode.Disposable[] = [];
-    protected client: PsClient | undefined;
-    protected session: InputSession | undefined;
+    protected client: InputStreamClient | undefined;
     protected webview: ImageSearchWebview | undefined;
     protected renderer = new ImageSearchRenderer();
     protected onDidSearchImageClick = new vscode.EventEmitter<SearchImage>();
@@ -30,21 +28,17 @@ export class ImageSearch implements vscode.Disposable {
     private imagesById = new Map<string, SearchImage>();
 
     constructor(
-        onDidPsClientChange: vscode.Event<PsClient>,
+        onDidInputStreamClientChange: vscode.Event<InputStreamClient>,
     ) {
-        onDidPsClientChange(this.handlePsClientChange, this, this.disposables);
+        onDidInputStreamClientChange(this.handleInputStreamClientChange, this, this.disposables);
         this.disposables.push(this.onDidSearchImageClick);
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.ImageSearch, this.handleCommandImageSearch, this));
         this.onDidSearchImageClick.event(this.handleCommandSearchImageClick, this, this.disposables);
     }
 
-    handlePsClientChange(client: PsClient) {
+    handleInputStreamClientChange(client: InputStreamClient) {
         this.client = client;
-    }
-
-    handleInputSessionChange(session: InputSession | undefined) {
-        this.session = session;
     }
 
     getOrCreateWebview(): ImageSearchWebview {

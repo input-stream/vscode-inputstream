@@ -5,16 +5,16 @@ import { resolveHome } from '../common';
 import { ProtoGrpcType as AuthProtoType } from '../proto/auth';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
 import { InputsClient } from '../proto/build/stack/inputstream/v1beta1/Inputs';
-import { ProtoGrpcType as PsProtoType } from '../proto/inputstream';
+import { ProtoGrpcType as InputStreamProtoType } from '../proto/inputstream';
 import { ConfigSection } from './constants';
 
 /**
  * Configuration for the inputstream feature.
  */
-export type PsConfiguration = {
+export type InputStreamConfiguration = {
     verbose: number,
     auth: AuthServerConfiguration,
-    inputstream: PsServerConfiguration,
+    inputstream: InputStreamServerConfiguration,
 };
 
 /**
@@ -30,7 +30,7 @@ export type AuthServerConfiguration = {
 /**
  * Configuration for the license server integration.
  */
-export type PsServerConfiguration = {
+export type InputStreamServerConfiguration = {
     // filename of the license.proto file.
     protofile: string,
     // address of the api server
@@ -41,11 +41,11 @@ export type PsServerConfiguration = {
     baseDir: string,
 };
 
-export async function createPsConfiguration(
+export async function createInputStreamConfiguration(
     asAbsolutePath: (rel: string) => string,
     storagePath: string,
-    config: vscode.WorkspaceConfiguration): Promise<PsConfiguration> {
-    const inputstream: PsServerConfiguration = {
+    config: vscode.WorkspaceConfiguration): Promise<InputStreamConfiguration> {
+    const inputstream: InputStreamServerConfiguration = {
         protofile: config.get<string>(ConfigSection.inputstreamProto,
             asAbsolutePath('./proto/inputstream.proto')),
         address: config.get<string>(ConfigSection.ApiAddress,
@@ -63,7 +63,7 @@ export async function createPsConfiguration(
             'input.stream:443'),
     };
 
-    const cfg: PsConfiguration = {
+    const cfg: InputStreamConfiguration = {
         verbose: config.get<number>(ConfigSection.Verbose, 0),
         auth: auth,
         inputstream: inputstream,
@@ -81,16 +81,16 @@ export function loadAuthProtos(protofile: string): AuthProtoType {
     return grpc.loadPackageDefinition(protoPackage) as unknown as AuthProtoType;
 }
 
-export function loadPsProtos(protofile: string): PsProtoType {
+export function loadInputStreamProtos(protofile: string): InputStreamProtoType {
     const protoPackage = loader.loadSync(protofile, {
         keepCase: false,
         defaults: false,
         oneofs: true
     });
-    return grpc.loadPackageDefinition(protoPackage) as unknown as PsProtoType;
+    return grpc.loadPackageDefinition(protoPackage) as unknown as InputStreamProtoType;
 }
 
-function getGRPCCredentials(address: string): grpc.ChannelCredentials {
+function getChannelCredentials(address: string): grpc.ChannelCredentials {
     if (address.endsWith(':443')) {
         return grpc.credentials.createSsl();
     }
@@ -102,8 +102,8 @@ function getGRPCCredentials(address: string): grpc.ChannelCredentials {
  * 
  * @param address The address to connect.
  */
-export function createInputsClient(proto: PsProtoType, address: string): InputsClient {
-    return new proto.build.stack.inputstream.v1beta1.Inputs(address, getGRPCCredentials(address));
+export function createInputsClient(proto: InputStreamProtoType, address: string): InputsClient {
+    return new proto.build.stack.inputstream.v1beta1.Inputs(address, getChannelCredentials(address));
 }
 
 /**
@@ -112,6 +112,6 @@ export function createInputsClient(proto: PsProtoType, address: string): InputsC
  * @param address The address to connect.
  */
 export function createAuthServiceClient(proto: AuthProtoType, address: string): AuthServiceClient {
-    return new proto.build.stack.auth.v1beta1.AuthService(address, getGRPCCredentials(address));
+    return new proto.build.stack.auth.v1beta1.AuthService(address, getChannelCredentials(address));
 }
 
