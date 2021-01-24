@@ -13,7 +13,7 @@ import { BuiltInCommands } from '../../constants';
 import { PsServerConfiguration } from '../configuration';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
 import { InputContent } from '../../proto/build/stack/inputstream/v1beta1/InputContent';
-import { InputSession } from './session';
+import { PageSession } from './session';
 
 /**
  * Renders a view for a users inputs.  Makes a call to the status
@@ -21,7 +21,7 @@ import { InputSession } from './session';
  */
 export class InputView extends PsClientTreeDataProvider<Input> {
     private items: Input[] | undefined;
-    private sessions: Map<string, InputSession> = new Map();
+    private sessions: Map<string, PageSession> = new Map();
     private currentInput: Input | undefined;
 
     constructor(
@@ -318,7 +318,7 @@ export class InputView extends PsClientTreeDataProvider<Input> {
         this.ensureInputSession(this.client, input, doc.uri);
     }
 
-    async ensureInputSession(client: PsClient, input: Input, uri: vscode.Uri): Promise<InputSession> {
+    async ensureInputSession(client: PsClient, input: Input, uri: vscode.Uri): Promise<PageSession> {
         let session = this.sessions.get(uri.fsPath);
         if (!session) {
             const action = await vscode.window.showInformationMessage(
@@ -328,7 +328,7 @@ export class InputView extends PsClientTreeDataProvider<Input> {
                 this.openHtmlUrl(input, true);
             }
 
-            session = new InputSession(client, input, uri, this.onDidInputChange);
+            session = new PageSession(client, input, uri, this.onDidInputChange);
             this.sessions.set(uri.fsPath, session);
         }
         return session;

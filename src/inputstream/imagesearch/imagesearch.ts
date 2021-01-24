@@ -9,7 +9,7 @@ import { SearchImagesRequest } from '../../proto/build/stack/inputstream/v1beta1
 import { Duration } from 'luxon';
 import { ImageSearchRenderer } from './renderer';
 import { SearchImage } from '../../proto/build/stack/inputstream/v1beta1/SearchImage';
-import { InputSession } from '../page/session';
+import { PageSession } from '../page/session';
 import { UnsplashImage } from '../../proto/build/stack/inputstream/v1beta1/UnsplashImage';
 
 /**
@@ -18,7 +18,7 @@ import { UnsplashImage } from '../../proto/build/stack/inputstream/v1beta1/Unspl
 export class ImageSearch implements vscode.Disposable {
     protected disposables: vscode.Disposable[] = [];
     protected client: PsClient | undefined;
-    protected session: InputSession | undefined;
+    protected session: PageSession | undefined;
     protected webview: ImageSearchWebview | undefined;
     protected renderer = new ImageSearchRenderer();
     protected onDidSearchImageClick = new vscode.EventEmitter<SearchImage>();
@@ -43,7 +43,7 @@ export class ImageSearch implements vscode.Disposable {
         this.client = client;
     }
 
-    handleInputSessionChange(session: InputSession | undefined) {
+    handlePageSessionChange(session: PageSession | undefined) {
         this.session = session;
     }
 

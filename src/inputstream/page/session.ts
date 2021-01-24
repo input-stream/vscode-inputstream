@@ -8,7 +8,7 @@ import { ShortPostInputContent } from '../../proto/build/stack/inputstream/v1bet
 /**
  * Handles updates for a single document editing session.
  */
-export class InputSession implements vscode.Disposable {
+export class PageSession implements vscode.Disposable {
     private disposables: vscode.Disposable[] = [];
 
     /**
