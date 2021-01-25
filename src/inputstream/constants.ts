@@ -1,4 +1,6 @@
+import { stringify } from 'querystring';
 import * as vscode from 'vscode';
+import { Input } from '../proto/build/stack/inputstream/v1beta1/Input';
 
 export const FeatureName = 'input.stream';
 
@@ -84,4 +86,13 @@ export enum ButtonName {
     Confirm = 'Confirm',
     Retry = 'Retry',
     Watch = 'Watch on https://input.stream',
+}
+
+export function getInputURI(input: Input): vscode.Uri {
+    const url = `${Scheme.Page}://input.stream/${input.owner}/${input.id}/${input.titleSlug}.md`;
+    return vscode.Uri.parse(url);
+}
+
+export function isInput(input: unknown): input is Input {
+    return typeof (input as Input).titleSlug === 'string';
 }

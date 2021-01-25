@@ -9,7 +9,7 @@ import {
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
 import { InputStreamClient } from '../client';
-import { ButtonName, CommandName } from '../constants';
+import { ButtonName, CommandName, getInputURI, isInput } from '../constants';
 import { PageFileSystemProvider } from './filesystem';
 import { User } from '../../proto/build/stack/auth/v1beta1/User';
 
@@ -144,9 +144,12 @@ export class PageController implements vscode.Disposable {
         this.updateInputStatus(file.input, InputStatus.STATUS_DRAFT);
     }
 
-    async handleCommandInputLink(uri: vscode.Uri) {
-        const file = await this.fs.getFile(uri);
-        return this.openHtmlUrl(file.input);
+    async handleCommandInputLink(inputOrUri: vscode.Uri | Input) {
+        if (isInput(inputOrUri)) {
+            this.handleCommandInputLink(getInputURI(inputOrUri as Input));
+        }
+        const file = await this.fs.getFile(inputOrUri as vscode.Uri);
+        return this.openHtmlUrl(file.input);    
     }
 
     async openHtmlUrl(input: Input, watch = true) {

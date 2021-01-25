@@ -142,7 +142,7 @@ export class ImageSearch implements vscode.Disposable {
             const timeoutID = setTimeout(() => {
                 webview.onDidChangeHTMLSummary.fire('Timed out.');
                 webview.onDidChangeHTMLResults.fire('');
-            }, 1000);
+            }, 10000);
 
             try {
                 // Perform the search and clear the timeout set above.
