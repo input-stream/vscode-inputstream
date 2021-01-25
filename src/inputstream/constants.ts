@@ -1,4 +1,3 @@
-import { stringify } from 'querystring';
 import * as vscode from 'vscode';
 import { Input } from '../proto/build/stack/inputstream/v1beta1/Input';
 
