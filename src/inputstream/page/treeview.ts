@@ -10,7 +10,7 @@ import {
     _build_stack_inputstream_v1beta1_Input_Status as InputStatus
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { InputStreamClient } from '../client';
-import { CommandName, ContextValue, Scheme, ThemeIconRss, ViewName } from '../constants';
+import { CommandName, ContextValue, getInputURI, Scheme, ThemeIconRss, ViewName } from '../constants';
 import { InputStreamClientTreeDataProvider } from '../inputstreamclienttreedataprovider';
 
 /**
@@ -125,10 +125,8 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
             return this.handleCommandInputOpen(foundItem);
         }
 
-        const url = `${Scheme.Page}://input.stream/${input.owner}/${input.id}/${input.titleSlug}.md`;
-        const uri = vscode.Uri.parse(url);
-
-        return vscode.commands.executeCommand(BuiltInCommands.Open, uri);
+        return vscode.commands.executeCommand(
+            BuiltInCommands.Open, getInputURI(input));
     }
 
     private getInputById(id: string): Input | undefined {
