@@ -5,6 +5,7 @@ export const FeatureName = 'input.stream';
 
 export enum ViewName {
     InputExplorer = 'input.stream.inputExplorer',
+    AccountExplorer = 'input.stream.accountExplorer',
 }
 
 export enum Scheme {
