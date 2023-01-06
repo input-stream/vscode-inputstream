@@ -17,7 +17,7 @@ import { ImageSearch } from './imagesearch/imagesearch';
 import { UriHandler } from './urihandler';
 import { EmptyView } from './emptyview';
 import { PageTreeView } from './page/treeview';
-import { LoginTreeDataProvider } from './login/treeview';
+import { AccountTreeDataProvider } from './login/treeview';
 import { TreeDataProvider } from './treedataprovider';
 import { PageController } from './page/controller';
 
@@ -33,6 +33,7 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
     private onDidInputRemove = new vscode.EventEmitter<Input>();
     private authClient: AuthServiceClient | undefined;
     private deviceLogin: DeviceLogin | undefined;
+    private accountTreeView: AccountTreeDataProvider | undefined;
     private pageTreeView: TreeDataProvider<any> | undefined;
     private pageController: PageController | undefined;
 
@@ -60,8 +61,8 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
 
         this.add(
             new ImageSearch(this.onDidInputStreamClientChange.event));
-        this.pageTreeView = this.add(
-            new LoginTreeDataProvider());
+        this.accountTreeView = this.add(
+            new AccountTreeDataProvider());
         this.deviceLogin = this.add(
             new DeviceLogin(this.authClient));
 
@@ -82,8 +83,10 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
      * @param user The user that logged in
      */
     protected handleAuthUserChange(user: User) {
-        this.pageTreeView?.dispose();
-        this.pageController?.dispose();
+        this.accountTreeView!.handleAuthUserChange(user);
+
+        const oldPageTreeView = this.pageTreeView;
+        const oldPageController = this.pageController;
 
         this.pageController = this.add(
             new PageController(
@@ -103,6 +106,13 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
                 this.onDidInputRemove.event,
             ),
         );
+
+        if (oldPageController) {
+            oldPageController.dispose();
+        }
+        if (oldPageTreeView) {
+            oldPageTreeView.dispose();
+        }
     }
 
     public deactivate() {
@@ -112,6 +122,7 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
         // implementations declared in the package.json to avoid the 'no tree
         // view with id ...' error.
         new EmptyView(ViewName.InputExplorer, this.disposables);
+        new EmptyView(ViewName.AccountExplorer, this.disposables);
     }
 
     protected add<T extends vscode.Disposable>(disposable: T): T {

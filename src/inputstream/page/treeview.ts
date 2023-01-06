@@ -10,11 +10,11 @@ import {
     _build_stack_inputstream_v1beta1_Input_Status as InputStatus
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { InputStreamClient } from '../client';
-import { CommandName, ContextValue, getInputURI, Scheme, ThemeIconRss, ViewName } from '../constants';
+import { CommandName, ContextValue, getInputURI, ThemeIconRss, ViewName } from '../constants';
 import { InputStreamClientTreeDataProvider } from '../inputstreamclienttreedataprovider';
 
 /**
- * Renders a view for a user pages.
+ * Renders a view for user pages.
  */
 export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
     private items: Input[] | undefined;
@@ -107,7 +107,9 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
             }
             return inputs;
         } catch (err) {
-            console.log(`Could not list Inputs: ${err.message}`);
+            if (err instanceof Error) {
+                console.log(`Could not list Inputs: ${err.message}`);
+            }
             return undefined;
         }
     }

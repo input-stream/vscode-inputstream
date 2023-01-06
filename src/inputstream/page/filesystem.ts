@@ -65,9 +65,14 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
             const input = await this.client.getInput({ login, id }, mask);
             return new InputFile(input!);
         } catch (err) {
-            vscode.window.showErrorMessage(`Could not get input content: ${err.message}`);
-            return err;
+            if (err instanceof Error) {
+                vscode.window.showErrorMessage(`Could not get input content: ${err.message}`);
+                throw err;
+            }
         }
+
+        // TODO(pcj): remove this, we are only fooling the compiler
+        return new InputFile({} as Input);
     }
 
     protected async createFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {

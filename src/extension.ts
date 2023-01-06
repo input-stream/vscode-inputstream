@@ -14,10 +14,10 @@ const features: IExtensionFeature[] = [
 
 export function activate(ctx: vscode.ExtensionContext) {
 	Container.initialize(ctx);
-	
+
 	ctx.subscriptions.push(
 		vscode.commands.registerCommand(
-			CommandName.OpenSetting, 
+			CommandName.OpenSetting,
 			openExtensionSetting));
 
 	Container.telemetry.sendTelemetryEvent(Telemetry.ExtensionActivate);
@@ -39,15 +39,14 @@ function setup(context: vscode.ExtensionContext, feature: IExtensionFeature) {
 		console.log(`skipping feature ${feature.name} (not enabled)`);
 		return;
 	}
-
-	feature.activate(context, config).catch(err => {
+	feature.activate(context, config).then(() => {
+		Container.telemetry.sendTelemetryEvent(Telemetry.FeatureActivate, {
+			'feature': feature.name,
+		});
+	}).catch(err => {
 		vscode.window.showErrorMessage(
 			`could not activate feature "${feature.name}": ${err}`,
 		);
-	});
-
-	Container.telemetry.sendTelemetryEvent(Telemetry.FeatureActivate, {
-		'feature': feature.name,
 	});
 }
 
