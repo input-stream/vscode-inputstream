@@ -12,7 +12,7 @@ export class Container {
     public static buildEventType: Promise<protobuf.Type>;
     public static debugEventType: Promise<protobuf.Type>;
     public static debugRequestType: Promise<protobuf.Type>;
-    
+
     static initialize(context: vscode.ExtensionContext) {
         Container._context = context;
         this.initializeTelemetry(context);
@@ -38,6 +38,10 @@ export class Container {
 
     static mediaIconPath(name: MediaIconName): string {
         return path.join(Container._context.extensionPath, 'media', name);
+    }
+
+    static scriptPath(name: string): string {
+        return path.join(Container._context.extensionPath, 'scripts', name);
     }
 
     static dispose() {

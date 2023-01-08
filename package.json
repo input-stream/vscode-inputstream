@@ -26,12 +26,14 @@
         "Other"
     ],
     "activationEvents": [
-        "onUri",
-        "onView:input.stream.inputExplorer",
-        "onView:input.stream.accountExplorer",
-        "onCommand:input.stream.login",
         "onCommand:input.stream.deviceLogin",
-        "onCommand:input.stream.image.search"
+        "onCommand:input.stream.image.paste",
+        "onCommand:input.stream.image.search",
+        "onCommand:input.stream.login",
+        "onFileSystem:page",
+        "onUri",
+        "onView:input.stream.accountExplorer",
+        "onView:input.stream.inputExplorer"
     ],
     "engines": {
         "vscode": "^1.45.0"
@@ -95,6 +97,12 @@
                     "dark": "media/unsplash-dark.svg",
                     "light": "media/unsplash-light.svg"
                 }
+            },
+            {
+                "category": "inputstream",
+                "command": "input.stream.image.paste",
+                "title": "Stream: Paste Image",
+                "icon": "$(clippy)"
             },
             {
                 "category": "inputstream",

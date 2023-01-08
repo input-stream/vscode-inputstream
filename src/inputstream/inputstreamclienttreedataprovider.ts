@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
-import { InputStreamClient } from './client';
+import { InputStreamClient } from './inputStreamClient';
 import { TreeDataProvider } from './treedataprovider';
 
 /**
  * Base class for a view that interacts with a gRPC endpoint and produces tree
  * output.
  */
-export abstract class InputStreamClientTreeDataProvider<T> extends TreeDataProvider<T> {
+export abstract class InputStreamClientTreeDataProvider<T extends vscode.TreeItem> extends TreeDataProvider<T> {
     protected client: InputStreamClient | undefined;
 
     constructor(

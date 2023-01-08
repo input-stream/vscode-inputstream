@@ -1,7 +1,7 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
 import { event } from 'vscode-common';
-import { InputStreamClient } from '../client';
+import { InputStreamClient } from '../inputStreamClient';
 import { CommandName } from '../constants';
 import { ImageSearchPanel as ImageSearchWebview, ImageSearchRenderProvider, Message } from './webview';
 import { Container } from '../../container';

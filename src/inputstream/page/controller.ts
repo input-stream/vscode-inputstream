@@ -7,11 +7,11 @@ import {
     _build_stack_inputstream_v1beta1_Input_Type as InputType,
     _build_stack_inputstream_v1beta1_Input_Status as InputStatus
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
-import { FieldMask } from '../../proto/google/protobuf/FieldMask';
-import { InputStreamClient } from '../client';
+import { InputStreamClient } from '../inputStreamClient';
 import { ButtonName, CommandName, getInputURI, isInput } from '../constants';
 import { PageFileSystemProvider } from './filesystem';
 import { User } from '../../proto/build/stack/auth/v1beta1/User';
+import { BytesClient } from '../byteStreamClient';
 
 /**
  * Controller for page commands.
@@ -24,12 +24,17 @@ export class PageController implements vscode.Disposable {
     constructor(
         private user: User,
         onDidInputStreamClientChange: vscode.EventEmitter<InputStreamClient>,
+        onDidByteStreamClientChange: vscode.EventEmitter<BytesClient>,
         private onDidInputChange: vscode.EventEmitter<Input>,
         private onDidInputCreate: vscode.EventEmitter<Input>,
         private onDidInputRemove: vscode.EventEmitter<Input>,
     ) {
         onDidInputStreamClientChange.event(this.handleInputStreamClientChange, this, this.disposables);
-        this.fs = new PageFileSystemProvider(onDidInputStreamClientChange.event, onDidInputChange);
+
+        this.fs = new PageFileSystemProvider(
+            onDidInputStreamClientChange.event,
+            onDidByteStreamClientChange.event,
+            onDidInputChange);
         this.disposables.push(this.fs);
 
         this.disposables.push(
@@ -42,6 +47,10 @@ export class PageController implements vscode.Disposable {
             vscode.commands.registerCommand(CommandName.InputPublish, this.handleCommandInputPublish, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputUnpublish, this.handleCommandInputUnpublish, this));
+    }
+
+    public filesystem(): vscode.FileSystem {
+        return this.fs.filesystem();
     }
 
     private handleInputStreamClientChange(client: InputStreamClient) {
@@ -110,7 +119,9 @@ export class PageController implements vscode.Disposable {
             this.onDidInputCreate.fire(input);
             vscode.commands.executeCommand(CommandName.InputOpen, input.id);
         } catch (err) {
-            vscode.window.showErrorMessage(`Could not create Input: ${err.message}`);
+            if (err instanceof Error) {
+                vscode.window.showErrorMessage(`Could not create Input: ${err.message}`);
+            }
             return undefined;
         }
     }
@@ -129,7 +140,9 @@ export class PageController implements vscode.Disposable {
             await this.client?.removeInput(input.id!);
             this.onDidInputRemove.fire(input);
         } catch (err) {
-            vscode.window.showErrorMessage(`Could not create Input: ${err.message}`);
+            if (err instanceof Error) {
+                vscode.window.showErrorMessage(`Could not create Input: ${err.message}`);
+            }
             return undefined;
         }
     }
@@ -149,7 +162,7 @@ export class PageController implements vscode.Disposable {
             this.handleCommandInputLink(getInputURI(inputOrUri as Input));
         }
         const file = await this.fs.getFile(inputOrUri as vscode.Uri);
-        return this.openHtmlUrl(file.input);    
+        return this.openHtmlUrl(file.input);
     }
 
     async openHtmlUrl(input: Input, watch = true) {
@@ -167,17 +180,17 @@ export class PageController implements vscode.Disposable {
     async updateInputStatus(input: Input, status: InputStatus) {
         input.status = status;
 
-        const mask: FieldMask = {
-            paths: ['status'],
-        };
-
         try {
-            const response = await this.client?.updateInput(input, mask);
+            const response = await this.client?.updateInput(input, {
+                paths: ['status'],
+            });
             if (response?.input) {
                 this.onDidInputChange.fire(response.input);
             }
         } catch (err) {
-            vscode.window.showErrorMessage(`Could not update input: ${err.message}`);
+            if (err instanceof Error) {
+                vscode.window.showErrorMessage(`Could not update input: ${err.message}`);
+            }
         }
     }
 

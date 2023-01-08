@@ -3,12 +3,13 @@ import { IExtensionFeature } from '../common';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
 import { User } from '../proto/build/stack/auth/v1beta1/User';
 import { Input } from '../proto/build/stack/inputstream/v1beta1/Input';
-import { InputStreamClient as InputStreamClient } from './client';
+import { InputStreamClient as InputStreamClient } from './inputStreamClient';
 import {
     createAuthServiceClient,
     createInputStreamConfiguration,
     loadAuthProtos,
     loadInputStreamProtos,
+    loadByteStreamProtos,
 } from './configuration';
 import { FeatureName, ViewName } from './constants';
 import { DeviceLogin } from './device_login';
@@ -20,14 +21,19 @@ import { PageTreeView } from './page/treeview';
 import { AccountTreeDataProvider } from './login/treeview';
 import { TreeDataProvider } from './treedataprovider';
 import { PageController } from './page/controller';
+import { Paster } from './paster';
+import { FsRegistry } from './fsregistry';
+import { ByteStreamClient } from '../proto/google/bytestream/ByteStream';
+import { BytesClient } from './byteStreamClient';
 
-export class InputStreamFeature implements IExtensionFeature, vscode.Disposable {
+export class InputStreamFeature implements IExtensionFeature, vscode.Disposable, FsRegistry {
     public readonly name = FeatureName;
 
     private disposables: vscode.Disposable[] = [];
     private closeables: Closeable[] = [];
     private client: InputStreamClient | undefined;
     private onDidInputStreamClientChange = new vscode.EventEmitter<InputStreamClient>();
+    private onDidByteStreamClientChange = new vscode.EventEmitter<BytesClient>();
     private onDidInputChange = new vscode.EventEmitter<Input>();
     private onDidInputCreate = new vscode.EventEmitter<Input>();
     private onDidInputRemove = new vscode.EventEmitter<Input>();
@@ -39,10 +45,12 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
 
     constructor() {
         this.add(this.onDidInputStreamClientChange);
+        this.add(this.onDidByteStreamClientChange);
         this.add(this.onDidInputChange);
         this.add(this.onDidInputCreate);
         this.add(this.onDidInputRemove);
         this.add(new UriHandler());
+        this.add(new Paster(this));
     }
 
     /**
@@ -52,6 +60,7 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
         const cfg = await createInputStreamConfiguration(ctx.asAbsolutePath.bind(ctx), ctx.globalStoragePath, config);
 
         const inputStreamProtos = loadInputStreamProtos(cfg.inputstream.protofile);
+        const byteStreamProtos = loadByteStreamProtos(cfg.bytestream.protofile);
         const authProtos = loadAuthProtos(cfg.auth.protofile);
 
         this.authClient = createAuthServiceClient(authProtos, cfg.auth.address);
@@ -69,8 +78,18 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
         this.deviceLogin.onDidAuthUserChange.event(this.handleAuthUserChange, this, this.disposables);
         this.deviceLogin.onDidLoginTokenChange.event(token => {
             this.client = this.add(
-                new InputStreamClient(inputStreamProtos, cfg.inputstream.address, token, () => this.deviceLogin!.refreshAccessToken()));
-            this.onDidInputStreamClientChange.fire(this.client);
+                new InputStreamClient(
+                    inputStreamProtos,
+                    cfg.inputstream.address,
+                    token,
+                    () => this.deviceLogin!.refreshAccessToken()));
+            const bytestreamClient = this.add(
+                new BytesClient(
+                    byteStreamProtos,
+                    cfg.bytestream.address,
+                    token,
+                    () => this.deviceLogin!.refreshAccessToken()));
+            this.onDidByteStreamClientChange.fire(bytestreamClient);
         }, this.disposables);
 
         this.deviceLogin.restoreSaved();
@@ -92,6 +111,7 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
             new PageController(
                 user,
                 this.onDidInputStreamClientChange,
+                this.onDidByteStreamClientChange,
                 this.onDidInputChange,
                 this.onDidInputCreate,
                 this.onDidInputRemove,
@@ -113,6 +133,22 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
         if (oldPageTreeView) {
             oldPageTreeView.dispose();
         }
+    }
+
+    public getFsForURI(uri: vscode.Uri): vscode.FileSystem | undefined {
+        switch (uri.scheme) {
+            case "page":
+                return this.getFsForPage(uri.fsPath)
+            default:
+                return vscode.workspace.fs;
+        }
+    }
+
+    private getFsForPage(fsPath: string): vscode.FileSystem | undefined {
+        if (!this.pageController) {
+            return;
+        }
+        return this.pageController.filesystem();
     }
 
     public deactivate() {

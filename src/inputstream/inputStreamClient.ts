@@ -94,7 +94,7 @@ export class InputStreamClient extends GRPCClient {
                 //     } as grpc.ServiceError);
                 // }
                 this.inputService.listInputs(
-                    { 
+                    {
                         filter: filter,
                         wantPrivate: true,
                     },
@@ -104,7 +104,7 @@ export class InputStreamClient extends GRPCClient {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
-                            resolve(resp?.input);
+                            resolve(resp?.input!);
                         }
                     });
             });
@@ -122,7 +122,7 @@ export class InputStreamClient extends GRPCClient {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
-                            resolve(resp);
+                            resolve(resp!);
                         }
                     });
             });
@@ -140,7 +140,7 @@ export class InputStreamClient extends GRPCClient {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
-                            resolve(resp);
+                            resolve(resp!);
                         }
                     });
             });
@@ -158,7 +158,7 @@ export class InputStreamClient extends GRPCClient {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
-                            resolve(resp);
+                            resolve(resp!);
                         }
                     });
             });
@@ -166,7 +166,7 @@ export class InputStreamClient extends GRPCClient {
     }
 
     async removeInput(id: string): Promise<RemoveInputResponse> {
-        return this.unaryCall<Input>('Remove Input', (): Promise<Input> => {
+        return this.unaryCall<RemoveInputResponse>('Remove Input', (): Promise<RemoveInputResponse> => {
             return new Promise<RemoveInputResponse>((resolve, reject) => {
                 this.inputService.removeInput(
                     { id },
@@ -176,7 +176,7 @@ export class InputStreamClient extends GRPCClient {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
-                            resolve(resp);
+                            resolve(resp!);
                         }
                     });
             });
@@ -193,7 +193,7 @@ export class InputStreamClient extends GRPCClient {
                     if (err) {
                         reject(this.handleError(err));
                     } else {
-                        resolve(resp);
+                        resolve(resp!);
                     }
                 });
         });
