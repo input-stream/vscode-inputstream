@@ -85,14 +85,6 @@ export class InputStreamClient extends GRPCClient {
     async listInputs(filter: InputFilterOptions): Promise<Input[] | undefined> {
         return this.unaryCall<Input[] | undefined>('List Inputs', (): Promise<Input[] | undefined> => {
             return new Promise<Input[]>((resolve, reject) => {
-                // if (false) {
-                //     reject({
-                //         message: 'UNAUTHENTICATED: WIP',
-                //         code: grpc.status.UNAUTHENTICATED,
-                //         details: 'WIP',
-                //         metadata: new grpc.Metadata(),
-                //     } as grpc.ServiceError);
-                // }
                 this.inputService.listInputs(
                     {
                         filter: filter,
@@ -100,7 +92,7 @@ export class InputStreamClient extends GRPCClient {
                     },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
-                    async (err?: grpc.ServiceError, resp?: ListInputsResponse) => {
+                    async (err: grpc.ServiceError | null, resp?: ListInputsResponse) => {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
@@ -118,7 +110,7 @@ export class InputStreamClient extends GRPCClient {
                     { input },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
-                    async (err?: grpc.ServiceError, resp?: Input) => {
+                    async (err: grpc.ServiceError | null, resp?: Input) => {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
@@ -136,7 +128,7 @@ export class InputStreamClient extends GRPCClient {
                     { filter, mask },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
-                    async (err?: grpc.ServiceError, resp?: Input) => {
+                    async (err: grpc.ServiceError | null, resp?: Input) => {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
@@ -154,7 +146,7 @@ export class InputStreamClient extends GRPCClient {
                     { input, mask },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
-                    async (err?: grpc.ServiceError, resp?: UpdateInputResponse) => {
+                    async (err: grpc.ServiceError | null, resp?: UpdateInputResponse) => {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
@@ -172,7 +164,7 @@ export class InputStreamClient extends GRPCClient {
                     { id },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
-                    async (err?: grpc.ServiceError, resp?: RemoveInputResponse) => {
+                    async (err: grpc.ServiceError | null, resp?: RemoveInputResponse) => {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
@@ -189,7 +181,7 @@ export class InputStreamClient extends GRPCClient {
                 request,
                 this.getGrpcMetadata(),
                 { deadline: this.getDeadline() },
-                async (err?: grpc.ServiceError, resp?: SearchImagesResponse) => {
+                async (err: grpc.ServiceError | null, resp?: SearchImagesResponse) => {
                     if (err) {
                         reject(this.handleError(err));
                     } else {

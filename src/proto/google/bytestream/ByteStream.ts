@@ -1,6 +1,7 @@
 // Original file: proto/bytestream.proto
 
 import type * as grpc from '@grpc/grpc-js'
+import type { MethodDefinition } from '@grpc/proto-loader'
 import type { QueryWriteStatusRequest as _google_bytestream_QueryWriteStatusRequest, QueryWriteStatusRequest__Output as _google_bytestream_QueryWriteStatusRequest__Output } from '../../google/bytestream/QueryWriteStatusRequest';
 import type { QueryWriteStatusResponse as _google_bytestream_QueryWriteStatusResponse, QueryWriteStatusResponse__Output as _google_bytestream_QueryWriteStatusResponse__Output } from '../../google/bytestream/QueryWriteStatusResponse';
 import type { ReadRequest as _google_bytestream_ReadRequest, ReadRequest__Output as _google_bytestream_ReadRequest__Output } from '../../google/bytestream/ReadRequest';
@@ -50,10 +51,10 @@ export interface ByteStreamClient extends grpc.Client {
    * resource name, the sequence of returned `committed_size` values will be
    * non-decreasing.
    */
-  QueryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_bytestream_QueryWriteStatusResponse__Output) => void): grpc.ClientUnaryCall;
-  QueryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_bytestream_QueryWriteStatusResponse__Output) => void): grpc.ClientUnaryCall;
-  QueryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_bytestream_QueryWriteStatusResponse__Output) => void): grpc.ClientUnaryCall;
-  QueryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, callback: (error?: grpc.ServiceError, result?: _google_bytestream_QueryWriteStatusResponse__Output) => void): grpc.ClientUnaryCall;
+  QueryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_google_bytestream_QueryWriteStatusResponse__Output>): grpc.ClientUnaryCall;
+  QueryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_google_bytestream_QueryWriteStatusResponse__Output>): grpc.ClientUnaryCall;
+  QueryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_google_bytestream_QueryWriteStatusResponse__Output>): grpc.ClientUnaryCall;
+  QueryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, callback: grpc.requestCallback<_google_bytestream_QueryWriteStatusResponse__Output>): grpc.ClientUnaryCall;
   /**
    * `QueryWriteStatus()` is used to find the `committed_size` for a resource
    * that is being written, which can then be used as the `write_offset` for
@@ -70,11 +71,11 @@ export interface ByteStreamClient extends grpc.Client {
    * resource name, the sequence of returned `committed_size` values will be
    * non-decreasing.
    */
-  queryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_bytestream_QueryWriteStatusResponse__Output) => void): grpc.ClientUnaryCall;
-  queryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_bytestream_QueryWriteStatusResponse__Output) => void): grpc.ClientUnaryCall;
-  queryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_bytestream_QueryWriteStatusResponse__Output) => void): grpc.ClientUnaryCall;
-  queryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, callback: (error?: grpc.ServiceError, result?: _google_bytestream_QueryWriteStatusResponse__Output) => void): grpc.ClientUnaryCall;
-
+  queryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_google_bytestream_QueryWriteStatusResponse__Output>): grpc.ClientUnaryCall;
+  queryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_google_bytestream_QueryWriteStatusResponse__Output>): grpc.ClientUnaryCall;
+  queryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_google_bytestream_QueryWriteStatusResponse__Output>): grpc.ClientUnaryCall;
+  queryWriteStatus(argument: _google_bytestream_QueryWriteStatusRequest, callback: grpc.requestCallback<_google_bytestream_QueryWriteStatusResponse__Output>): grpc.ClientUnaryCall;
+  
   /**
    * `Read()` is used to retrieve the contents of a resource as a sequence
    * of bytes. The bytes are returned in a sequence of responses, and the
@@ -89,7 +90,7 @@ export interface ByteStreamClient extends grpc.Client {
    */
   read(argument: _google_bytestream_ReadRequest, metadata: grpc.Metadata, options?: grpc.CallOptions): grpc.ClientReadableStream<_google_bytestream_ReadResponse__Output>;
   read(argument: _google_bytestream_ReadRequest, options?: grpc.CallOptions): grpc.ClientReadableStream<_google_bytestream_ReadResponse__Output>;
-
+  
   /**
    * `Write()` is used to send the contents of a resource as a sequence of
    * bytes. The bytes are sent in a sequence of request protos of a client-side
@@ -114,10 +115,10 @@ export interface ByteStreamClient extends grpc.Client {
    * service was able to commit and whether the service views the resource as
    * `complete` or not.
    */
-  Write(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_bytestream_WriteResponse__Output) => void): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
-  Write(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_bytestream_WriteResponse__Output) => void): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
-  Write(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_bytestream_WriteResponse__Output) => void): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
-  Write(callback: (error?: grpc.ServiceError, result?: _google_bytestream_WriteResponse__Output) => void): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
+  Write(metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_google_bytestream_WriteResponse__Output>): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
+  Write(metadata: grpc.Metadata, callback: grpc.requestCallback<_google_bytestream_WriteResponse__Output>): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
+  Write(options: grpc.CallOptions, callback: grpc.requestCallback<_google_bytestream_WriteResponse__Output>): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
+  Write(callback: grpc.requestCallback<_google_bytestream_WriteResponse__Output>): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
   /**
    * `Write()` is used to send the contents of a resource as a sequence of
    * bytes. The bytes are sent in a sequence of request protos of a client-side
@@ -142,11 +143,11 @@ export interface ByteStreamClient extends grpc.Client {
    * service was able to commit and whether the service views the resource as
    * `complete` or not.
    */
-  write(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_bytestream_WriteResponse__Output) => void): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
-  write(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_bytestream_WriteResponse__Output) => void): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
-  write(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_bytestream_WriteResponse__Output) => void): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
-  write(callback: (error?: grpc.ServiceError, result?: _google_bytestream_WriteResponse__Output) => void): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
-
+  write(metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_google_bytestream_WriteResponse__Output>): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
+  write(metadata: grpc.Metadata, callback: grpc.requestCallback<_google_bytestream_WriteResponse__Output>): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
+  write(options: grpc.CallOptions, callback: grpc.requestCallback<_google_bytestream_WriteResponse__Output>): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
+  write(callback: grpc.requestCallback<_google_bytestream_WriteResponse__Output>): grpc.ClientWritableStream<_google_bytestream_WriteRequest>;
+  
 }
 
 /**
@@ -192,14 +193,14 @@ export interface ByteStreamHandlers extends grpc.UntypedServiceImplementation {
    * non-decreasing.
    */
   QueryWriteStatus: grpc.handleUnaryCall<_google_bytestream_QueryWriteStatusRequest__Output, _google_bytestream_QueryWriteStatusResponse>;
-
+  
   /**
    * `Read()` is used to retrieve the contents of a resource as a sequence
    * of bytes. The bytes are returned in a sequence of responses, and the
    * responses are delivered as the results of a server-side streaming RPC.
    */
   Read: grpc.handleServerStreamingCall<_google_bytestream_ReadRequest__Output, _google_bytestream_ReadResponse>;
-
+  
   /**
    * `Write()` is used to send the contents of a resource as a sequence of
    * bytes. The bytes are sent in a sequence of request protos of a client-side
@@ -225,5 +226,11 @@ export interface ByteStreamHandlers extends grpc.UntypedServiceImplementation {
    * `complete` or not.
    */
   Write: grpc.handleClientStreamingCall<_google_bytestream_WriteRequest__Output, _google_bytestream_WriteResponse>;
+  
+}
 
+export interface ByteStreamDefinition extends grpc.ServiceDefinition {
+  QueryWriteStatus: MethodDefinition<_google_bytestream_QueryWriteStatusRequest, _google_bytestream_QueryWriteStatusResponse, _google_bytestream_QueryWriteStatusRequest__Output, _google_bytestream_QueryWriteStatusResponse__Output>
+  Read: MethodDefinition<_google_bytestream_ReadRequest, _google_bytestream_ReadResponse, _google_bytestream_ReadRequest__Output, _google_bytestream_ReadResponse__Output>
+  Write: MethodDefinition<_google_bytestream_WriteRequest, _google_bytestream_WriteResponse, _google_bytestream_WriteRequest__Output, _google_bytestream_WriteResponse__Output>
 }

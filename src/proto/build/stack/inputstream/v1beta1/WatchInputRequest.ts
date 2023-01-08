@@ -5,7 +5,7 @@ import type { FieldMask as _google_protobuf_FieldMask, FieldMask__Output as _goo
 export interface WatchInputRequest {
   'owner'?: (string);
   'id'?: (string);
-  'mask'?: (_google_protobuf_FieldMask);
+  'mask'?: (_google_protobuf_FieldMask | null);
   /**
    * The login token, in the event that the streaming endpoint does not
    * support headers.
@@ -16,7 +16,7 @@ export interface WatchInputRequest {
 export interface WatchInputRequest__Output {
   'owner': (string);
   'id': (string);
-  'mask'?: (_google_protobuf_FieldMask__Output);
+  'mask': (_google_protobuf_FieldMask__Output | null);
   /**
    * The login token, in the event that the streaming endpoint does not
    * support headers.

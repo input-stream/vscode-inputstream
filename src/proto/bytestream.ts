@@ -1,7 +1,7 @@
 import type * as grpc from '@grpc/grpc-js';
-import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
+import type { MessageTypeDefinition } from '@grpc/proto-loader';
 
-import type { ByteStreamClient as _google_bytestream_ByteStreamClient } from './google/bytestream/ByteStream';
+import type { ByteStreamClient as _google_bytestream_ByteStreamClient, ByteStreamDefinition as _google_bytestream_ByteStreamDefinition } from './google/bytestream/ByteStream';
 
 type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
   new(...args: ConstructorParameters<Constructor>): Subtype;
@@ -40,7 +40,7 @@ export interface ProtoGrpcType {
        * 
        * The errors returned by the service are in the Google canonical error space.
        */
-      ByteStream: SubtypeConstructor<typeof grpc.Client, _google_bytestream_ByteStreamClient> & { service: ServiceDefinition }
+      ByteStream: SubtypeConstructor<typeof grpc.Client, _google_bytestream_ByteStreamClient> & { service: _google_bytestream_ByteStreamDefinition }
       QueryWriteStatusRequest: MessageTypeDefinition
       QueryWriteStatusResponse: MessageTypeDefinition
       ReadRequest: MessageTypeDefinition

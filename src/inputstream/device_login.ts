@@ -97,7 +97,7 @@ export class DeviceLogin implements vscode.Disposable {
     }
 
     public async login(token: string): Promise<void> {
-        this.authClient.Login({ token }, new grpc.Metadata(), (error: grpc.ServiceError | undefined, response: LoginResponse | undefined) => {
+        this.authClient.Login({ token }, new grpc.Metadata(), (error: grpc.ServiceError | null, response: LoginResponse | undefined) => {
             if (error) {
                 setCommandContext(ContextName.LoggedIn, false);
                 vscode.window.showErrorMessage('login error: ' + error.message);

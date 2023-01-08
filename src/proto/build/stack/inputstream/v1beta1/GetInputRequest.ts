@@ -4,17 +4,17 @@ import type { InputFilterOptions as _build_stack_inputstream_v1beta1_InputFilter
 import type { FieldMask as _google_protobuf_FieldMask, FieldMask__Output as _google_protobuf_FieldMask__Output } from '../../../../google/protobuf/FieldMask';
 
 export interface GetInputRequest {
-  'filter'?: (_build_stack_inputstream_v1beta1_InputFilterOptions);
+  'filter'?: (_build_stack_inputstream_v1beta1_InputFilterOptions | null);
   /**
    * optional mask for specifying a subset of fields
    */
-  'mask'?: (_google_protobuf_FieldMask);
+  'mask'?: (_google_protobuf_FieldMask | null);
 }
 
 export interface GetInputRequest__Output {
-  'filter'?: (_build_stack_inputstream_v1beta1_InputFilterOptions__Output);
+  'filter': (_build_stack_inputstream_v1beta1_InputFilterOptions__Output | null);
   /**
    * optional mask for specifying a subset of fields
    */
-  'mask'?: (_google_protobuf_FieldMask__Output);
+  'mask': (_google_protobuf_FieldMask__Output | null);
 }

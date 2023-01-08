@@ -68,7 +68,7 @@ export class BytesClient extends GRPCClient {
         }
     }
 
-    write(onResponse: (error?: grpc.ServiceError | undefined, out?: WriteResponse | undefined) => void): grpc.ClientWritableStream<WriteRequest> {
+    write(onResponse: (error?: grpc.ServiceError | null, out?: WriteResponse | undefined) => void): grpc.ClientWritableStream<WriteRequest> {
         return this.bytesService.write(
             this.getGrpcMetadata(),
             { deadline: this.getDeadline() },
@@ -83,7 +83,7 @@ export class BytesClient extends GRPCClient {
                     req,
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
-                    async (err?: grpc.ServiceError, resp?: QueryWriteStatusResponse) => {
+                    async (err: grpc.ServiceError | null, resp?: QueryWriteStatusResponse) => {
                         if (err) {
                             reject(this.handleError(err));
                         } else {

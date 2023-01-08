@@ -17,7 +17,7 @@ export interface DeviceLoginResponse {
   /**
    * the user details
    */
-  'user'?: (_build_stack_auth_v1beta1_User);
+  'user'?: (_build_stack_auth_v1beta1_User | null);
   /**
    * a jwt token that can be used for subsequent access (an access_token).
    */
@@ -25,7 +25,7 @@ export interface DeviceLoginResponse {
   /**
    * date at which the access_token is expected to expire
    */
-  'expiresAt'?: (_google_protobuf_Timestamp);
+  'expiresAt'?: (_google_protobuf_Timestamp | null);
   /**
    * a different token that can be used for retrieving new access tokens.  This
    * is only populated by interacting with the oauth_url.
@@ -47,7 +47,7 @@ export interface DeviceLoginResponse__Output {
   /**
    * the user details
    */
-  'user'?: (_build_stack_auth_v1beta1_User__Output);
+  'user': (_build_stack_auth_v1beta1_User__Output | null);
   /**
    * a jwt token that can be used for subsequent access (an access_token).
    */
@@ -55,7 +55,7 @@ export interface DeviceLoginResponse__Output {
   /**
    * date at which the access_token is expected to expire
    */
-  'expiresAt'?: (_google_protobuf_Timestamp__Output);
+  'expiresAt': (_google_protobuf_Timestamp__Output | null);
   /**
    * a different token that can be used for retrieving new access tokens.  This
    * is only populated by interacting with the oauth_url.
