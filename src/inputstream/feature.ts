@@ -23,7 +23,6 @@ import { TreeDataProvider } from './treedataprovider';
 import { PageController } from './page/controller';
 import { Paster } from './paster';
 import { FsRegistry } from './fsregistry';
-import { ByteStreamClient } from '../proto/google/bytestream/ByteStream';
 import { BytesClient } from './byteStreamClient';
 
 export class InputStreamFeature implements IExtensionFeature, vscode.Disposable, FsRegistry {
@@ -83,13 +82,14 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable,
                     cfg.inputstream.address,
                     token,
                     () => this.deviceLogin!.refreshAccessToken()));
-            const bytestreamClient = this.add(
+            const bytesClient = this.add(
                 new BytesClient(
                     byteStreamProtos,
                     cfg.bytestream.address,
                     token,
                     () => this.deviceLogin!.refreshAccessToken()));
-            this.onDidByteStreamClientChange.fire(bytestreamClient);
+            this.onDidInputStreamClientChange.fire(this.client);
+            this.onDidByteStreamClientChange.fire(bytesClient);
         }, this.disposables);
 
         this.deviceLogin.restoreSaved();

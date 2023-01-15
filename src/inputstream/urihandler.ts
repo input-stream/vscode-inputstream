@@ -61,7 +61,7 @@ export class UriHandler implements vscode.UriHandler, vscode.Disposable {
 
 }
 
-function parseQuery(uri: vscode.Uri): { [key: string]: string } {
+export function parseQuery(uri: vscode.Uri): { [key: string]: string } {
     return uri.query.split('&').reduce((prev: any, current) => {
         const queryString = current.split('=');
         prev[queryString[0]] = queryString[1];

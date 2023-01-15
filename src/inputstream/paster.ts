@@ -1,12 +1,14 @@
-import * as vscode from 'vscode';
+import * as crypto from 'crypto';
+import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
-import * as fs from "fs-extra";
+import * as vscode from 'vscode';
 import { spawn } from "child_process";
 import { CommandName } from './constants';
 import { Container } from '../container';
 import { Predefine } from './predefine';
 import { FsRegistry } from './fsregistry';
+import { uuid } from 'vscode-common';
 
 // import * as clipboard from "clipboardy";
 
@@ -30,7 +32,7 @@ enum ClipboardType {
 
 
 type PasteImageContext = {
-    targetFile?: vscode.Uri;
+    target?: vscode.Uri;
     convertToBase64: boolean;
     removeTargetFileAfterConvert: boolean;
     imgTag?: {
@@ -103,28 +105,52 @@ export class Paster implements vscode.Disposable {
     }
 
     private async handleCommandPasteImage(uri: vscode.Uri, fs: vscode.FileSystem) {
-        const target = makeImageUri(uri, fs, ".png");
-        return this.saveImage(uri, fs);
+        const imageUri = await makeImageUri(uri, fs, ".png", "image/png");
+        return this.saveImage(imageUri, fs);
     }
 
-    private async saveImage(target: vscode.Uri, fs: vscode.FileSystem) {
-
-        const filename = await this.saveClipboardImage(target, fs);
-        if (!filename) {
+    private async saveImage(imageUri: vscode.Uri, fs: vscode.FileSystem) {
+        const sourceFilename = await this.saveClipboardImage(imageUri, fs);
+        if (!sourceFilename) {
             return;
         }
-        if (filename === "no image") {
+        if (sourceFilename === "no image") {
             vscode.window.showInformationMessage(
                 "There is not an image in the clipboard."
             );
             return;
         }
+        const sourceUri = vscode.Uri.file(sourceFilename);
 
-        const source = vscode.Uri.file(filename);
-        await fs.copy(source, target);
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            return;
+        }
+
+        let docUri = editor.document.uri;
+        if (!docUri) {
+            return;
+        }
+        // dirname will have leading slash from fsPath
+        const dirname = path.dirname(docUri.fsPath);
+        const basename = path.basename(sourceUri.fsPath);
+        const resourceName = bytestreamResourceName(sourceUri, uuid.generateUuid());
+
+        const targetAuthority = 'file.input.stream';
+        const targetFilename = `${dirname}/${basename}`;
+        const targetQuery = `fileContentType=image/png&resourceName=${resourceName}`;
+        const targetUri = vscode.Uri.parse(`https://${targetAuthority}${targetFilename}?${targetQuery}`);
+
+        try {
+            await fs.copy(sourceUri, targetUri);
+        } catch (e) {
+            if (e instanceof Error) {
+                vscode.window.showErrorMessage(e.message);
+            }
+        }
 
         this.renderMarkdownLink({
-            targetFile: target,
+            target: targetUri,
             removeTargetFileAfterConvert: false,
             convertToBase64: false,
         });
@@ -142,68 +168,47 @@ export class Paster implements vscode.Disposable {
         } else {
             renderText = this.renderMdFilePath(pasteImgContext);
         }
-
-        if (renderText) {
-            editor.edit((edit) => {
-                let current = editor.selection;
-                if (current.isEmpty) {
-                    edit.insert(current.start, renderText!);
-                } else {
-                    edit.replace(current, renderText!);
-                }
-            });
+        if (!renderText) {
+            return;
         }
+
+        editor.edit((edit) => {
+            let current = editor.selection;
+            if (current.isEmpty) {
+                edit.insert(current.start, renderText!);
+            } else {
+                edit.replace(current, renderText!);
+            }
+        });
     }
 
-
     private renderMdFilePath(pasteImgContext: PasteImageContext): string | undefined {
-        let editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return;
+        const uri = pasteImgContext.target;
+        if (!uri) {
+            return
         }
+        const href = `${uri.scheme}://${uri.authority}${uri.path}`;
 
-        let fileUri = editor.document.uri;
-        if (!fileUri) {
-            return;
-        }
-
-        const basePath = path.dirname(fileUri.fsPath);
-        const fsPath = pasteImgContext.targetFile?.fsPath;
-        if (!fsPath) {
-            return;
-        }
-
-        // relative will be add backslash characters so need to replace '\' to '/' here.
-        let imageFilePath = this.encodePath(
-            path.relative(basePath, fsPath)
-        );
-
-        // parse imageFilePath by rule again for appling lang_rule to image path
-        let parseResult = this.parseRules(imageFilePath);
-        if (typeof parseResult === "string") {
-            return parseResult;
-        }
-
-        // "../../static/images/vscode-paste/cover.png".replace(new RegExp("(.*/static/)(.*)", ""), "/$2")
         let imgTag = pasteImgContext.imgTag;
         if (imgTag) {
-            return `<img src='${imageFilePath}' ${getDimensionProps(
+            return `<img src='${href}' ${getDimensionProps(
                 imgTag.width,
                 imgTag.height
             )}/>`;
         }
-        return `![](${imageFilePath})  `;
+
+        return `![${uri.path}](${href})\n`;
     }
 
     private renderMdImageBase64(pasteImgContext: PasteImageContext): string | undefined {
         if (
-            !pasteImgContext.targetFile?.fsPath ||
-            !fs.existsSync(pasteImgContext.targetFile.fsPath)
+            !pasteImgContext.target?.fsPath ||
+            !fs.existsSync(pasteImgContext.target.fsPath)
         ) {
             return;
         }
 
-        let renderText = base64EncodeFile(pasteImgContext.targetFile.fsPath);
+        let renderText = base64EncodeFile(pasteImgContext.target.fsPath);
         let imgTag = pasteImgContext.imgTag;
         if (imgTag) {
             renderText = `<img src='data:image/png;base64,${renderText}' ${getDimensionProps(
@@ -215,7 +220,7 @@ export class Paster implements vscode.Disposable {
         }
 
         if (pasteImgContext.removeTargetFileAfterConvert) {
-            fs.removeSync(pasteImgContext.targetFile.fsPath);
+            fs.removeSync(pasteImgContext.target.fsPath);
         }
 
         return renderText;
@@ -348,14 +353,14 @@ export class Paster implements vscode.Disposable {
         const last_char = inputUri.fsPath.slice(inputUri.fsPath.length - 1);
         if (["/", "\\"].includes(last_char)) {
             pasteImgContext = {
-                targetFile: newTemporaryFilename(),
+                target: newTemporaryFilename(),
                 convertToBase64: true,
                 removeTargetFileAfterConvert: true,
             };
             // While filename is empty(ex: /abc/?200,20),  paste clipboard to a temporay file, then convert it to base64 image to markdown.
         } else {
             pasteImgContext = {
-                targetFile: inputUri,
+                target: inputUri,
                 convertToBase64: false,
                 removeTargetFileAfterConvert: false,
             };
@@ -534,7 +539,6 @@ export class Paster implements vscode.Disposable {
 
         try {
             let data = await this.runScript(script, []);
-            console.log("getClipboardContentType", data);
             if (data == "no xclip") {
                 vscode.window.showInformationMessage(
                     "You need to install xclip command first."
@@ -709,12 +713,10 @@ function runScript(
         let process = spawn(shell, options, { timeout });
 
         process.stdout.on("data", (chunk) => {
-            console.log(chunk);
             output += `${chunk}`;
         });
 
         process.stderr.on("data", (chunk) => {
-            console.log(chunk);
             errorMessage += `${chunk}`;
         });
 
@@ -808,7 +810,7 @@ function getDimensionProps(width: any, height: any): string {
     return [widthProp, heightProp].join(" ").trim();
 }
 
-async function makeImageUri(uri: vscode.Uri, fs: vscode.FileSystem, ext: string): Promise<vscode.Uri> {
+async function makeImageUri(uri: vscode.Uri, fs: vscode.FileSystem, ext: string, contentType: string): Promise<vscode.Uri> {
     const now = new Date().toISOString().slice(0, 10);
     const dirname = path.dirname(uri.path);
 
@@ -824,7 +826,7 @@ async function makeImageUri(uri: vscode.Uri, fs: vscode.FileSystem, ext: string)
         }
         basename += ext;
         const filepath = path.join(dirname, basename);
-        target = vscode.Uri.parse(`${uri.scheme}://${uri.authority}/${filepath}`);
+        target = vscode.Uri.parse(`${uri.scheme}://${uri.authority}/${filepath}?contentType=${contentType}`);
         try {
             await fs.stat(target);
             iteration++; // file exists, keep going
@@ -834,4 +836,18 @@ async function makeImageUri(uri: vscode.Uri, fs: vscode.FileSystem, ext: string)
     }
 
     return target;
+}
+
+function bytestreamResourceName(source: vscode.Uri, id: string): string {
+    const fileBuffer = fs.readFileSync(source.fsPath);
+    const sha256 = sha256Bytes(fileBuffer);
+    const size = fileBuffer.length;
+    return `/uploads/${id}/blobs/${sha256}/${size}`;
+}
+
+function sha256Bytes(buf: Buffer): string {
+    const hashSum = crypto.createHash('sha256');
+    hashSum.update(buf);
+    const hex = hashSum.digest('hex');
+    return hex;
 }

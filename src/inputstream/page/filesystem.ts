@@ -1,13 +1,19 @@
-import Long = require('long');
-import { TextDecoder, TextEncoder } from 'util';
+import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
-import { Input, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from '../../proto/build/stack/inputstream/v1beta1/Input';
-import { ShortPostInputContent } from '../../proto/build/stack/inputstream/v1beta1/ShortPostInputContent';
-import { ByteStreamClient } from '../../proto/google/bytestream/ByteStream';
+import * as fs from 'fs-extra';
+
+import { BytesClient } from '../byteStreamClient';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
+import { Input, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { InputStreamClient } from '../inputStreamClient';
 import { Scheme } from '../constants';
-import { BytesClient } from '../byteStreamClient';
+import { ShortPostInputContent } from '../../proto/build/stack/inputstream/v1beta1/ShortPostInputContent';
+import { TextDecoder, TextEncoder } from 'util';
+import { WriteResponse } from '../../proto/google/bytestream/WriteResponse';
+import Long = require('long');
+import { WriteRequest } from '../../proto/google/bytestream/WriteRequest';
+import path = require('path');
+import { parseQuery } from '../urihandler';
 
 /**
  * Document content provider for input pages.  
@@ -150,9 +156,103 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         return new vscode.Disposable(() => { });
     }
 
-    public copy(source: vscode.Uri, destination: vscode.Uri, options: { overwrite: boolean }): Promise<void> {
-        console.log(`copying ${source} to ${destination}...`);
-        throw vscode.FileSystemError.Unavailable('unsupported operation: copy');
+    public copy(source: vscode.Uri, target: vscode.Uri, options: { overwrite: boolean }): Thenable<void> {
+        if (target.authority === 'file.input.stream') {
+            return this.upload(source, target, options);
+        }
+        throw vscode.FileSystemError.Unavailable(`unsupported operation: copy to ${target.scheme}://${target.authority}`);
+    }
+
+    private upload(source: vscode.Uri, target: vscode.Uri, options: { overwrite: boolean }): Thenable<void> {
+        console.log(`uploading ${source} to ${target}...`);
+        return vscode.window.withProgress<void>(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: `Uploading ${path.basename(target.path)}...`,
+                cancellable: true,
+            },
+            (progress: vscode.Progress<{
+                message?: string | undefined,
+                increment?: number | undefined,
+            }>, token: vscode.CancellationToken): Promise<void> => {
+                return new Promise((resolve, reject) => {
+                    // TODO: check authority and do selective logic for 'file.input.stream'
+                    const query = parseQuery(target);
+                    const fileContentType = query["fileContentType"];
+                    if (!fileContentType) {
+                        reject("target URI must have query param contentType");
+                        return;
+                    }
+                    const resourceName = query["resourceName"];
+                    if (!resourceName) {
+                        reject("target URI must have query param resourceName");
+                        return;
+                    }
+                    const size = parseInt(path.basename(resourceName));
+
+                    // send the filename and content-type as metadata since the resource name is really
+                    // just the content hash.
+                    const md = new grpc.Metadata();
+                    md.set('filename', target.path);
+                    md.set('file-content-type', fileContentType);
+                    // call?.emit('metadata', md);
+
+                    // prepare the call.
+                    const call = this.bytestreamClient?.write((err: grpc.ServiceError | null | undefined, resp: WriteResponse | undefined) => {
+                        console.log(`write response: committed size: ${resp?.committedSize}`);
+                    }, md);
+
+                    call?.on('status', (status: grpc.StatusObject) => {
+                        switch (status.code) {
+                            case grpc.status.OK:
+                                resolve();
+                                break;
+                            default:
+                                reject(new Error(`file upload failed: ${status.details} (code ${status.code})`));
+                        }
+                    });
+
+                    call?.on('error', (err: Error) => {
+                        reject(err);
+                    });
+
+                    call?.on('end', () => {
+                        resolve();
+                    });
+
+                    // read file in chunks and upload it
+                    const stream = fs.createReadStream(source.fsPath, {
+                        autoClose: true,
+                    });
+
+                    let offset = 0;
+                    stream.on('data', (chunk: Buffer) => {
+                        const nextOffset = offset + chunk.length;
+                        const req: WriteRequest = {
+                            resourceName: resourceName,
+                            writeOffset: offset,
+                            data: chunk,
+                            finishWrite: nextOffset === size,
+                        };
+                        offset = nextOffset;
+                        // console.log(`wrote:`, req);
+                        call?.write(req);
+                        progress.report({
+                            increment: (offset / size) * 100,
+                        });
+                    });
+
+                    stream.on('error', (err: any) => {
+                        reject(err);
+                    });
+
+                    stream.on('end', () => {
+                        call?.end();
+                    });
+                });
+            },
+        );
+
     }
 
     public dispose() {

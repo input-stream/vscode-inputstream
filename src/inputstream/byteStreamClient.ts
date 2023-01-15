@@ -68,12 +68,12 @@ export class BytesClient extends GRPCClient {
         }
     }
 
-    write(onResponse: (error?: grpc.ServiceError | null, out?: WriteResponse | undefined) => void): grpc.ClientWritableStream<WriteRequest> {
-        return this.bytesService.write(
-            this.getGrpcMetadata(),
-            { deadline: this.getDeadline() },
-            onResponse,
-        )
+    write(onResponse: (error?: grpc.ServiceError | null, out?: WriteResponse | undefined) => void, extraMd?: grpc.Metadata): grpc.ClientWritableStream<WriteRequest> {
+        const md = this.getGrpcMetadata();
+        if (extraMd) {
+            md.merge(extraMd);
+        }
+        return this.bytesService.write(md, { deadline: this.getDeadline() }, onResponse);
     }
 
     async queryWriteStatus(req: QueryWriteStatusRequest): Promise<QueryWriteStatusResponse> {
@@ -93,7 +93,6 @@ export class BytesClient extends GRPCClient {
             });
         });
     }
-
 
     getGrpcMetadata(): grpc.Metadata {
         const md = new grpc.Metadata({
