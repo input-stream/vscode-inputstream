@@ -10,8 +10,6 @@ import { Predefine } from './predefine';
 import { FsRegistry } from './fsregistry';
 import { uuid } from 'vscode-common';
 
-// import * as clipboard from "clipboardy";
-
 //
 // Adapted from
 // https://github.com/telesoho/vscode-markdown-paste-image/blob/master/src/paster.ts
@@ -30,7 +28,6 @@ enum ClipboardType {
     Image = 2,
 }
 
-
 type PasteImageContext = {
     target?: vscode.Uri;
     convertToBase64: boolean;
@@ -42,7 +39,6 @@ type PasteImageContext = {
 }
 
 export class Paster implements vscode.Disposable {
-
     private disposables: vscode.Disposable[] = [];
 
     constructor(private fsregistry: FsRegistry) {
@@ -227,70 +223,6 @@ export class Paster implements vscode.Disposable {
     }
 
     /**
-     * Encode path string.
-     * encodeURI        : encode all characters to URL encode format
-     * encodeSpaceOnly  : encode all space character to %20
-     * none             : do nothing
-     * @param filePath
-     * @returns
-     */
-    encodePath(filePath: string): string {
-        filePath = filePath.replace(/\\/g, "/");
-
-        const encodePathConfig = this.getConfig().encodePath;
-
-        if (encodePathConfig == "encodeURI") {
-            filePath = encodeURI(filePath);
-        } else if (encodePathConfig == "encodeSpaceOnly") {
-            filePath = filePath.replace(/ /g, "%20");
-        }
-        return filePath;
-    }
-
-    getLanguageRules(languageId: string): any[] {
-        const langRules = this.getConfig().lang_rules;
-
-        if (languageId === "markdown") {
-            return this.getConfig().rules;
-        }
-
-        // find lang rules
-        for (const lang_rule of langRules) {
-            if (lang_rule.hasOwnProperty(languageId)) {
-                return lang_rule[languageId];
-            }
-        }
-
-        // if not found then return empty
-        return [];
-    }
-
-    /**
-     * Parse content by rules
-     * @param content content will be parse
-     * @returns
-     *  string: if content match rule, will return replaced string
-     *  null: dismatch any rule
-     */
-    private parseRules(content: string): string | undefined {
-        let editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return;
-        }
-        let languageId = editor.document.languageId;
-        let rules = this.getLanguageRules(languageId);
-        for (const rule of rules) {
-            const re = new RegExp(rule.regex, rule.options);
-            const reps = rule.replace;
-            if (re.test(content)) {
-                const newstr = content.replace(re, reps);
-                return newstr;
-            }
-        }
-        return;
-    }
-
-    /**
      * Save image from clipboard and get stdout.  The stdout should indicate the
      * name of the file written or 'no image' if failed.
      */
@@ -307,225 +239,6 @@ export class Paster implements vscode.Disposable {
         const fsPath = await wslSafe(tmp.fsPath);
 
         return this.runScript(script, [fsPath]);
-    }
-
-    /**
-     * Generate different Markdown content based on the value entered.
-     * for example:
-     * ./assets/test.png        => ![](./assets/test.png)
-     * ./assets/test.png?200,10 => <img src="./assets/test.png" width="200" height="10"/>
-     * ./assets/                => ![](![](data:image/png;base64,...)
-     * ./assets/?200,10         => <img src="data:image/png;base64,..." width="200" height="10"/>
-     *
-     * @param inputVal
-     * @returns
-     */
-    protected parsePasteImageContext(inputVal: string): PasteImageContext | undefined {
-        if (!inputVal) {
-            return;
-        }
-
-        inputVal = this.replacePredefinedVars(inputVal);
-
-        // leading and trailing white space are invalid
-        if (inputVal && inputVal.length !== inputVal.trim().length) {
-            vscode.window.showErrorMessage(
-                'The specified path is invalid: "' + inputVal + '"'
-            );
-            return;
-        }
-
-        // ! Maybe it is a bug in vscode.Uri.parse():
-        // > vscode.Uri.parse("f:/test/images").fsPath
-        // '/test/images'
-        // > vscode.Uri.parse("file:///f:/test/images").fsPath
-        // 'f:/test/image'
-        //
-        // So we have to add file:/// scheme. while input value contain a driver character
-        if (inputVal.substring(1, 2) === ":") {
-            inputVal = "file:///" + inputVal;
-        }
-
-        let pasteImgContext: PasteImageContext;
-
-        let inputUri = vscode.Uri.parse(inputVal);
-
-        const last_char = inputUri.fsPath.slice(inputUri.fsPath.length - 1);
-        if (["/", "\\"].includes(last_char)) {
-            pasteImgContext = {
-                target: newTemporaryFilename(),
-                convertToBase64: true,
-                removeTargetFileAfterConvert: true,
-            };
-            // While filename is empty(ex: /abc/?200,20),  paste clipboard to a temporay file, then convert it to base64 image to markdown.
-        } else {
-            pasteImgContext = {
-                target: inputUri,
-                convertToBase64: false,
-                removeTargetFileAfterConvert: false,
-            };
-        }
-
-        let enableImgTagConfig = this.getConfig().enableImgTag;
-        if (enableImgTagConfig && inputUri.query) {
-            // parse `<filepath>[?width,height]`. for example. /abc/abc.png?200,100
-            let ar = inputUri.query.split(",");
-            if (ar) {
-                pasteImgContext.imgTag = {
-                    width: ar[0],
-                    height: ar[1],
-                };
-            }
-        }
-
-        return pasteImgContext;
-    }
-
-    /**
-       * Generate a path for target image.
-       * @param extension extension of target image file.
-       * @returns
-       */
-    private genTargetImagePath(extension: string = ".png"): string | undefined {
-        // get current edit file path
-        let editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return;
-        }
-
-        let fileUri = editor.document.uri;
-        if (!fileUri) {
-            return;
-        }
-
-        let filePath: string;
-        switch (fileUri.scheme) {
-            case "untitled": {
-                vscode.window.showInformationMessage(
-                    "Before pasting an image, you need to save the current edited file first."
-                );
-                return;
-            }
-            case "page": {
-                filePath = path.basename(fileUri.fsPath);
-            }
-            default: {
-                filePath = fileUri.fsPath;
-            }
-        }
-
-        // get selection as image file name, need check
-        const selection = editor.selection;
-        const selectText = editor.document.getText(selection);
-
-        if (selectText && !/^[^\\/:\*\?""<>|]{1,120}$/.test(selectText)) {
-            vscode.window.showInformationMessage(
-                "Your selection is not a valid file name!"
-            );
-            return;
-        }
-
-        // get image destination path
-        let folderPathFromConfig = this.getConfig().path;
-
-        folderPathFromConfig = this.replacePredefinedVars(folderPathFromConfig);
-
-        if (
-            folderPathFromConfig &&
-            folderPathFromConfig.length !== folderPathFromConfig.trim().length
-        ) {
-            vscode.window.showErrorMessage(
-                'The specified path is invalid: "' + folderPathFromConfig + '"'
-            );
-            return;
-        }
-
-        // image file name
-        let imageFileName = "";
-        let namePrefix = this.getConfig().namePrefix;
-        let nameBase = this.getConfig().nameBase;
-        let nameSuffix = this.getConfig().nameSuffix;
-        if (!selectText) {
-            imageFileName = namePrefix + nameBase + nameSuffix + extension;
-            imageFileName = this.replacePredefinedVars(imageFileName);
-        } else {
-            imageFileName = selectText + extension;
-        }
-
-        // image output path
-        let folderPath = path.dirname(filePath);
-        let imagePath = "";
-
-        // generate image path
-        if (path.isAbsolute(folderPathFromConfig)) {
-            // important: replace must be done at the end, path.join() will build a path with backward slashes (\)
-            imagePath = path
-                .join(folderPathFromConfig, imageFileName)
-                .replace(/\\/g, "/");
-        } else {
-            // important: replace must be done at the end, path.join() will build a path with backward slashes (\)
-            imagePath = path
-                .join(folderPath, folderPathFromConfig, imageFileName)
-                .replace(/\\/g, "/");
-        }
-
-        return imagePath;
-    }
-
-
-    /**
-     * Replace all predefined variable.
-     * @param str path
-     * @returns
-     */
-    private replacePredefinedVars(str: string) {
-        let predefine = new Predefine();
-        return this.replaceRegPredefinedVars(str, predefine);
-    }
-
-
-    /**
-     * Replace all predefined variable with Regexp.
-     * @param str path
-     * @returns
-     */
-    private replaceRegPredefinedVars(str: string, predefine: Predefine) {
-        const regex = /(?<var>\$\{\s*(?<name>\w+)\s*(\|(?<param>.*?))?\})/gm;
-
-        // let ret: string = str;
-        // let m: RegExpExecArray | null;
-
-        // while ((m = regex.exec(str)) !== null) {
-        //     // This is necessary to avoid infinite loops with zero-width matches
-        //     if (m.index === regex.lastIndex) {
-        //         regex.lastIndex++;
-        //     }
-        //     if (!m.groups) {
-        //         continue;
-        //     }
-        //     if (m.groups.name in predefine) {
-        //         const replace = predefine[m.groups.name];
-        //         ret = ret.replace(
-        //             m.groups.var,
-        //             predefine[m.groups.name](m.groups.param)
-        //         );
-        //     }
-        // }
-
-        // User may be input a path with backward slashes (\), so need to replace all '\' to '/'.
-        return str.replace(/\\/g, "/");
-    }
-
-    protected getConfig(): vscode.WorkspaceConfiguration {
-        let editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return vscode.workspace.getConfiguration("MarkdownPaste");
-        }
-        let fileUri = editor.document.uri;
-        if (!fileUri) {
-            return vscode.workspace.getConfiguration("MarkdownPaste");
-        }
-        return vscode.workspace.getConfiguration("MarkdownPaste", fileUri);
     }
 
     private async getClipboardContentType() {
@@ -767,23 +480,6 @@ async function wslSafe(script: string): Promise<string> {
     return script;
 }
 
-
-/**
- * prepare directory for specified file.
- * @param filePath
- */
-async function prepareDirForFile(filePath: string): Promise<boolean> {
-    let dirname = path.dirname(filePath);
-    try {
-        await fs.ensureDir(dirname);
-        return true;
-    } catch (error) {
-        console.log(`failed while creating dir ${dirname}`, error);
-        return false;
-    }
-}
-
-
 /**
  * Temporary file name
  */
@@ -792,7 +488,6 @@ function newTemporaryFilename(prefix = "markdown_paste", suffix = ""): vscode.Ur
     const now = new Date().toISOString().slice(0, 10) + suffix;
     return vscode.Uri.parse(path.join(tempDir, now));
 }
-
 
 /**
  * Encode local file data to base64 encoded string

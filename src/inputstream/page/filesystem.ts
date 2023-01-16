@@ -164,7 +164,6 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     }
 
     private upload(source: vscode.Uri, target: vscode.Uri, options: { overwrite: boolean }): Thenable<void> {
-        console.log(`uploading ${source} to ${target}...`);
         return vscode.window.withProgress<void>(
             {
                 location: vscode.ProgressLocation.Notification,
@@ -176,7 +175,6 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                 increment?: number | undefined,
             }>, token: vscode.CancellationToken): Promise<void> => {
                 return new Promise((resolve, reject) => {
-                    // TODO: check authority and do selective logic for 'file.input.stream'
                     const query = parseQuery(target);
                     const fileContentType = query["fileContentType"];
                     if (!fileContentType) {
@@ -190,12 +188,11 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                     }
                     const size = parseInt(path.basename(resourceName));
 
-                    // send the filename and content-type as metadata since the resource name is really
-                    // just the content hash.
+                    // send the filename and content-type as metadata since the
+                    // resource name is really just the content hash.
                     const md = new grpc.Metadata();
                     md.set('filename', target.path);
                     md.set('file-content-type', fileContentType);
-                    // call?.emit('metadata', md);
 
                     // prepare the call.
                     const call = this.bytestreamClient?.write((err: grpc.ServiceError | null | undefined, resp: WriteResponse | undefined) => {
