@@ -14,6 +14,7 @@ export enum Scheme {
 
 export enum ConfigSection {
     AuthProto = 'auth.proto',
+    BytestreamProto = 'bytestream.proto',
     inputstreamProto = 'inputstream.proto',
     ApiAddress = 'api.address',
     Verbose = 'verbose',
@@ -26,6 +27,7 @@ export enum ConfigSection {
  */
 export enum CommandName {
     RefreshSuffix = '.refresh',
+    ImagePaste = 'input.stream.image.paste',
     ImageSearch = 'input.stream.image.search',
     InputCreate = 'input.stream.input.create',
     InputOpen = 'input.stream.input.open',

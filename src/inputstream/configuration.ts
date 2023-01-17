@@ -5,6 +5,7 @@ import { resolveHome } from '../common';
 import { ProtoGrpcType as AuthProtoType } from '../proto/auth';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
 import { InputsClient } from '../proto/build/stack/inputstream/v1beta1/Inputs';
+import { ProtoGrpcType as ByteStreamProtoType } from '../proto/bytestream';
 import { ProtoGrpcType as InputStreamProtoType } from '../proto/inputstream';
 import { ConfigSection } from './constants';
 
@@ -15,6 +16,7 @@ export type InputStreamConfiguration = {
     verbose: number,
     auth: AuthServerConfiguration,
     inputstream: InputStreamServerConfiguration,
+    bytestream: ByteStreamServerConfiguration,
 };
 
 /**
@@ -28,7 +30,7 @@ export type AuthServerConfiguration = {
 };
 
 /**
- * Configuration for the license server integration.
+ * Configuration for the inputstream server integration.
  */
 export type InputStreamServerConfiguration = {
     // filename of the license.proto file.
@@ -39,6 +41,16 @@ export type InputStreamServerConfiguration = {
     baseURL: string,
     // base directory where to store files
     baseDir: string,
+};
+
+/**
+ * Configuration for the bytestream server integration.
+ */
+export type ByteStreamServerConfiguration = {
+    // filename of the license.proto file.
+    protofile: string,
+    // address of the api server
+    address: string,
 };
 
 export async function createInputStreamConfiguration(
@@ -54,7 +66,7 @@ export async function createInputStreamConfiguration(
             'https://input.stream')),
         baseDir: resolveHome(config.get<string>(ConfigSection.BaseDir,
             '~/.inputstream')),
-        };
+    };
 
     const auth = {
         protofile: config.get<string>(ConfigSection.AuthProto,
@@ -63,10 +75,18 @@ export async function createInputStreamConfiguration(
             'input.stream:443'),
     };
 
+    const bytestream = {
+        protofile: config.get<string>(ConfigSection.BytestreamProto,
+            asAbsolutePath('./proto/bytestream.proto')),
+        address: config.get<string>(ConfigSection.ApiAddress,
+            'input.stream:443'),
+    };
+
     const cfg: InputStreamConfiguration = {
         verbose: config.get<number>(ConfigSection.Verbose, 0),
         auth: auth,
         inputstream: inputstream,
+        bytestream: bytestream,
     };
 
     return cfg;
@@ -88,6 +108,15 @@ export function loadInputStreamProtos(protofile: string): InputStreamProtoType {
         oneofs: true
     });
     return grpc.loadPackageDefinition(protoPackage) as unknown as InputStreamProtoType;
+}
+
+export function loadByteStreamProtos(protofile: string): ByteStreamProtoType {
+    const protoPackage = loader.loadSync(protofile, {
+        keepCase: false,
+        defaults: false,
+        oneofs: true
+    });
+    return grpc.loadPackageDefinition(protoPackage) as unknown as ByteStreamProtoType;
 }
 
 function getChannelCredentials(address: string): grpc.ChannelCredentials {

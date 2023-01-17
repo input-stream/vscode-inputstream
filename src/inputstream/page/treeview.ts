@@ -9,7 +9,7 @@ import {
     _build_stack_inputstream_v1beta1_Input_Type as InputType,
     _build_stack_inputstream_v1beta1_Input_Status as InputStatus
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
-import { InputStreamClient } from '../client';
+import { InputStreamClient } from '../inputStreamClient';
 import { CommandName, ContextValue, getInputURI, ThemeIconRss, ViewName } from '../constants';
 import { InputStreamClientTreeDataProvider } from '../inputstreamclienttreedataprovider';
 

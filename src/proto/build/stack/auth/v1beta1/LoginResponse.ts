@@ -7,7 +7,7 @@ export interface LoginResponse {
   /**
    * the user details
    */
-  'user'?: (_build_stack_auth_v1beta1_User);
+  'user'?: (_build_stack_auth_v1beta1_User | null);
   /**
    * a jwt token that can be used for subsequent auth
    */
@@ -15,14 +15,14 @@ export interface LoginResponse {
   /**
    * date at which the token is expected to expire
    */
-  'expiresAt'?: (_google_protobuf_Timestamp);
+  'expiresAt'?: (_google_protobuf_Timestamp | null);
 }
 
 export interface LoginResponse__Output {
   /**
    * the user details
    */
-  'user'?: (_build_stack_auth_v1beta1_User__Output);
+  'user': (_build_stack_auth_v1beta1_User__Output | null);
   /**
    * a jwt token that can be used for subsequent auth
    */
@@ -30,5 +30,5 @@ export interface LoginResponse__Output {
   /**
    * date at which the token is expected to expire
    */
-  'expiresAt'?: (_google_protobuf_Timestamp__Output);
+  'expiresAt': (_google_protobuf_Timestamp__Output | null);
 }

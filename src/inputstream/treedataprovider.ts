@@ -4,7 +4,7 @@ import { CommandName } from './constants';
 /**
  * Base class for a tree view with a refresh command.
  */
-export abstract class TreeDataProvider<T> implements vscode.Disposable, vscode.TreeDataProvider<T> {
+export abstract class TreeDataProvider<T extends vscode.TreeItem> implements vscode.Disposable, vscode.TreeDataProvider<T> {
     protected view: vscode.TreeView<T | undefined>;
     protected disposables: vscode.Disposable[] = [];
     protected _onDidChangeTreeData: vscode.EventEmitter<T | undefined> = new vscode.EventEmitter<T | undefined>();
@@ -28,10 +28,6 @@ export abstract class TreeDataProvider<T> implements vscode.Disposable, vscode.T
     protected handleCommandRefresh() {
         this.refresh();
     }
-    
-    protected addCommand(name: string, command: (...args: any) => any) {
-        this.disposables.push(vscode.commands.registerCommand(name, command, this));
-    }
 
     refresh(): void {
         this._onDidChangeTreeData.fire(undefined);
@@ -52,7 +48,7 @@ export abstract class TreeDataProvider<T> implements vscode.Disposable, vscode.T
         return this.getRootItems();
     }
 
-    protected abstract async getRootItems(): Promise<T[] | undefined>;
+    protected abstract getRootItems(): Promise<T[] | undefined>;
 
     public dispose() {
         vscode.commands.executeCommand(this.name + CommandName.RefreshSuffix);

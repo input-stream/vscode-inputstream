@@ -2,7 +2,7 @@
     "name": "vscode-inputstream",
     "displayName": "vscode-inputstream",
     "description": "Streamlined developer publishing",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "publisher": "stackbuild",
     "license": "Apache-2.0",
     "icon": "stackb-full.png",
@@ -26,12 +26,14 @@
         "Other"
     ],
     "activationEvents": [
-        "onUri",
-        "onView:input.stream.inputExplorer",
-        "onView:input.stream.accountExplorer",
-        "onCommand:input.stream.login",
         "onCommand:input.stream.deviceLogin",
-        "onCommand:input.stream.image.search"
+        "onCommand:input.stream.image.paste",
+        "onCommand:input.stream.image.search",
+        "onCommand:input.stream.login",
+        "onFileSystem:page",
+        "onUri",
+        "onView:input.stream.accountExplorer",
+        "onView:input.stream.inputExplorer"
     ],
     "engines": {
         "vscode": "^1.45.0"
@@ -95,6 +97,12 @@
                     "dark": "media/unsplash-dark.svg",
                     "light": "media/unsplash-light.svg"
                 }
+            },
+            {
+                "category": "inputstream",
+                "command": "input.stream.image.paste",
+                "title": "Stream: Paste Image",
+                "icon": "$(clippy)"
             },
             {
                 "category": "inputstream",
@@ -246,8 +254,8 @@
         "genproto": "node ./node_modules/@grpc/proto-loader/build/bin/proto-loader-gen-types.js --defaults --oneofs --verbose --includeComments -O ./src/proto --grpcLib @grpc/grpc-js proto/*.proto"
     },
     "dependencies": {
-        "@grpc/grpc-js": "1.1.1",
-        "@grpc/proto-loader": "0.6.0-pre17",
+        "@grpc/grpc-js": "1.8.1",
+        "@grpc/proto-loader": "0.7.4",
         "fs-extra": "9.0.1",
         "google-auth-library": "6.1.0",
         "graceful-fs": "4.2.4",

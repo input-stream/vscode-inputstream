@@ -10,9 +10,9 @@ export class ImageSearchRenderer {
 		const atLimit = response.totalImages === response.image?.length;
 		let html = '';
 		if (response.image?.length) {
-            const startPage = Math.max(1, request.page || 1);
-            const startIndex = 1 * startPage;
-            const endIndex = startIndex + response.image.length - 1;
+			const startPage = Math.max(1, request.page || 1);
+			const startIndex = 1 * startPage;
+			const endIndex = startIndex + response.image.length - 1;
 			html += `<span>Showing image ${startIndex}-${endIndex} of ${response.totalImages}</span>`;
 		}
 		if (html === '') {
@@ -23,7 +23,7 @@ export class ImageSearchRenderer {
 
 	public async renderResults(response: SearchImagesResponse): Promise<string> {
 		let lines: string[] = [];
-        lines.push('<div class="grid" data-masonry=\'{ "itemSelector": ".grid-item", "columnWidth": 200 }\'>');
+		lines.push('<div class="grid" data-masonry=\'{ "itemSelector": ".grid-item", "columnWidth": 200 }\'>');
 		response.image?.forEach(image => {
 			this.formatUnsplashImageResult(lines, image.unsplash);
 		});
@@ -41,16 +41,16 @@ export class ImageSearchRenderer {
 		</button>`;
 	}
 
-	private formatUnsplashImageResult(lines: string[], image: UnsplashImage | undefined) {
+	private formatUnsplashImageResult(lines: string[], image: UnsplashImage | null | undefined) {
 		if (!image) {
 			return;
 		}
 		// START
-        lines.push(`<div class="grid-item" style="font-size: smaller; padding: 0.2rem" data-id="${image.id}" onclick="postDataElementClick('image', this)">`);
-		
+		lines.push(`<div class="grid-item" style="font-size: smaller; padding: 0.2rem" data-id="${image.id}" onclick="postDataElementClick('image', this)">`);
+
 		// IMAGE
 		lines.push(`<img src="${image.regularUrl}" data-id="${image.id}">`);
-		
+
 		// URLS
 		lines.push('<div style="float: right; padding: 0.5 0.5rem 0.2">');
 		lines.push(`<a href="${image.rawUrl}" title="Copy Raw URL">Raw</a> &middot;`);
@@ -58,8 +58,8 @@ export class ImageSearchRenderer {
 		lines.push(`<a href="${image.regularUrl}" title="Copy Regular URL">Reg</a> &middot;`);
 		lines.push(`<a href="${image.smallUrl}" title="Copy Small URL">Sm</a> &middot;`);
 		lines.push(`<a href="${image.thumbUrl}" title="Copy Thumb URL">Thumb</a>`);
-        lines.push('</div>');
-		
+		lines.push('</div>');
+
 		// METADATA
 		lines.push('<div style="padding-left: 0.5rem; color: gray">');
 		if (image.user?.firstName) {

@@ -59,7 +59,7 @@ export function isTimestampPast(ts: Timestamp): boolean {
  * Format a timestamp like "2020-12-03".
  * @param ts 
  */
-export function formatTimestampISODate(ts: Timestamp | undefined): string {
+export function formatTimestampISODate(ts: Timestamp | null | undefined): string {
     if (!ts) {
         return 'UNKNOWN';
     }
@@ -69,7 +69,7 @@ export function formatTimestampISODate(ts: Timestamp | undefined): string {
 }
 
 export function setCommandContext<T>(key: string, value: T) {
-	return vscode.commands.executeCommand(BuiltInCommands.SetContext, key, value);
+    return vscode.commands.executeCommand(BuiltInCommands.SetContext, key, value);
 }
 
 export function resolveHome(filepath: string) {

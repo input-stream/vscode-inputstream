@@ -7,11 +7,11 @@ export interface InputContent {
   /**
    * any type, for dynamic case
    */
-  'any'?: (_google_protobuf_Any);
+  'any'?: (_google_protobuf_Any | null);
   /**
    * short post form
    */
-  'shortPost'?: (_build_stack_inputstream_v1beta1_ShortPostInputContent);
+  'shortPost'?: (_build_stack_inputstream_v1beta1_ShortPostInputContent | null);
   'value'?: "any"|"shortPost";
 }
 
@@ -19,10 +19,10 @@ export interface InputContent__Output {
   /**
    * any type, for dynamic case
    */
-  'any'?: (_google_protobuf_Any__Output);
+  'any'?: (_google_protobuf_Any__Output | null);
   /**
    * short post form
    */
-  'shortPost'?: (_build_stack_inputstream_v1beta1_ShortPostInputContent__Output);
+  'shortPost'?: (_build_stack_inputstream_v1beta1_ShortPostInputContent__Output | null);
   'value': "any"|"shortPost";
 }

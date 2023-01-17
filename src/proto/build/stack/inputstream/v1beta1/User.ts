@@ -7,7 +7,7 @@ export interface User {
   'name'?: (string);
   'avatarUrl'?: (string);
   'bio'?: (string);
-  'createdAt'?: (_google_protobuf_Timestamp);
+  'createdAt'?: (_google_protobuf_Timestamp | null);
 }
 
 export interface User__Output {
@@ -15,5 +15,5 @@ export interface User__Output {
   'name': (string);
   'avatarUrl': (string);
   'bio': (string);
-  'createdAt'?: (_google_protobuf_Timestamp__Output);
+  'createdAt': (_google_protobuf_Timestamp__Output | null);
 }

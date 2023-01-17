@@ -1,9 +1,9 @@
 import type * as grpc from '@grpc/grpc-js';
-import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
+import type { MessageTypeDefinition } from '@grpc/proto-loader';
 
-import type { ImagesClient as _build_stack_inputstream_v1beta1_ImagesClient } from './build/stack/inputstream/v1beta1/Images';
-import type { InputsClient as _build_stack_inputstream_v1beta1_InputsClient } from './build/stack/inputstream/v1beta1/Inputs';
-import type { UsersClient as _build_stack_inputstream_v1beta1_UsersClient } from './build/stack/inputstream/v1beta1/Users';
+import type { ImagesClient as _build_stack_inputstream_v1beta1_ImagesClient, ImagesDefinition as _build_stack_inputstream_v1beta1_ImagesDefinition } from './build/stack/inputstream/v1beta1/Images';
+import type { InputsClient as _build_stack_inputstream_v1beta1_InputsClient, InputsDefinition as _build_stack_inputstream_v1beta1_InputsDefinition } from './build/stack/inputstream/v1beta1/Inputs';
+import type { UsersClient as _build_stack_inputstream_v1beta1_UsersClient, UsersDefinition as _build_stack_inputstream_v1beta1_UsersDefinition } from './build/stack/inputstream/v1beta1/Users';
 
 type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
   new(...args: ConstructorParameters<Constructor>): Subtype;
@@ -18,11 +18,11 @@ export interface ProtoGrpcType {
           CreateUserRequest: MessageTypeDefinition
           GetInputRequest: MessageTypeDefinition
           GetUserRequest: MessageTypeDefinition
-          Images: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_ImagesClient> & { service: ServiceDefinition }
+          Images: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_ImagesClient> & { service: _build_stack_inputstream_v1beta1_ImagesDefinition }
           Input: MessageTypeDefinition
           InputContent: MessageTypeDefinition
           InputFilterOptions: MessageTypeDefinition
-          Inputs: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_InputsClient> & { service: ServiceDefinition }
+          Inputs: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_InputsClient> & { service: _build_stack_inputstream_v1beta1_InputsDefinition }
           ListInputsRequest: MessageTypeDefinition
           ListInputsResponse: MessageTypeDefinition
           ListUsersRequest: MessageTypeDefinition
@@ -39,7 +39,7 @@ export interface ProtoGrpcType {
           UpdateInputResponse: MessageTypeDefinition
           UpdateUserRequest: MessageTypeDefinition
           User: MessageTypeDefinition
-          Users: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_UsersClient> & { service: ServiceDefinition }
+          Users: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_UsersClient> & { service: _build_stack_inputstream_v1beta1_UsersDefinition }
           WatchInputRequest: MessageTypeDefinition
         }
       }

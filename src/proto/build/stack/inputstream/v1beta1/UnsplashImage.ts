@@ -13,9 +13,9 @@ export interface UnsplashImage {
   'width'?: (number);
   'height'?: (number);
   'color'?: (string);
-  'createdAt'?: (_google_protobuf_Timestamp);
-  'updatedAt'?: (_google_protobuf_Timestamp);
-  'user'?: (_build_stack_inputstream_v1beta1_UnsplashUser);
+  'createdAt'?: (_google_protobuf_Timestamp | null);
+  'updatedAt'?: (_google_protobuf_Timestamp | null);
+  'user'?: (_build_stack_inputstream_v1beta1_UnsplashUser | null);
 }
 
 export interface UnsplashImage__Output {
@@ -28,7 +28,7 @@ export interface UnsplashImage__Output {
   'width': (number);
   'height': (number);
   'color': (string);
-  'createdAt'?: (_google_protobuf_Timestamp__Output);
-  'updatedAt'?: (_google_protobuf_Timestamp__Output);
-  'user'?: (_build_stack_inputstream_v1beta1_UnsplashUser__Output);
+  'createdAt': (_google_protobuf_Timestamp__Output | null);
+  'updatedAt': (_google_protobuf_Timestamp__Output | null);
+  'user': (_build_stack_inputstream_v1beta1_UnsplashUser__Output | null);
 }

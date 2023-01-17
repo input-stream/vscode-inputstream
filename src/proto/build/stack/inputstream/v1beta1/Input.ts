@@ -7,23 +7,51 @@ import type { Long } from '@grpc/proto-loader';
 
 // Original file: proto/inputstream.proto
 
-export enum _build_stack_inputstream_v1beta1_Input_Status {
-  STATUS_UNKNOWN = 0,
-  STATUS_DRAFT = 1,
-  STATUS_PUBLISHED = 2,
-}
+export const _build_stack_inputstream_v1beta1_Input_Status = {
+  STATUS_UNKNOWN: 0,
+  STATUS_DRAFT: 1,
+  STATUS_PUBLISHED: 2,
+} as const;
+
+export type _build_stack_inputstream_v1beta1_Input_Status =
+  | 'STATUS_UNKNOWN'
+  | 0
+  | 'STATUS_DRAFT'
+  | 1
+  | 'STATUS_PUBLISHED'
+  | 2
+
+export type _build_stack_inputstream_v1beta1_Input_Status__Output = typeof _build_stack_inputstream_v1beta1_Input_Status[keyof typeof _build_stack_inputstream_v1beta1_Input_Status]
 
 // Original file: proto/inputstream.proto
 
-export enum _build_stack_inputstream_v1beta1_Input_Type {
-  TYPE_UNKNOWN = 0,
-  TYPE_ANY = 1,
-  TYPE_TWEET = 2,
-  TYPE_SHORT_POST = 3,
-  TYPE_LONG_POST = 4,
-  TYPE_IMAGE = 5,
-  TYPE_PRESENTATION = 6,
-}
+export const _build_stack_inputstream_v1beta1_Input_Type = {
+  TYPE_UNKNOWN: 0,
+  TYPE_ANY: 1,
+  TYPE_TWEET: 2,
+  TYPE_SHORT_POST: 3,
+  TYPE_LONG_POST: 4,
+  TYPE_IMAGE: 5,
+  TYPE_PRESENTATION: 6,
+} as const;
+
+export type _build_stack_inputstream_v1beta1_Input_Type =
+  | 'TYPE_UNKNOWN'
+  | 0
+  | 'TYPE_ANY'
+  | 1
+  | 'TYPE_TWEET'
+  | 2
+  | 'TYPE_SHORT_POST'
+  | 3
+  | 'TYPE_LONG_POST'
+  | 4
+  | 'TYPE_IMAGE'
+  | 5
+  | 'TYPE_PRESENTATION'
+  | 6
+
+export type _build_stack_inputstream_v1beta1_Input_Type__Output = typeof _build_stack_inputstream_v1beta1_Input_Type[keyof typeof _build_stack_inputstream_v1beta1_Input_Type]
 
 export interface Input {
   /**
@@ -49,19 +77,19 @@ export interface Input {
   /**
    * the content value, if masked
    */
-  'content'?: (_build_stack_inputstream_v1beta1_InputContent);
+  'content'?: (_build_stack_inputstream_v1beta1_InputContent | null);
   /**
    * Date when post was created
    */
-  'createdAt'?: (_google_protobuf_Timestamp);
+  'createdAt'?: (_google_protobuf_Timestamp | null);
   /**
    * Date when post content was last updated
    */
-  'updatedAt'?: (_google_protobuf_Timestamp);
+  'updatedAt'?: (_google_protobuf_Timestamp | null);
   /**
    * the type of input this is
    */
-  'type'?: (_build_stack_inputstream_v1beta1_Input_Type | keyof typeof _build_stack_inputstream_v1beta1_Input_Type);
+  'type'?: (_build_stack_inputstream_v1beta1_Input_Type);
   /**
    * the post identifier (a simple number)
    */
@@ -69,12 +97,12 @@ export interface Input {
   /**
    * The status of this input (published or not)
    */
-  'status'?: (_build_stack_inputstream_v1beta1_Input_Status | keyof typeof _build_stack_inputstream_v1beta1_Input_Status);
+  'status'?: (_build_stack_inputstream_v1beta1_Input_Status);
   /**
    * The user that published this item.  This is only
    * populated via a get operation.
    */
-  'author'?: (_build_stack_inputstream_v1beta1_User);
+  'author'?: (_build_stack_inputstream_v1beta1_User | null);
   /**
    * The subtitle of the post
    */
@@ -90,7 +118,7 @@ export interface Input {
   /**
    * Date when post content was last published
    */
-  'publishedAt'?: (_google_protobuf_Timestamp);
+  'publishedAt'?: (_google_protobuf_Timestamp | null);
   /**
    * the URL where the input can be viewed
    */
@@ -125,19 +153,19 @@ export interface Input__Output {
   /**
    * the content value, if masked
    */
-  'content'?: (_build_stack_inputstream_v1beta1_InputContent__Output);
+  'content': (_build_stack_inputstream_v1beta1_InputContent__Output | null);
   /**
    * Date when post was created
    */
-  'createdAt'?: (_google_protobuf_Timestamp__Output);
+  'createdAt': (_google_protobuf_Timestamp__Output | null);
   /**
    * Date when post content was last updated
    */
-  'updatedAt'?: (_google_protobuf_Timestamp__Output);
+  'updatedAt': (_google_protobuf_Timestamp__Output | null);
   /**
    * the type of input this is
    */
-  'type': (_build_stack_inputstream_v1beta1_Input_Type);
+  'type': (_build_stack_inputstream_v1beta1_Input_Type__Output);
   /**
    * the post identifier (a simple number)
    */
@@ -145,12 +173,12 @@ export interface Input__Output {
   /**
    * The status of this input (published or not)
    */
-  'status': (_build_stack_inputstream_v1beta1_Input_Status);
+  'status': (_build_stack_inputstream_v1beta1_Input_Status__Output);
   /**
    * The user that published this item.  This is only
    * populated via a get operation.
    */
-  'author'?: (_build_stack_inputstream_v1beta1_User__Output);
+  'author': (_build_stack_inputstream_v1beta1_User__Output | null);
   /**
    * The subtitle of the post
    */
@@ -166,7 +194,7 @@ export interface Input__Output {
   /**
    * Date when post content was last published
    */
-  'publishedAt'?: (_google_protobuf_Timestamp__Output);
+  'publishedAt': (_google_protobuf_Timestamp__Output | null);
   /**
    * the URL where the input can be viewed
    */
