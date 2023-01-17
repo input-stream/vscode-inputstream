@@ -46,13 +46,49 @@ export class Paster implements vscode.Disposable {
     protected registerCommands() {
         this.disposables.push(
             vscode.commands.registerCommand(
+                CommandName.ImageUpload,
+                this.handleCommandImageUpload, this,
+            ),
+            vscode.commands.registerCommand(
                 CommandName.ImagePaste,
-                this.handleCommandPaste, this,
+                this.handleCommandImagePaste, this,
             ),
         );
     }
 
-    public async handleCommandPaste() {
+    public async handleCommandImageUpload() {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            return;
+        }
+        const docUri = editor.document.uri;
+        if (!docUri) {
+            return;
+        }
+        const docFs = this.fsregistry.getFsForURI(docUri)
+        if (!docFs) {
+            return;
+        }
+
+        const options: vscode.OpenDialogOptions = {
+            canSelectMany: true,
+            openLabel: 'Upload',
+            filters: {
+                'Images': ['apng', 'avif', 'gif', 'jpeg', 'jpg', 'png', 'svg', 'webp'],
+            }
+        };
+        const files = await vscode.window.showOpenDialog(options);
+        if (!files || files.length === 0) {
+            return
+        }
+
+        return Promise.all(files.map((srcUri: vscode.Uri) => {
+            const contentType = getImageContentType(path.extname(srcUri.fsPath));
+            return this.uploadImage(editor, docFs, docUri, srcUri, srcUri.fsPath.slice(1), contentType);
+        }));
+    }
+
+    public async handleCommandImagePaste() {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             return;
@@ -112,13 +148,17 @@ export class Paster implements vscode.Disposable {
 
         const now = new Date().toISOString()
         const basename = `${now.slice(0, 10)}-${now.slice(11, 19).replace(/:/g, "-")}.png`;
-        const dirname = path.dirname(docUri.fsPath);
-        const filename = `${dirname}/${basename}`;
-        const rscname = bytestreamResourceName(srcUri, uuid.generateUuid());
-        const query = `fileContentType=image/png&resourceName=${rscname}`;
 
-        const dstUri = vscode.Uri.parse(
-            `https://img.input.stream${filename}?${query}`);
+        return this.uploadImage(editor, fs, docUri, srcUri, basename, 'image/png');
+    }
+
+    private async uploadImage(editor: vscode.TextEditor, fs: vscode.FileSystem, docUri: vscode.Uri, srcUri: vscode.Uri, basename: string, contentType: string) {
+        basename = basename.replace(/ /g, "_");
+        const dstDirname = path.dirname(docUri.fsPath);
+        const dstFilename = `${dstDirname}/${basename}`;
+        const resourceName = bytestreamResourceName(srcUri, uuid.generateUuid());
+        const dstQuery = `fileContentType=${contentType}&resourceName=${resourceName}`;
+        const dstUri = vscode.Uri.parse(`https://img.input.stream${dstFilename}?${dstQuery}`);
 
         try {
             await fs.copy(srcUri, dstUri);
@@ -131,6 +171,7 @@ export class Paster implements vscode.Disposable {
             if (e instanceof Error) {
                 vscode.window.showErrorMessage(e.message);
             }
+            throw e;
         }
     }
 
@@ -164,7 +205,7 @@ export class Paster implements vscode.Disposable {
             )}/>`;
         }
 
-        return `![${path.basename(uri.path)}](${href})\n`;
+        return `![${path.basename(uri.path)}](${href})\n\n`;
     }
 
     /**
@@ -463,4 +504,27 @@ function makeId(length: number): string {
         result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
+}
+
+function getImageContentType(ext: string): string {
+    switch (ext) {
+        case '.apng':
+            return 'image/apng';
+        case '.avif':
+            return 'image/avif';
+        case '.gif':
+            return 'image/gif';
+        case '.jpeg':
+            return 'image/jpeg';
+        case '.jpg':
+            return 'image/jpeg';
+        case '.png':
+            return 'image/png';
+        case '.svg':
+            return 'image/svg+xml';
+        case '.webp':
+            return 'image/webp';
+        default:
+            throw new Error('unsupported image extension: ' + ext);
+    }
 }

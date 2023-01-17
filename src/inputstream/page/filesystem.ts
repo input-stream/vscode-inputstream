@@ -180,7 +180,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                     const query = parseQuery(target);
                     const fileContentType = query["fileContentType"];
                     if (!fileContentType) {
-                        reject("target URI must have query param contentType");
+                        reject("target URI must have query param fileContentType");
                         return;
                     }
                     const resourceName = query["resourceName"];
@@ -206,6 +206,10 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                     }, md);
 
                     call?.on('status', (status: grpc.StatusObject) => {
+                        if (token.isCancellationRequested) {
+                            reject('Cancellation Requested');
+                            return;
+                        }
                         switch (status.code) {
                             case grpc.status.OK:
                                 resolve();
@@ -227,13 +231,22 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                         resolve();
                     });
 
+                    const chunkSize = 65536;
+                    const increment = (chunkSize / size) * 100;
+
                     // read file in chunks and upload it
                     const stream = fs.createReadStream(source.fsPath, {
                         autoClose: true,
+                        highWaterMark: chunkSize,
                     });
 
                     let offset = 0;
                     stream.on('data', (chunk: Buffer) => {
+                        if (token.isCancellationRequested) {
+                            reject('Cancellation Requested');
+                            return;
+                        }
+
                         const nextOffset = offset + chunk.length;
                         const req: WriteRequest = {
                             resourceName: resourceName,
@@ -242,10 +255,10 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                             finishWrite: nextOffset === size,
                         };
                         offset = nextOffset;
+
                         call?.write(req);
-                        progress.report({
-                            increment: (offset / size) * 100,
-                        });
+
+                        progress.report({ increment });
                     });
 
                     stream.on('error', (err: any) => {
