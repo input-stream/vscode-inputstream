@@ -2,7 +2,7 @@
     "name": "vscode-inputstream",
     "displayName": "vscode-inputstream",
     "description": "Streamlined developer publishing",
-    "version": "0.8.0",
+    "version": "0.8.1",
     "publisher": "stackbuild",
     "license": "Apache-2.0",
     "icon": "stackb-full.png",
@@ -28,6 +28,7 @@
     "activationEvents": [
         "onCommand:input.stream.deviceLogin",
         "onCommand:input.stream.image.paste",
+        "onCommand:input.stream.image.upload",
         "onCommand:input.stream.image.search",
         "onCommand:input.stream.login",
         "onFileSystem:page",
@@ -101,8 +102,14 @@
             {
                 "category": "inputstream",
                 "command": "input.stream.image.paste",
-                "title": "Stream: Paste Image",
-                "icon": "$(clippy)"
+                "title": "Paste Image",
+                "icon": "$(cloud-upload)"
+            },
+            {
+                "category": "inputstream",
+                "command": "input.stream.image.upload",
+                "title": "Upload Image",
+                "icon": "$(upload)"
             },
             {
                 "category": "inputstream",
@@ -215,7 +222,7 @@
             "activitybar": [
                 {
                     "id": "inputstream-explorer",
-                    "title": "Stream 0.8.0",
+                    "title": "Stream 0.8.1",
                     "icon": "media/astronaut.svg"
                 }
             ]

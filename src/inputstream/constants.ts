@@ -28,6 +28,7 @@ export enum ConfigSection {
 export enum CommandName {
     RefreshSuffix = '.refresh',
     ImagePaste = 'input.stream.image.paste',
+    ImageUpload = 'input.stream.image.upload',
     ImageSearch = 'input.stream.image.search',
     InputCreate = 'input.stream.input.create',
     InputOpen = 'input.stream.input.open',
