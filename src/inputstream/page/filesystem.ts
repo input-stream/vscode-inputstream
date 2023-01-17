@@ -1,19 +1,19 @@
-import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
 import * as fs from 'fs-extra';
+import * as grpc from '@grpc/grpc-js';
+import Long = require('long');
+import path = require('path');
 
 import { BytesClient } from '../byteStreamClient';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
-import { Input, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from '../../proto/build/stack/inputstream/v1beta1/Input';
+import { Input } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { InputStreamClient } from '../inputStreamClient';
+import { parseQuery } from '../urihandler';
 import { Scheme } from '../constants';
 import { ShortPostInputContent } from '../../proto/build/stack/inputstream/v1beta1/ShortPostInputContent';
 import { TextDecoder, TextEncoder } from 'util';
-import { WriteResponse } from '../../proto/google/bytestream/WriteResponse';
-import Long = require('long');
 import { WriteRequest } from '../../proto/google/bytestream/WriteRequest';
-import path = require('path');
-import { parseQuery } from '../urihandler';
+import { WriteResponse } from '../../proto/google/bytestream/WriteResponse';
 
 const MAX_CLIENT_BODY_SIZE = 10 * 1024 * 1024; // upload size limit
 
@@ -41,10 +41,6 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         this.disposables.push(vscode.workspace.registerFileSystemProvider(Scheme.Page, this, { isCaseSensitive: true }));
     }
 
-    public filesystem(): vscode.FileSystem {
-        return new Filesystem(this);
-    }
-
     private handleInputStreamClientChange(client: InputStreamClient) {
         this.inputstreamClient = client;
     }
@@ -56,113 +52,8 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     private handleTextDocumentClose(doc: vscode.TextDocument) {
     }
 
-    public async getFile(uri: vscode.Uri): Promise<InputFile> {
-        let file = this.files.get(uri.path);
-        if (!file) {
-            file = await this.openFile(uri);
-            this.files.set(uri.path, file);
-        }
-        return file;
-    }
-
-    protected async openFile(uri: vscode.Uri): Promise<InputFile> {
-        if (!this.inputstreamClient) {
-            throw vscode.FileSystemError.Unavailable(uri);
-        }
-
-        const parts = uri.path.split('/');
-        const login = parts[1];
-        const id = parts[2];
-        // const slug = parts[2];
-        if (!(login && id)) {
-            throw vscode.FileSystemError.FileNotFound(uri);
-        }
-        const mask: FieldMask = {
-            paths: ['content'],
-        };
-
-        try {
-            const input = await this.inputstreamClient.getInput({ login, id }, mask);
-            return new InputFile(input!);
-        } catch (err) {
-            if (err instanceof Error) {
-                vscode.window.showErrorMessage(`Could not get input content: ${err.message}`);
-                throw err;
-            }
-        }
-
-        // TODO(pcj): remove this, we are only fooling the compiler
-        return new InputFile({} as Input);
-    }
-
-    protected async createFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
-        return this.updateFile(uri, content);
-    }
-
-    protected async updateFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
-        if (!this.inputstreamClient) {
-            throw vscode.FileSystemError.Unavailable(uri);
-        }
-        const file = await this.getFile(uri);
-        const text = new TextDecoder().decode(content);
-        const short: ShortPostInputContent = {
-            markdown: text,
-        };
-        file.input.content = {
-            value: 'shortPost',
-            shortPost: short,
-        };
-        const mask: FieldMask = {
-            paths: ['content'],
-        };
-
-        const response = await this.inputstreamClient.updateInput(file.input, mask);
-        this.onDidInputChange.fire(file.input);
-    }
-
-    public async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
-        return this.getFile(uri);
-    }
-
-    public async readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
-        throw vscode.FileSystemError.FileNotFound(uri);
-    }
-
-    public async writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): Promise<void> {
-        const file = this.getFile(uri);
-        if (options.create) {
-            return this.createFile(uri, content);
-        }
-        return this.updateFile(uri, content);
-    }
-
-    async readFile(uri: vscode.Uri): Promise<Uint8Array> {
-        const file = await this.getFile(uri);
-        return file.data!;
-    }
-
-    public async createDirectory(uri: vscode.Uri): Promise<void> {
-        throw vscode.FileSystemError.Unavailable('unsupported operation: create directory');
-    }
-
-    public rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean }): void {
-        throw vscode.FileSystemError.Unavailable('unsupported operation: rename');
-    }
-
-    public delete(uri: vscode.Uri): void {
-        throw vscode.FileSystemError.Unavailable('unsupported operation: delete');
-    }
-
-    public watch(_resource: vscode.Uri): vscode.Disposable {
-        // ignore, fires for all changes...
-        return new vscode.Disposable(() => { });
-    }
-
-    public copy(source: vscode.Uri, target: vscode.Uri, options: { overwrite: boolean }): Thenable<void> {
-        if (target.authority === 'img.input.stream') {
-            return this.upload(source, target, options);
-        }
-        throw vscode.FileSystemError.Unavailable(`unsupported operation: copy to ${target.scheme}://${target.authority}`);
+    public filesystem(): vscode.FileSystem {
+        return new Filesystem(this);
     }
 
     private upload(source: vscode.Uri, target: vscode.Uri, options: { overwrite: boolean }): Thenable<void> {
@@ -178,14 +69,14 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
             }>, token: vscode.CancellationToken): Promise<void> => {
                 return new Promise<void>((resolve, reject) => {
                     const query = parseQuery(target);
-                    const fileContentType = query["fileContentType"];
+                    const fileContentType = query['fileContentType'];
                     if (!fileContentType) {
-                        reject("target URI must have query param fileContentType");
+                        reject('target URI must have query param fileContentType');
                         return;
                     }
-                    const resourceName = query["resourceName"];
+                    const resourceName = query['resourceName'];
                     if (!resourceName) {
-                        reject("target URI must have query param resourceName");
+                        reject('target URI must have query param resourceName');
                         return;
                     }
                     const size = parseInt(path.basename(resourceName));
@@ -271,21 +162,182 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                 });
             },
         );
-
     }
 
+    protected async openFile(uri: vscode.Uri): Promise<InputFile> {
+        if (!this.inputstreamClient) {
+            throw vscode.FileSystemError.Unavailable(uri);
+        }
+
+        const parts = uri.path.split('/');
+        const login = parts[1];
+        const id = parts[2];
+        // const slug = parts[2];
+        if (!(login && id)) {
+            throw vscode.FileSystemError.FileNotFound(uri);
+        }
+        const mask: FieldMask = {
+            paths: ['content'],
+        };
+
+        try {
+            const input = await this.inputstreamClient.getInput({ login, id }, mask);
+            return new InputFile(input!);
+        } catch (err) {
+            if (err instanceof Error) {
+                vscode.window.showErrorMessage(`Could not get input content: ${err.message}`);
+                throw err;
+            }
+        }
+
+        // TODO(pcj): remove this, we are only fooling the compiler
+        return new InputFile({} as Input);
+    }
+
+    protected async createFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
+        return this.updateFile(uri, content);
+    }
+
+    protected async updateFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
+        if (!this.inputstreamClient) {
+            throw vscode.FileSystemError.Unavailable(uri);
+        }
+        const file = await this.getFile(uri);
+        const text = new TextDecoder().decode(content);
+        const short: ShortPostInputContent = {
+            markdown: text,
+        };
+        file.input.content = {
+            value: 'shortPost',
+            shortPost: short,
+        };
+        const mask: FieldMask = {
+            paths: ['content'],
+        };
+
+        const response = await this.inputstreamClient.updateInput(file.input, mask);
+        this.onDidInputChange.fire(file.input);
+    }
+
+    public async getFile(uri: vscode.Uri): Promise<InputFile> {
+        try {
+            let file = this.files.get(uri.path);
+            if (!file) {
+                file = await this.openFile(uri);
+                this.files.set(uri.path, file);
+            }
+            return file;
+        } catch (e) {
+            throw vscode.FileSystemError.FileNotFound(uri);
+        }
+    }
+
+    /**
+     * stat implements part of the vscode.FileSystemProvider interface.
+     * @param uri 
+     * @returns 
+     */
+    public stat(uri: vscode.Uri): Promise<vscode.FileStat> {
+        // return undefined;
+        return this.getFile(uri);
+    }
+
+    /**
+     * readDirectory implements part of the vscode.FileSystemProvider interface.
+     * @param uri 
+     */
+    public readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
+        throw vscode.FileSystemError.FileNotFound(uri);
+    }
+
+    /**
+     * writeFile implements part of the vscode.FileSystemProvider interface.
+     * @param uri 
+     * @param content 
+     * @param options 
+     * @returns 
+     */
+    public writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): Promise<void> {
+        const file = this.getFile(uri);
+        if (options.create) {
+            return this.createFile(uri, content);
+        }
+        return this.updateFile(uri, content);
+    }
+
+    /**
+     * readFile implements part of the vscode.FileSystemProvider interface.
+     * @param uri 
+     * @returns 
+     */
+    async readFile(uri: vscode.Uri): Promise<Uint8Array> {
+        const file = await this.getFile(uri);
+        return file.data!;
+    }
+
+    /**
+     * createDirectory implements part of the vscode.FileSystemProvider interface.
+     * @param uri 
+     */
+    public createDirectory(uri: vscode.Uri): Promise<void> {
+        throw vscode.FileSystemError.Unavailable('unsupported operation: create directory');
+    }
+
+    /**
+     * rename implements part of the vscode.FileSystemProvider interface.
+     * @param oldUri 
+     * @param newUri 
+     * @param options 
+     */
+    public rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean }): void {
+        throw vscode.FileSystemError.Unavailable('unsupported operation: rename');
+    }
+
+    /**
+     * delete implements part of the vscode.FileSystemProvider interface.
+     * @param uri 
+     */
+    public delete(uri: vscode.Uri): void {
+        throw vscode.FileSystemError.Unavailable('unsupported operation: delete');
+    }
+
+    /**
+     * watch implements part of the vscode.FileSystemProvider interface.
+     * @param _resource 
+     * @returns 
+     */
+    public watch(_resource: vscode.Uri): vscode.Disposable {
+        // ignore, fires for all changes...
+        return new vscode.Disposable(() => { });
+    }
+
+    /**
+     * copy implements part of the vscode.FileSystemProvider interface.
+     * @param source 
+     * @param target 
+     * @param options 
+     * @returns 
+     */
+    public copy(source: vscode.Uri, target: vscode.Uri, options: { overwrite: boolean }): Thenable<void> {
+        if (target.authority === 'img.input.stream') {
+            return this.upload(source, target, options);
+        }
+        throw vscode.FileSystemError.Unavailable(`unsupported operation: copy to ${target.scheme}://${target.authority}`);
+    }
+
+    /**
+     * dispose implements part of the vscode.Disposable interface.
+     */
     public dispose() {
         for (const disposable of this.disposables) {
             disposable.dispose();
         }
         this.disposables.length = 0;
     }
-
 }
 
 class Filesystem implements vscode.FileSystem {
     constructor(private provider: vscode.FileSystemProvider) { }
-
 
     /**
      * Retrieve metadata about a file.
@@ -293,7 +345,7 @@ class Filesystem implements vscode.FileSystem {
      * @param uri The uri of the file to retrieve metadata about.
      * @return The file metadata about the file.
      */
-    async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
+    public async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
         return this.provider.stat(uri);
     }
 
@@ -303,7 +355,7 @@ class Filesystem implements vscode.FileSystem {
      * @param uri The uri of the folder.
      * @return An array of name/type-tuples or a thenable that resolves to such.
      */
-    async readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
+    public async readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
         return this.provider.readDirectory(uri);
     }
 
@@ -315,7 +367,7 @@ class Filesystem implements vscode.FileSystem {
      *
      * @param uri The uri of the new folder.
      */
-    async createDirectory(uri: vscode.Uri): Promise<void> {
+    public async createDirectory(uri: vscode.Uri): Promise<void> {
         return this.provider.createDirectory(uri);
     }
 
@@ -325,7 +377,7 @@ class Filesystem implements vscode.FileSystem {
      * @param uri The uri of the file.
      * @return An array of bytes or a thenable that resolves to such.
      */
-    async readFile(uri: vscode.Uri): Promise<Uint8Array> {
+    public async readFile(uri: vscode.Uri): Promise<Uint8Array> {
         return this.provider.readFile(uri);
     }
 
@@ -335,7 +387,7 @@ class Filesystem implements vscode.FileSystem {
      * @param uri The uri of the file.
      * @param content The new content of the file.
      */
-    async writeFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
+    public async writeFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
         return this.provider.writeFile(uri, content, {
             create: true,
             overwrite: true,
@@ -348,7 +400,7 @@ class Filesystem implements vscode.FileSystem {
      * @param uri The resource that is to be deleted.
      * @param options Defines if trash can should be used and if deletion of folders is recursive
      */
-    async delete(uri: vscode.Uri, options?: { recursive?: boolean, useTrash?: boolean }): Promise<void> {
+    public async delete(uri: vscode.Uri, options?: { recursive?: boolean, useTrash?: boolean }): Promise<void> {
         return this.provider.delete(uri, { recursive: options?.recursive || false });
     }
 
@@ -359,10 +411,10 @@ class Filesystem implements vscode.FileSystem {
      * @param newUri The new location.
      * @param options Defines if existing files should be overwritten.
      */
-    async rename(source: vscode.Uri, target: vscode.Uri, options?: { overwrite?: boolean }): Promise<void> {
+    public async rename(source: vscode.Uri, target: vscode.Uri, options?: { overwrite?: boolean }): Promise<void> {
         return this.provider.rename(source, target, {
             overwrite: options?.overwrite || false,
-        })
+        });
     }
 
     /**
@@ -372,15 +424,18 @@ class Filesystem implements vscode.FileSystem {
      * @param destination The destination location.
      * @param options Defines if existing files should be overwritten.
      */
-    async copy(source: vscode.Uri, target: vscode.Uri, options?: { overwrite?: boolean }): Promise<void> {
+    public async copy(source: vscode.Uri, target: vscode.Uri, options?: { overwrite?: boolean }): Promise<void> {
         if (!this.provider.copy) {
             throw vscode.FileSystemError.Unavailable('unsupported operation: copy');
         }
         return this.provider.copy(source, target, {
             overwrite: options?.overwrite || false,
-        })
+        });
     }
 
+    public isWritableFileSystem(scheme: string): boolean | undefined {
+        return scheme === Scheme.Page;
+    }
 }
 
 export class InputFile implements vscode.FileStat {

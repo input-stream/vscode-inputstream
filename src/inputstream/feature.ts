@@ -137,8 +137,8 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable,
 
     public getFsForURI(uri: vscode.Uri): vscode.FileSystem | undefined {
         switch (uri.scheme) {
-            case "page":
-                return this.getFsForPage(uri.fsPath)
+            case 'page':
+                return this.getFsForPage(uri.fsPath);
             default:
                 return vscode.workspace.fs;
         }

@@ -1,9 +1,9 @@
 import * as crypto from 'crypto';
-import * as fs from "fs-extra";
-import * as os from "os";
-import * as path from "path";
+import * as fs from 'fs-extra';
+import * as os from 'os';
+import * as path from 'path';
 import * as vscode from 'vscode';
-import { spawn } from "child_process";
+import { spawn } from 'child_process';
 import { CommandName } from './constants';
 import { Container } from '../container';
 import { FsRegistry } from './fsregistry';
@@ -18,7 +18,7 @@ import { uuid } from 'vscode-common';
 // unless I can get support upstreamed.
 //
 
-type Platform = "darwin" | "win32" | "win10" | "linux" | "wsl";
+type Platform = 'darwin' | 'win32' | 'win10' | 'linux' | 'wsl';
 
 enum ClipboardType {
     Unknown = -1,
@@ -34,7 +34,7 @@ type PasteImageContext = {
         width: string;
         height: string;
     } | null;
-}
+};
 
 export class Paster implements vscode.Disposable {
     private disposables: vscode.Disposable[] = [];
@@ -65,7 +65,7 @@ export class Paster implements vscode.Disposable {
         if (!docUri) {
             return;
         }
-        const docFs = this.fsregistry.getFsForURI(docUri)
+        const docFs = this.fsregistry.getFsForURI(docUri);
         if (!docFs) {
             return;
         }
@@ -79,7 +79,7 @@ export class Paster implements vscode.Disposable {
         };
         const files = await vscode.window.showOpenDialog(options);
         if (!files || files.length === 0) {
-            return
+            return;
         }
 
         return Promise.all(files.map((srcUri: vscode.Uri) => {
@@ -97,7 +97,7 @@ export class Paster implements vscode.Disposable {
         if (!docUri) {
             return;
         }
-        const docFs = this.fsregistry.getFsForURI(docUri)
+        const docFs = this.fsregistry.getFsForURI(docUri);
         if (!docFs) {
             return;
         }
@@ -138,22 +138,22 @@ export class Paster implements vscode.Disposable {
         if (!tmpfile) {
             return;
         }
-        if (tmpfile === "no image") {
+        if (tmpfile === 'no image') {
             vscode.window.showInformationMessage(
-                "There is not an image in the clipboard."
+                'There is not an image in the clipboard.'
             );
             return;
         }
         const srcUri = vscode.Uri.file(tmpfile);
 
-        const now = new Date().toISOString()
-        const basename = `${now.slice(0, 10)}-${now.slice(11, 19).replace(/:/g, "-")}.png`;
+        const now = new Date().toISOString();
+        const basename = `${now.slice(0, 10)}-${now.slice(11, 19).replace(/:/g, '-')}.png`;
 
         return this.uploadImage(editor, fs, docUri, srcUri, basename, 'image/png');
     }
 
     private async uploadImage(editor: vscode.TextEditor, fs: vscode.FileSystem, docUri: vscode.Uri, srcUri: vscode.Uri, basename: string, contentType: string) {
-        basename = basename.replace(/ /g, "_");
+        basename = basename.replace(/ /g, '_');
         const dstDirname = path.dirname(docUri.fsPath);
         const dstFilename = `${dstDirname}/${basename}`;
         const resourceName = bytestreamResourceName(srcUri, uuid.generateUuid());
@@ -193,7 +193,7 @@ export class Paster implements vscode.Disposable {
     private renderMdFilePath(pasteImgContext: PasteImageContext): string | undefined {
         const uri = pasteImgContext.target;
         if (!uri) {
-            return
+            return;
         }
         const href = `${uri.scheme}://${uri.authority}${uri.path}`;
 
@@ -214,13 +214,13 @@ export class Paster implements vscode.Disposable {
      */
     private async saveClipboardImage(): Promise<string> {
         const script = {
-            win32: "win32_save_clipboard_png.ps1",
-            darwin: "mac.applescript",
-            linux: "linux_save_clipboard_png.sh",
-            wsl: "win32_save_clipboard_png.ps1",
-            win10: "win32_save_clipboard_png.ps1",
+            win32: 'win32_save_clipboard_png.ps1',
+            darwin: 'mac.applescript',
+            linux: 'linux_save_clipboard_png.sh',
+            wsl: 'win32_save_clipboard_png.ps1',
+            win10: 'win32_save_clipboard_png.ps1',
         };
-        const basename = makeId(20) + ".png";
+        const basename = makeId(20) + '.png';
         const tmp = vscode.Uri.file(path.join(os.tmpdir(), basename));
         const fsPath = await wslSafe(tmp.fsPath);
 
@@ -229,18 +229,18 @@ export class Paster implements vscode.Disposable {
 
     private async getClipboardContentType() {
         const script = {
-            linux: "linux_get_clipboard_content_type.sh",
-            win32: "win32_get_clipboard_content_type.ps1",
-            darwin: "darwin_get_clipboard_content_type.applescript",
-            wsl: "win32_get_clipboard_content_type.ps1",
-            win10: "win32_get_clipboard_content_type.ps1",
+            linux: 'linux_get_clipboard_content_type.sh',
+            win32: 'win32_get_clipboard_content_type.ps1',
+            darwin: 'darwin_get_clipboard_content_type.applescript',
+            wsl: 'win32_get_clipboard_content_type.ps1',
+            win10: 'win32_get_clipboard_content_type.ps1',
         };
 
         try {
             let data = await this.runScript(script, []);
-            if (data == "no xclip") {
+            if (data === 'no xclip') {
                 vscode.window.showInformationMessage(
-                    "You need to install xclip command first."
+                    'You need to install xclip command first.'
                 );
                 return;
             }
@@ -270,39 +270,39 @@ export class Paster implements vscode.Disposable {
         }
         const scriptPath = Container.scriptPath(scriptName);
 
-        let shell = "";
+        let shell = '';
         let command = [];
 
         switch (platform) {
-            case "win32":
-            case "win10":
-            case "wsl":
+            case 'win32':
+            case 'win10':
+            case 'wsl':
                 // Windows
                 command = [
-                    "-noprofile",
-                    "-noninteractive",
-                    "-nologo",
-                    "-sta",
-                    "-executionpolicy",
-                    "bypass",
-                    "-windowstyle",
-                    "hidden",
-                    "-file",
+                    '-noprofile',
+                    '-noninteractive',
+                    '-nologo',
+                    '-sta',
+                    '-executionpolicy',
+                    'bypass',
+                    '-windowstyle',
+                    'hidden',
+                    '-file',
                     await wslSafe(scriptPath),
                 ].concat(args);
                 shell =
-                    platform == "wsl"
-                        ? "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"
-                        : "powershell";
+                    platform === 'wsl'
+                        ? '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe'
+                        : 'powershell';
                 break;
-            case "darwin":
+            case 'darwin':
                 // Mac
-                shell = "osascript";
+                shell = 'osascript';
                 command = [scriptPath].concat(args);
                 break;
-            case "linux":
+            case 'linux':
                 // Linux
-                shell = "sh";
+                shell = 'sh';
                 command = [scriptPath].concat(args);
                 break;
         }
@@ -317,15 +317,15 @@ export class Paster implements vscode.Disposable {
 
         const detectedTypes = new Set();
         let platform = getCurrentPlatform();
-        console.log("platform", platform);
+        console.log('platform', platform);
         switch (platform) {
-            case "linux":
+            case 'linux':
                 for (const type of types) {
                     switch (type) {
-                        case "image/png":
+                        case 'image/png':
                             detectedTypes.add(ClipboardType.Image);
                             break;
-                        case "text/html":
+                        case 'text/html':
                             detectedTypes.add(ClipboardType.Html);
                             break;
                         default:
@@ -334,35 +334,35 @@ export class Paster implements vscode.Disposable {
                     }
                 }
                 break;
-            case "win32":
-            case "win10":
-            case "wsl":
+            case 'win32':
+            case 'win10':
+            case 'wsl':
                 for (const type of types) {
                     switch (type) {
-                        case "PNG":
-                        case "Bitmap":
-                        case "DeviceIndependentBitmap":
+                        case 'PNG':
+                        case 'Bitmap':
+                        case 'DeviceIndependentBitmap':
                             detectedTypes.add(ClipboardType.Image);
                             break;
-                        case "HTML Format":
+                        case 'HTML Format':
                             detectedTypes.add(ClipboardType.Html);
                             break;
-                        case "Text":
-                        case "UnicodeText":
+                        case 'Text':
+                        case 'UnicodeText':
                             detectedTypes.add(ClipboardType.Text);
                             break;
                     }
                 }
                 break;
-            case "darwin":
+            case 'darwin':
                 for (const type of types) {
                     switch (type) {
-                        case "Text":
+                        case 'Text':
                             detectedTypes.add(ClipboardType.Text);
                             break;
-                        case "HTML":
+                        case 'HTML':
                             detectedTypes.add(ClipboardType.Html);
-                        case "Image":
+                        case 'Image':
                             detectedTypes.add(ClipboardType.Image);
                     }
                 }
@@ -375,8 +375,7 @@ export class Paster implements vscode.Disposable {
             ClipboardType.Html,
             ClipboardType.Text,
         ];
-        for (const type of priorityOrdering)
-            if (detectedTypes.has(type)) return type;
+        for (const type of priorityOrdering) { if (detectedTypes.has(type)) { return type; } }
         // No known types detected
         return ClipboardType.Unknown;
     }
@@ -407,21 +406,21 @@ function runScript(
 ): Promise<string> {
     return new Promise((resolve, reject) => {
         let errorTriggered = false;
-        let output = "";
-        let errorMessage = "";
+        let output = '';
+        let errorMessage = '';
         let process = spawn(shell, options, { timeout });
 
-        process.stdout.on("data", (chunk) => {
+        process.stdout.on('data', (chunk) => {
             output += `${chunk}`;
         });
 
-        process.stderr.on("data", (chunk) => {
+        process.stderr.on('data', (chunk) => {
             errorMessage += `${chunk}`;
         });
 
-        process.on("exit", (code, signal) => {
+        process.on('exit', (code, signal) => {
             if (process.killed) {
-                console.log("Process took too long and was killed");
+                console.log('Process took too long and was killed');
             }
             if (!errorTriggered) {
                 if (code === 0) {
@@ -432,7 +431,7 @@ function runScript(
             }
         });
 
-        process.on("error", (error) => {
+        process.on('error', (error) => {
             errorTriggered = true;
             reject(error);
         });
@@ -442,24 +441,24 @@ function runScript(
 function getCurrentPlatform(): Platform {
     const platform = process.platform;
     if (isWsl(platform)) {
-        return "wsl";
+        return 'wsl';
     }
-    if (platform === "win32") {
-        const currentOS = os.release().split(".")[0];
-        if (currentOS === "10") {
-            return "win10";
+    if (platform === 'win32') {
+        const currentOS = os.release().split('.')[0];
+        if (currentOS === '10') {
+            return 'win10';
         } else {
-            return "win32";
+            return 'win32';
         }
-    } else if (platform === "darwin") {
-        return "darwin";
+    } else if (platform === 'darwin') {
+        return 'darwin';
     } else {
-        return "linux";
+        return 'linux';
     }
 };
 
 function isWsl(platform: string): boolean {
-    return false
+    return false;
 }
 
 async function wslSafe(script: string): Promise<string> {
@@ -473,13 +472,13 @@ async function wslSafe(script: string): Promise<string> {
  */
 function base64EncodeFile(filename: string) {
     const bitmap = fs.readFileSync(filename);
-    return Buffer.from(bitmap).toString("base64");
+    return Buffer.from(bitmap).toString('base64');
 }
 
 function getDimensionProps(width: any, height: any): string {
-    const widthProp = width === undefined ? "" : `width='${width}'`;
-    const heightProp = height === undefined ? "" : `height='${height}'`;
-    return [widthProp, heightProp].join(" ").trim();
+    const widthProp = width === undefined ? '' : `width='${width}'`;
+    const heightProp = height === undefined ? '' : `height='${height}'`;
+    return [widthProp, heightProp].join(' ').trim();
 }
 
 function bytestreamResourceName(source: vscode.Uri, id: string): string {

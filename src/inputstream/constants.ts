@@ -93,7 +93,7 @@ export enum ButtonName {
 }
 
 export function getInputURI(input: Input): vscode.Uri {
-    const url = `${Scheme.Page}://input.stream/${input.owner}/${input.id}/${input.titleSlug}.md`;
+    const url = `${Scheme.Page}:/${input.owner}/${input.id}/${input.titleSlug}.md`;
     return vscode.Uri.parse(url);
 }
 
