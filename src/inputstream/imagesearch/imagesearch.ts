@@ -151,8 +151,12 @@ export class ImageSearch implements vscode.Disposable {
 
                 // Save the images
                 this.imagesById.clear();
-                response.image?.forEach(
-                    image => this.imagesById.set(image.unsplash?.id!, image));
+                response.image?.forEach(image => {
+                    if (!image.unsplash?.id) {
+                        return;
+                    }
+                    this.imagesById.set(image.unsplash.id, image);
+                });
 
                 // Update summary
                 webview.onDidChangeHTMLSummary.fire('Rendering results...');

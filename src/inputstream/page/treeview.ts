@@ -152,7 +152,7 @@ export class InputItem extends vscode.TreeItem {
     ) {
         super(label || `"${input.title!}"`);
 
-        let when = formatTimestampISODate(input.createdAt);
+        const when = formatTimestampISODate(input.createdAt);
 
         this.id = input.id;
         this.label = `${when}`;

@@ -96,7 +96,11 @@ export class InputStreamClient extends GRPCClient {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
-                            resolve(resp?.input!);
+                            if (resp?.input) {
+                                resolve(resp.input);
+                            } else {
+                                reject(`panic: response object missing`);
+                            }
                         }
                     });
             });

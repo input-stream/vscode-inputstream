@@ -22,7 +22,7 @@ export class ImageSearchRenderer {
 	}
 
 	public async renderResults(response: SearchImagesResponse): Promise<string> {
-		let lines: string[] = [];
+		const lines: string[] = [];
 		lines.push('<div class="grid" data-masonry=\'{ "itemSelector": ".grid-item", "columnWidth": 200 }\'>');
 		response.image?.forEach(image => {
 			this.formatUnsplashImageResult(lines, image.unsplash);

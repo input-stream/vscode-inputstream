@@ -67,7 +67,7 @@ export class PageController implements vscode.Disposable {
             return;
         }
         try {
-            let request: Input = {
+            const request: Input = {
                 status: 'STATUS_DRAFT',
                 owner: this.user.login,
                 login: this.user.login,

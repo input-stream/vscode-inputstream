@@ -181,7 +181,7 @@ export class Paster implements vscode.Disposable {
             return;
         }
         editor.edit((edit) => {
-            let current = editor.selection;
+            const current = editor.selection;
             if (current.isEmpty) {
                 edit.insert(current.start, renderText!);
             } else {
@@ -197,7 +197,7 @@ export class Paster implements vscode.Disposable {
         }
         const href = `${uri.scheme}://${uri.authority}${uri.path}`;
 
-        let imgTag = pasteImgContext.imgTag;
+        const imgTag = pasteImgContext.imgTag;
         if (imgTag) {
             return `<img src='${href}' ${getDimensionProps(
                 imgTag.width,
@@ -237,14 +237,14 @@ export class Paster implements vscode.Disposable {
         };
 
         try {
-            let data = await this.runScript(script, []);
+            const data = await this.runScript(script, []);
             if (data === 'no xclip') {
                 vscode.window.showInformationMessage(
                     'You need to install xclip command first.'
                 );
                 return;
             }
-            let types = data.split(/\r\n|\n|\r/);
+            const types = data.split(/\r\n|\n|\r/);
 
             return this.getClipboardType(types);
         } catch (e) {
@@ -263,7 +263,7 @@ export class Paster implements vscode.Disposable {
         script: Record<Platform, string | null>,
         args: string[] = [],
     ) {
-        let platform = getCurrentPlatform();
+        const platform = getCurrentPlatform();
         const scriptName = script[platform];
         if (!scriptName) {
             throw new Error(`No script exists for ${platform}`);
@@ -316,7 +316,7 @@ export class Paster implements vscode.Disposable {
         }
 
         const detectedTypes = new Set();
-        let platform = getCurrentPlatform();
+        const platform = getCurrentPlatform();
         console.log('platform', platform);
         switch (platform) {
             case 'linux':
@@ -362,8 +362,10 @@ export class Paster implements vscode.Disposable {
                             break;
                         case 'HTML':
                             detectedTypes.add(ClipboardType.Html);
+                            break;
                         case 'Image':
                             detectedTypes.add(ClipboardType.Image);
+                            break;
                     }
                 }
                 break;
@@ -408,7 +410,7 @@ function runScript(
         let errorTriggered = false;
         let output = '';
         let errorMessage = '';
-        let process = spawn(shell, options, { timeout });
+        const process = spawn(shell, options, { timeout });
 
         process.stdout.on('data', (chunk) => {
             output += `${chunk}`;
@@ -455,7 +457,7 @@ function getCurrentPlatform(): Platform {
     } else {
         return 'linux';
     }
-};
+}
 
 function isWsl(platform: string): boolean {
     return false;
@@ -496,10 +498,10 @@ function sha256Bytes(buf: Buffer): string {
 }
 
 function makeId(length: number): string {
-    var result = '';
-    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var charactersLength = characters.length;
-    for (var i = 0; i < length; i++) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
         result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
