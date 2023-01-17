@@ -6,7 +6,6 @@ import * as vscode from 'vscode';
 import { spawn } from "child_process";
 import { CommandName } from './constants';
 import { Container } from '../container';
-import { Predefine } from './predefine';
 import { FsRegistry } from './fsregistry';
 import { uuid } from 'vscode-common';
 
@@ -29,8 +28,7 @@ enum ClipboardType {
 }
 
 type PasteImageContext = {
-    target?: vscode.Uri;
-    convertToBase64: boolean;
+    target: vscode.Uri;
     removeTargetFileAfterConvert: boolean;
     imgTag?: {
         width: string;
@@ -55,21 +53,20 @@ export class Paster implements vscode.Disposable {
     }
 
     public async handleCommandPaste() {
-        const clipboardType = await this.getClipboardContentType();
-
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             return;
         }
-        const uri = editor.document.uri;
-        if (!uri) {
+        const docUri = editor.document.uri;
+        if (!docUri) {
             return;
         }
-        const fs = this.fsregistry.getFsForURI(uri)
-        if (!fs) {
+        const docFs = this.fsregistry.getFsForURI(docUri)
+        if (!docFs) {
             return;
         }
 
+        const clipboardType = await this.getClipboardContentType();
         switch (clipboardType) {
             // case ClipboardType.Html:
             //   const html = await this.pasteTextHtml();
@@ -85,7 +82,7 @@ export class Paster implements vscode.Disposable {
             //   }
             //   break;
             case ClipboardType.Image:
-                return this.handleCommandPasteImage(uri, fs);
+                return this.handleCommandPasteImage(editor, docFs, docUri);
             default:
                 // // Probably missing script to support type detection
                 // const textContent = clipboard.readSync();
@@ -100,74 +97,48 @@ export class Paster implements vscode.Disposable {
         }
     }
 
-    private async handleCommandPasteImage(uri: vscode.Uri, fs: vscode.FileSystem) {
-        const imageUri = await makeImageUri(uri, fs, ".png", "image/png");
-        return this.saveImage(imageUri, fs);
-    }
-
-    private async saveImage(imageUri: vscode.Uri, fs: vscode.FileSystem) {
-        const sourceFilename = await this.saveClipboardImage(imageUri, fs);
-        if (!sourceFilename) {
+    private async handleCommandPasteImage(editor: vscode.TextEditor, fs: vscode.FileSystem, docUri: vscode.Uri) {
+        const tmpfile = await this.saveClipboardImage();
+        if (!tmpfile) {
             return;
         }
-        if (sourceFilename === "no image") {
+        if (tmpfile === "no image") {
             vscode.window.showInformationMessage(
                 "There is not an image in the clipboard."
             );
             return;
         }
-        const sourceUri = vscode.Uri.file(sourceFilename);
+        const srcUri = vscode.Uri.file(tmpfile);
 
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return;
-        }
-
-        let docUri = editor.document.uri;
-        if (!docUri) {
-            return;
-        }
-        // dirname will have leading slash from fsPath
+        const now = new Date().toISOString()
+        const basename = `${now.slice(0, 10)}-${now.slice(11, 19).replace(/:/g, "-")}.png`;
         const dirname = path.dirname(docUri.fsPath);
-        const basename = path.basename(sourceUri.fsPath);
-        const resourceName = bytestreamResourceName(sourceUri, uuid.generateUuid());
+        const filename = `${dirname}/${basename}`;
+        const rscname = bytestreamResourceName(srcUri, uuid.generateUuid());
+        const query = `fileContentType=image/png&resourceName=${rscname}`;
 
-        const targetAuthority = 'file.input.stream';
-        const targetFilename = `${dirname}/${basename}`;
-        const targetQuery = `fileContentType=image/png&resourceName=${resourceName}`;
-        const targetUri = vscode.Uri.parse(`https://${targetAuthority}${targetFilename}?${targetQuery}`);
+        const dstUri = vscode.Uri.parse(
+            `https://img.input.stream${filename}?${query}`);
 
         try {
-            await fs.copy(sourceUri, targetUri);
+            await fs.copy(srcUri, dstUri);
+
+            this.renderMarkdownLink(editor, {
+                target: dstUri,
+                removeTargetFileAfterConvert: true,
+            });
         } catch (e) {
             if (e instanceof Error) {
                 vscode.window.showErrorMessage(e.message);
             }
         }
-
-        this.renderMarkdownLink({
-            target: targetUri,
-            removeTargetFileAfterConvert: false,
-            convertToBase64: false,
-        });
     }
 
-    public renderMarkdownLink(pasteImgContext: PasteImageContext) {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return;
-        }
-
-        let renderText: string | undefined;
-        if (pasteImgContext.convertToBase64) {
-            renderText = this.renderMdImageBase64(pasteImgContext);
-        } else {
-            renderText = this.renderMdFilePath(pasteImgContext);
-        }
+    public renderMarkdownLink(editor: vscode.TextEditor, pasteImgContext: PasteImageContext) {
+        const renderText = this.renderMdFilePath(pasteImgContext);
         if (!renderText) {
             return;
         }
-
         editor.edit((edit) => {
             let current = editor.selection;
             if (current.isEmpty) {
@@ -193,40 +164,14 @@ export class Paster implements vscode.Disposable {
             )}/>`;
         }
 
-        return `![${uri.path}](${href})\n`;
-    }
-
-    private renderMdImageBase64(pasteImgContext: PasteImageContext): string | undefined {
-        if (
-            !pasteImgContext.target?.fsPath ||
-            !fs.existsSync(pasteImgContext.target.fsPath)
-        ) {
-            return;
-        }
-
-        let renderText = base64EncodeFile(pasteImgContext.target.fsPath);
-        let imgTag = pasteImgContext.imgTag;
-        if (imgTag) {
-            renderText = `<img src='data:image/png;base64,${renderText}' ${getDimensionProps(
-                imgTag.width,
-                imgTag.height
-            )}/>`;
-        } else {
-            renderText = `![](data:image/png;base64,${renderText})  `;
-        }
-
-        if (pasteImgContext.removeTargetFileAfterConvert) {
-            fs.removeSync(pasteImgContext.target.fsPath);
-        }
-
-        return renderText;
+        return `![${path.basename(uri.path)}](${href})\n`;
     }
 
     /**
-     * Save image from clipboard and get stdout.  The stdout should indicate the
-     * name of the file written or 'no image' if failed.
+     * Save image from clipboard to a tmp file.  The script stdout should
+     * indicate the name of the file written or 'no image' if failed.
      */
-    private async saveClipboardImage(target: vscode.Uri, fs: vscode.FileSystem): Promise<string> {
+    private async saveClipboardImage(): Promise<string> {
         const script = {
             win32: "win32_save_clipboard_png.ps1",
             darwin: "mac.applescript",
@@ -234,8 +179,8 @@ export class Paster implements vscode.Disposable {
             wsl: "win32_save_clipboard_png.ps1",
             win10: "win32_save_clipboard_png.ps1",
         };
-
-        const tmp = newTemporaryFilename('clip-', '.png')
+        const basename = makeId(20) + ".png";
+        const tmp = vscode.Uri.file(path.join(os.tmpdir(), basename));
         const fsPath = await wslSafe(tmp.fsPath);
 
         return this.runScript(script, [fsPath]);
@@ -481,15 +426,6 @@ async function wslSafe(script: string): Promise<string> {
 }
 
 /**
- * Temporary file name
- */
-function newTemporaryFilename(prefix = "markdown_paste", suffix = ""): vscode.Uri {
-    let tempDir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-    const now = new Date().toISOString().slice(0, 10) + suffix;
-    return vscode.Uri.parse(path.join(tempDir, now));
-}
-
-/**
  * Encode local file data to base64 encoded string
  * @param file
  * @returns base64 code string
@@ -505,34 +441,6 @@ function getDimensionProps(width: any, height: any): string {
     return [widthProp, heightProp].join(" ").trim();
 }
 
-async function makeImageUri(uri: vscode.Uri, fs: vscode.FileSystem, ext: string, contentType: string): Promise<vscode.Uri> {
-    const now = new Date().toISOString().slice(0, 10);
-    const dirname = path.dirname(uri.path);
-
-    let iteration = 0;
-    let target: vscode.Uri;
-    while (true) {
-        if (iteration > 1000) {
-            throw new Error(`too many attempts while trying to create image filename`);
-        }
-        let basename = now;
-        if (iteration > 0) {
-            basename += "." + String(iteration);
-        }
-        basename += ext;
-        const filepath = path.join(dirname, basename);
-        target = vscode.Uri.parse(`${uri.scheme}://${uri.authority}/${filepath}?contentType=${contentType}`);
-        try {
-            await fs.stat(target);
-            iteration++; // file exists, keep going
-        } catch (err) {
-            break; // not does not exist
-        }
-    }
-
-    return target;
-}
-
 function bytestreamResourceName(source: vscode.Uri, id: string): string {
     const fileBuffer = fs.readFileSync(source.fsPath);
     const sha256 = sha256Bytes(fileBuffer);
@@ -545,4 +453,14 @@ function sha256Bytes(buf: Buffer): string {
     hashSum.update(buf);
     const hex = hashSum.digest('hex');
     return hex;
+}
+
+function makeId(length: number): string {
+    var result = '';
+    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for (var i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
 }

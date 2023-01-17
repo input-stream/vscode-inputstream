@@ -15,6 +15,8 @@ import { WriteRequest } from '../../proto/google/bytestream/WriteRequest';
 import path = require('path');
 import { parseQuery } from '../urihandler';
 
+const MAX_CLIENT_BODY_SIZE = 10 * 1024 * 1024; // upload size limit
+
 /**
  * Document content provider for input pages.  
  * Modeled after https://github.com/microsoft/vscode-extension-samples/blob/9b8701dceac5fab83345356743170bca609c87f9/fsprovider-sample/src/fileSystemProvider.ts
@@ -157,7 +159,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     }
 
     public copy(source: vscode.Uri, target: vscode.Uri, options: { overwrite: boolean }): Thenable<void> {
-        if (target.authority === 'file.input.stream') {
+        if (target.authority === 'img.input.stream') {
             return this.upload(source, target, options);
         }
         throw vscode.FileSystemError.Unavailable(`unsupported operation: copy to ${target.scheme}://${target.authority}`);
@@ -174,7 +176,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                 message?: string | undefined,
                 increment?: number | undefined,
             }>, token: vscode.CancellationToken): Promise<void> => {
-                return new Promise((resolve, reject) => {
+                return new Promise<void>((resolve, reject) => {
                     const query = parseQuery(target);
                     const fileContentType = query["fileContentType"];
                     if (!fileContentType) {
@@ -187,12 +189,16 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                         return;
                     }
                     const size = parseInt(path.basename(resourceName));
-
                     // send the filename and content-type as metadata since the
                     // resource name is really just the content hash.
                     const md = new grpc.Metadata();
                     md.set('filename', target.path);
                     md.set('file-content-type', fileContentType);
+
+                    if (size > MAX_CLIENT_BODY_SIZE) {
+                        reject(new Error(`cannot upload ${target.path} (${size}b > ${MAX_CLIENT_BODY_SIZE}`));
+                        return;
+                    }
 
                     // prepare the call.
                     const call = this.bytestreamClient?.write((err: grpc.ServiceError | null | undefined, resp: WriteResponse | undefined) => {
@@ -204,8 +210,12 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                             case grpc.status.OK:
                                 resolve();
                                 break;
+                            case grpc.status.CANCELLED:
+                                reject(new Error(`file upload cancelled: ${status.details} (code ${status.code})`));
+                                break;
                             default:
                                 reject(new Error(`file upload failed: ${status.details} (code ${status.code})`));
+                                break;
                         }
                     });
 
@@ -232,7 +242,6 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                             finishWrite: nextOffset === size,
                         };
                         offset = nextOffset;
-                        // console.log(`wrote:`, req);
                         call?.write(req);
                         progress.report({
                             increment: (offset / size) * 100,
