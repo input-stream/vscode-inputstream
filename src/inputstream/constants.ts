@@ -52,6 +52,7 @@ export const ThemeIconFile = new vscode.ThemeIcon('file');
 export const ThemeIconQuestion = new vscode.ThemeIcon('question');
 export const ThemeIconReport = new vscode.ThemeIcon('report');
 export const ThemeIconRss = new vscode.ThemeIcon('rss');
+export const ThemeIconTestingPassed = new vscode.ThemeIcon('testing-passed-icon');
 export const ThemeIconServer = new vscode.ThemeIcon('server');
 export const ThemeIconSymbolEvent = new vscode.ThemeIcon('symbol-event');
 export const ThemeIconSymbolInterface = new vscode.ThemeIcon('symbol-interface');
