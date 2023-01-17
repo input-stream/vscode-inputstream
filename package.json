@@ -215,7 +215,7 @@
             "activitybar": [
                 {
                     "id": "inputstream-explorer",
-                    "title": "Stream",
+                    "title": "Stream 0.8.0",
                     "icon": "media/astronaut.svg"
                 }
             ]

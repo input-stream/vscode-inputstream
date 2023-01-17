@@ -10,7 +10,7 @@ import {
     _build_stack_inputstream_v1beta1_Input_Status as InputStatus
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { InputStreamClient } from '../inputStreamClient';
-import { CommandName, ContextValue, getInputURI, ThemeIconRss, ViewName } from '../constants';
+import { CommandName, ContextValue, getInputURI, ThemeIconRss, ThemeIconTestingPassed, ViewName } from '../constants';
 import { InputStreamClientTreeDataProvider } from '../inputstreamclienttreedataprovider';
 
 /**
@@ -158,7 +158,7 @@ export class InputItem extends vscode.TreeItem {
         this.label = `${when}`;
         this.tooltip = `${when}: "${input.title}" (${input.id})`;
         this.contextValue = ContextValue.Input;
-        this.iconPath = input.status === InputStatus.STATUS_PUBLISHED ? ThemeIconRss : undefined;
+        this.iconPath = input.status === InputStatus.STATUS_PUBLISHED ? ThemeIconTestingPassed : undefined;
         this.description = `${input.title}`;
         this.command = {
             title: 'Open File',
