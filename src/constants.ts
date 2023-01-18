@@ -15,10 +15,14 @@ export enum Telemetry {
 }
 
 export enum BuiltInCommands {
-	SetContext = 'setContext',
+    SetContext = 'setContext',
     ClosePanel = 'workbench.action.closePanel',
     MarkdownPreview = 'markdown.showPreview',
     Open = 'vscode.open',
     OpenFolder = 'vscode.openFolder',
     OpenSettings = 'workbench.action.openSettings',
+}
+
+export enum FolderName {
+    Stream = 'Stream',
 }

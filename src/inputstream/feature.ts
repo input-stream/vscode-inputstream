@@ -24,6 +24,7 @@ import { PageController } from './page/controller';
 import { Paster } from './paster';
 import { FsRegistry } from './fsregistry';
 import { BytesClient } from './byteStreamClient';
+import { MemFS } from './memfs';
 
 export class InputStreamFeature implements IExtensionFeature, vscode.Disposable, FsRegistry {
     public readonly name = FeatureName;
@@ -91,6 +92,8 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable,
             this.onDidInputStreamClientChange.fire(this.client);
             this.onDidByteStreamClientChange.fire(bytesClient);
         }, this.disposables);
+
+        vscode.workspace.registerFileSystemProvider("memfs", new MemFS());
 
         this.deviceLogin.restoreSaved();
     }

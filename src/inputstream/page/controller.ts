@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
+import * as fsExtra from 'fs-extra';
 import { formatTimestampISODate } from '../../common';
 import { InputStep, MultiStepInput } from '../../multiStepInput';
-import { BuiltInCommands } from '../../constants';
+import { BuiltInCommands, FolderName } from '../../constants';
 import {
     Input,
     _build_stack_inputstream_v1beta1_Input_Type as InputType,
@@ -12,6 +13,7 @@ import { ButtonName, CommandName, getInputURI, isInput } from '../constants';
 import { PageFileSystemProvider } from './filesystem';
 import { User } from '../../proto/build/stack/auth/v1beta1/User';
 import { BytesClient } from '../byteStreamClient';
+import path = require('path');
 
 /**
  * Controller for page commands.
@@ -32,10 +34,13 @@ export class PageController implements vscode.Disposable {
         onDidInputStreamClientChange.event(this.handleInputStreamClientChange, this, this.disposables);
 
         this.fs = new PageFileSystemProvider(
+            user,
             onDidInputStreamClientChange.event,
             onDidByteStreamClientChange.event,
             onDidInputChange);
         this.disposables.push(this.fs);
+
+        onDidInputStreamClientChange.event(e => this.installWorkspaceFolder());
 
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputCreate, this.handleCommandInputCreate, this));
@@ -51,6 +56,42 @@ export class PageController implements vscode.Disposable {
 
     public filesystem(): vscode.FileSystem {
         return this.fs.filesystem();
+    }
+
+    private installWorkspaceFolder(): void {
+        const name = FolderName.Stream;
+        const uri = vscode.Uri.parse('page:/');
+
+        let folders = vscode.workspace.workspaceFolders || [];
+        const found = folders.find((f: vscode.WorkspaceFolder) => f.name === name);
+        const start = found ? found.index : folders.length;
+        const deleteCount = found ? 1 : 0;
+        const numOthers = folders.length - deleteCount;
+
+        // if we're the only folder in the instance or it's already a multiroot
+        // workspace, don't do anything fancy.
+        if (numOthers === 0 || numOthers > 2) {
+            vscode.workspace.updateWorkspaceFolders(start, deleteCount, { name, uri });
+            return;
+        }
+
+        // otherwise, avoid the dreaded 'Untitled' workspace by writing a
+        // pseudo-temporary file for this and opening it.
+        const folderData: { name: string, uri: string }[] = folders.map(f => {
+            return {
+                name: f.name,
+                uri: f.uri.toString(),
+            };
+        });
+        folderData.push({ name, uri: uri.toString() });
+
+        const fsPath = folders[0].uri.fsPath
+        const dirname = path.dirname(fsPath);
+        const basename = path.basename(fsPath) + ".code-workspace";
+        const filename = path.join(dirname, basename);
+
+        fsExtra.writeFileSync(filename, JSON.stringify({ folders: folderData }));
+        vscode.commands.executeCommand(BuiltInCommands.OpenFolder, vscode.Uri.file(filename));
     }
 
     private handleInputStreamClientChange(client: InputStreamClient) {
@@ -148,21 +189,21 @@ export class PageController implements vscode.Disposable {
     }
 
     async handleCommandInputPublish(uri: vscode.Uri): Promise<void> {
-        const file = await this.fs.getFile(uri);
-        this.updateInputStatus(file.input, InputStatus.STATUS_PUBLISHED);
+        // const file = await this.fs.getFile(uri);
+        // this.updateInputStatus(file.input, InputStatus.STATUS_PUBLISHED);
     }
 
     async handleCommandInputUnpublish(uri: vscode.Uri): Promise<void> {
-        const file = await this.fs.getFile(uri);
-        this.updateInputStatus(file.input, InputStatus.STATUS_DRAFT);
+        // const file = await this.fs.getFile(uri);
+        // this.updateInputStatus(file.input, InputStatus.STATUS_DRAFT);
     }
 
     async handleCommandInputLink(inputOrUri: vscode.Uri | Input) {
         if (isInput(inputOrUri)) {
             this.handleCommandInputLink(getInputURI(inputOrUri as Input));
         }
-        const file = await this.fs.getFile(inputOrUri as vscode.Uri);
-        return this.openHtmlUrl(file.input);
+        // const file = await this.fs.getFile(inputOrUri as vscode.Uri);
+        // return this.openHtmlUrl(file.input);
     }
 
     async openHtmlUrl(input: Input, watch = true) {

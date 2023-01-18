@@ -174,7 +174,7 @@
                 },
                 {
                     "command": "input.stream.input.create",
-                    "when": "view == input.stream.inputExplorer",
+                    "when": "view == explorer && resourceScheme == page",
                     "group": "navigation@1"
                 },
                 {
@@ -188,11 +188,37 @@
                     "group": "navigation@0"
                 }
             ],
+            "explorer/title": [
+                {
+                    "command": "input.stream.input.create",
+                    "when": "resourceScheme == page"
+                },
+                {
+                    "command": "input.stream.image.search"
+                },
+                {
+                    "command": "input.stream.deviceLogin"
+                }
+            ],
             "view/item/context": [
                 {
                     "command": "input.stream.input.link",
                     "when": "view == input.stream.inputExplorer && viewItem == input",
                     "group": "inline@0"
+                },
+                {
+                    "command": "input.stream.input.publish",
+                    "when": "resourceLangId == markdown"
+                }
+            ],
+            "explorer/context": [
+                {
+                    "command": "input.stream.input.publish",
+                    "when": "resourceLangId == markdown"
+                },
+                {
+                    "command": "input.stream.input.create",
+                    "when": "resourceScheme == page"
                 }
             ],
             "editor/context": [

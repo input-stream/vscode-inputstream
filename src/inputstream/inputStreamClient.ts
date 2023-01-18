@@ -16,6 +16,16 @@ import { InputFilterOptions } from '../proto/build/stack/inputstream/v1beta1/Inp
 
 grpc.setLogVerbosity(grpc.logVerbosity.DEBUG);
 
+export type UnaryCallOptions = {
+    limit: number;
+    silent: boolean;
+}
+
+const defaultUnaryCallOptions = {
+    limit: 2,
+    silent: false,
+}
+
 export class InputStreamClient extends GRPCClient {
     private readonly inputService: InputsClient;
     private readonly imagesService: ImagesClient;
@@ -48,7 +58,7 @@ export class InputStreamClient extends GRPCClient {
      * response type or fail to a grpc.ServiceError.
      * @param limit Max number of retries.
      */
-    async unaryCall<S>(desc: string, fn: () => Promise<S>, limit = 2): Promise<S> {
+    async unaryCall<S>(desc: string, fn: () => Promise<S>, limit = 2, silent = false): Promise<S> {
         try {
             return await fn();
         } catch (e) {
@@ -56,7 +66,9 @@ export class InputStreamClient extends GRPCClient {
 
             // Reached terminal attempt, report error and bail
             if (limit === 0) {
-                vscode.window.showErrorMessage(`${desc}: ${err.message} (operation will not be retried)`);
+                if (!silent) {
+                    vscode.window.showErrorMessage(`${desc}: ${err.message} (operation will not be retried)`);
+                }
                 throw err;
             }
 
@@ -66,23 +78,27 @@ export class InputStreamClient extends GRPCClient {
                     await this.refreshAccessToken();
                     return this.unaryCall(desc, fn, Math.max(0, limit - 1));
                 } catch (e2) {
-                    vscode.window.showWarningMessage('Could not refresh access token: ' + JSON.stringify(e2));
+                    if (!silent) {
+                        vscode.window.showWarningMessage('Could not refresh access token: ' + JSON.stringify(e2));
+                    }
                 }
             }
 
             // Prompt user to retry
-            const action = await vscode.window.showInformationMessage(
-                `${desc} failed: ${err.message} (${limit} attempts remaining)`,
-                ButtonName.Retry, ButtonName.Cancel);
-            if (action !== ButtonName.Retry) {
-                throw err;
+            if (!silent) {
+                const action = await vscode.window.showInformationMessage(
+                    `${desc} failed: ${err.message} (${limit} attempts remaining)`,
+                    ButtonName.Retry, ButtonName.Cancel);
+                if (action !== ButtonName.Retry) {
+                    throw err;
+                }
             }
 
-            return this.unaryCall(desc, fn, Math.max(0, limit - 1));
+            return this.unaryCall(desc, fn, Math.max(0, limit - 1), silent);
         }
     }
 
-    async listInputs(filter: InputFilterOptions): Promise<Input[] | undefined> {
+    async listInputs(filter: InputFilterOptions, options?: UnaryCallOptions): Promise<Input[] | undefined> {
         return this.unaryCall<Input[] | undefined>('List Inputs', (): Promise<Input[] | undefined> => {
             return new Promise<Input[]>((resolve, reject) => {
                 this.inputService.listInputs(
@@ -104,10 +120,10 @@ export class InputStreamClient extends GRPCClient {
                         }
                     });
             });
-        });
+        }, options?.limit, options?.silent);
     }
 
-    async createInput(input: Input): Promise<Input | undefined> {
+    async createInput(input: Input, options?: UnaryCallOptions): Promise<Input | undefined> {
         return this.unaryCall<Input>('Create Input', (): Promise<Input> => {
             return new Promise<Input>((resolve, reject) => {
                 this.inputService.createInput(
@@ -122,10 +138,10 @@ export class InputStreamClient extends GRPCClient {
                         }
                     });
             });
-        });
+        }, options?.limit, options?.silent);
     }
 
-    async getInput(filter: InputFilterOptions, mask?: FieldMask): Promise<Input | undefined> {
+    async getInput(filter: InputFilterOptions, mask?: FieldMask, options?: UnaryCallOptions): Promise<Input | undefined> {
         return this.unaryCall<Input>('Get Input', (): Promise<Input> => {
             return new Promise<Input>((resolve, reject) => {
                 this.inputService.getInput(
@@ -140,10 +156,10 @@ export class InputStreamClient extends GRPCClient {
                         }
                     });
             });
-        });
+        }, options?.limit, options?.silent);
     }
 
-    async updateInput(input: Input, mask: FieldMask): Promise<UpdateInputResponse> {
+    async updateInput(input: Input, mask: FieldMask, options?: UnaryCallOptions): Promise<UpdateInputResponse> {
         return this.unaryCall<UpdateInputResponse>('Update Input', (): Promise<UpdateInputResponse> => {
             return new Promise<UpdateInputResponse>((resolve, reject) => {
                 this.inputService.updateInput(
@@ -158,10 +174,10 @@ export class InputStreamClient extends GRPCClient {
                         }
                     });
             });
-        });
+        }, options?.limit, options?.silent);
     }
 
-    async removeInput(id: string): Promise<RemoveInputResponse> {
+    async removeInput(id: string, options?: UnaryCallOptions): Promise<RemoveInputResponse> {
         return this.unaryCall<RemoveInputResponse>('Remove Input', (): Promise<RemoveInputResponse> => {
             return new Promise<RemoveInputResponse>((resolve, reject) => {
                 this.inputService.removeInput(
@@ -176,7 +192,7 @@ export class InputStreamClient extends GRPCClient {
                         }
                     });
             });
-        });
+        }, options?.limit, options?.silent);
     }
 
     async searchImages(request: SearchImagesRequest): Promise<SearchImagesResponse> {
