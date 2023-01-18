@@ -40,7 +40,8 @@ export class PageController implements vscode.Disposable {
             onDidInputChange);
         this.disposables.push(this.fs);
 
-        onDidInputStreamClientChange.event(e => this.installWorkspaceFolder());
+        this.installWorkspaceFolder();
+        // onDidInputStreamClientChange.event(e => this.installWorkspaceFolder());
 
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputCreate, this.handleCommandInputCreate, this));
@@ -50,8 +51,6 @@ export class PageController implements vscode.Disposable {
             vscode.commands.registerCommand(CommandName.InputLink, this.handleCommandInputLink, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputPublish, this.handleCommandInputPublish, this));
-        this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputUnpublish, this.handleCommandInputUnpublish, this));
     }
 
     public filesystem(): vscode.FileSystem {

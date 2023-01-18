@@ -81,7 +81,7 @@
             {
                 "category": "inputstream",
                 "command": "input.stream.input.publish",
-                "title": "Stream: Publish Page",
+                "title": "Stream: Publish Page 💯",
                 "icon": "$(rss)"
             },
             {
@@ -214,7 +214,7 @@
             "explorer/context": [
                 {
                     "command": "input.stream.input.publish",
-                    "when": "resourceLangId == markdown"
+                    "when": "resourceScheme == page && resourceLangId == markdown"
                 },
                 {
                     "command": "input.stream.input.create",
@@ -291,6 +291,8 @@
         "@grpc/proto-loader": "0.7.4",
         "fs-extra": "9.0.1",
         "google-auth-library": "6.1.0",
+        "kebab-case": "1.0.2",
+        "just-kebab-case": "4.2.0",
         "luxon": "1.24.1",
         "protobufjs": "6.10.1",
         "vscode-common": "1.50.0",
