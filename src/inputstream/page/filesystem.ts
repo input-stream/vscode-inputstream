@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs-extra';
 import * as grpc from '@grpc/grpc-js';
-import kebabCase from 'just-kebab-case';
 import Long = require('long');
 import path = require('path');
 
@@ -817,7 +816,7 @@ class UserDir extends Dir<InputDir> {
         if (child) {
             return child;
         }
-        const input = await this.fetchInputByTitleSlug(this.user.login!, name);
+        const input = await this.fetchInputByTitle(this.user.login!, name);
         if (!input) {
             return;
         }
@@ -832,37 +831,25 @@ class UserDir extends Dir<InputDir> {
         });
     }
 
-    protected async fetchInputByTitleSlug(login: string, titleSlug: string): Promise<Input | undefined> {
+    protected async fetchInputByTitle(login: string, title: string): Promise<Input | undefined> {
         const client = await this.ctx.client();
         try {
-            // const titleSlug = makeTitleSlug(titleSlug);
-            const filter: InputFilterOptions = { login, titleSlug };
+            const filter: InputFilterOptions = { login, title };
             const mask: FieldMask = { paths: ['content'] };
             const options: UnaryCallOptions = { limit: 1, silent: true };
             const input = await client.getInput(filter, mask, options);
             return input;
         } catch (e) {
-            console.log(`could not get input: ${login}/${titleSlug}`, e);
+            console.log(`could not fetch input: ${login}/${title}`, e);
             return undefined;
         }
     }
 
 }
 
-function makeTitleSlug(title: string): string {
-    try {
-        const slug = kebabCase(title);
-        // const slug = title.toLocaleLowerCase().replace(/ /g, "-").replace(/[^A-Za-z0-9 ]+/, "");
-        return slug;
-
-    } catch (e) {
-        throw e;
-    }
-    // return slug.replace(/ /g, "-").replace(/[^A-Za-z0-9 ]+/, "");
-}
 
 function inputName(input: Input): string {
-    return input.titleSlug!;
+    return input.title!;
 }
 
 function inputContentName(input: Input): string {

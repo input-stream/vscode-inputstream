@@ -158,10 +158,12 @@ message InputFilterOptions {
     string id = 3;
     // filter by title_slug
     string title_slug = 4;
+    // filter by title
+    string title = 5;
     // filter by tag
-    string tag = 5;
+    string tag = 6;
     // filter by input status
-    Input.Status status = 6;
+    Input.Status status = 7;
 }
 
 message ListInputsResponse {
