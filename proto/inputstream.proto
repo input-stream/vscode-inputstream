@@ -103,6 +103,22 @@ message Input {
     string html_url = 17;
     // the owner of the input
     string owner = 18;
+    // associated files for the input
+    FileSet file_set = 19;
+}
+
+message FileSet {
+    repeated File files = 1;
+}
+
+message File {
+    string sha256 = 1;
+    string name = 2;
+    int64 size = 3;
+    uint32 mode = 4;
+    string content_type = 5;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp modified_at = 7;
 }
 
 message CreateInputRequest {

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as crypto from 'crypto';
 import * as fs from 'fs-extra';
 import * as grpc from '@grpc/grpc-js';
 import Long = require('long');
@@ -10,6 +11,8 @@ import {
     _build_stack_inputstream_v1beta1_Input_Type as InputType,
     _build_stack_inputstream_v1beta1_Input_Status as InputStatus,
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
+import { FileSet } from '../../proto/build/stack/inputstream/v1beta1/FileSet';
+import { File as FileProto } from '../../proto/build/stack/inputstream/v1beta1/File';
 import { InputStreamClient, UnaryCallOptions } from '../inputStreamClient';
 import { parseQuery } from '../urihandler';
 import { CommandName, Scheme } from '../constants';
@@ -20,28 +23,28 @@ import { User } from '../../proto/build/stack/auth/v1beta1/User';
 import { InputFilterOptions } from '../../proto/build/stack/inputstream/v1beta1/InputFilterOptions';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
 import { BuiltInCommands } from '../../constants';
+import { uuid } from 'vscode-common';
+import { ReadRequest } from '../../proto/google/bytestream/ReadRequest';
+import { ReadResponse } from '../../proto/google/bytestream/ReadResponse';
+import { Duplex, Readable, Writable } from 'stream';
 
 const MAX_CLIENT_BODY_SIZE = 10 * 1024 * 1024; // upload size limit
 
 class ClientContext {
     listFilterStatus: InputStatus | undefined;
-    isContentReadOnly: boolean = false;
 
     constructor(
-        public client: () => Promise<InputStreamClient>
+        public inputStreamClient: () => Promise<InputStreamClient>,
+        public byteStreamClient: () => Promise<BytesClient>,
     ) {
     }
 
     clone(): ClientContext {
-        const ctx = new ClientContext(this.client);
+        const ctx = new ClientContext(
+            this.inputStreamClient,
+            this.byteStreamClient,
+        );
         ctx.listFilterStatus = this.listFilterStatus;
-        ctx.isContentReadOnly = this.isContentReadOnly;
-        return ctx;
-    }
-
-    withIsContentReadOnly(value: boolean): ClientContext {
-        const ctx = this.clone();
-        ctx.isContentReadOnly = value;
         return ctx;
     }
 
@@ -92,14 +95,24 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     }
 
     createClientContext(): ClientContext {
-        return new ClientContext(this.getClient.bind(this));
+        return new ClientContext(
+            this.getInputStreamClient.bind(this),
+            this.getByteStreamClient.bind(this),
+        );
     }
 
-    private getClient(): Promise<InputStreamClient> {
+    private getInputStreamClient(): Promise<InputStreamClient> {
         if (!this.inputstreamClient) {
             Promise.reject(vscode.FileSystemError.Unavailable('inputstream client not yet available'));
         }
         return Promise.resolve(this.inputstreamClient!);
+    }
+
+    private getByteStreamClient(): Promise<BytesClient> {
+        if (!this.bytestreamClient) {
+            Promise.reject(vscode.FileSystemError.Unavailable('Bytestream client not yet available'));
+        }
+        return Promise.resolve(this.bytestreamClient!);
     }
 
     private async handleCommandInputPublish(uri: vscode.Uri): Promise<Input | undefined> {
@@ -299,7 +312,11 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
             }
             let child: Entry | undefined;
             if (entry instanceof Dir) {
-                child = await entry.getChild(part);
+                try {
+                    child = await entry.getChild(part);
+                } catch (e) {
+                    throw e;
+                }
             }
             if (!child) {
                 if (!silent) {
@@ -394,8 +411,12 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
             throw vscode.FileSystemError.FileExists(uri);
         }
         if (!entry) {
-            await parent.createFile(basename, content);
-            this._fireSoon({ type: vscode.FileChangeType.Created, uri });
+            try {
+                await parent.createFile(basename, content);
+                this._fireSoon({ type: vscode.FileChangeType.Created, uri });
+            } catch (e) {
+                throw e;
+            }
         } else {
             const file = entry as File;
             await file.setData(content);
@@ -830,7 +851,7 @@ class UserDir extends Dir<InputDir> {
     }
 
     async createDirectory(name: string): Promise<InputDir> {
-        const client = await this.ctx.client();
+        const client = await this.ctx.inputStreamClient();
 
         let input: Input | undefined = {
             status: 'STATUS_DRAFT',
@@ -865,7 +886,7 @@ class UserDir extends Dir<InputDir> {
         if (!child) {
             throw vscode.FileSystemError.FileNotFound(name);
         }
-        const client = await this.ctx.client();
+        const client = await this.ctx.inputStreamClient();
         const selection = await vscode.window.showInformationMessage(`Are you sure you want to delete ${name}?`, 'Delete', 'Cancel');
         if (selection !== 'Delete') {
             return;
@@ -888,7 +909,7 @@ class UserDir extends Dir<InputDir> {
     }
 
     protected async loadInputs(): Promise<Input[] | undefined> {
-        const client = await this.ctx.client();
+        const client = await this.ctx.inputStreamClient();
         return client.listInputs({
             login: this.user.login,
             status: this.ctx.listFilterStatus,
@@ -896,7 +917,7 @@ class UserDir extends Dir<InputDir> {
     }
 
     protected async fetchInputByTitle(login: string, title: string): Promise<Input | undefined> {
-        const client = await this.ctx.client();
+        const client = await this.ctx.inputStreamClient();
         try {
             const filter: InputFilterOptions = { login, title };
             const mask: FieldMask = { paths: ['content'] };
@@ -912,15 +933,28 @@ class UserDir extends Dir<InputDir> {
 }
 
 class InputDir extends Dir<File> {
-    content: ContentFile;
-
     constructor(
         protected ctx: ClientContext,
         protected user: User,
         public input: Input,
     ) {
         super(makeInputName(input));
-        this.content = this.addContentFile(input);
+        this.addContentFile(input);
+        if (input.fileSet) {
+            this.addFileSet(input.fileSet);
+        }
+    }
+
+    addFileSet(fileSet: FileSet): void {
+        if (fileSet.files) {
+            for (const inputFile of fileSet.files) {
+                this.addInputFile(inputFile);
+            }
+        }
+    }
+
+    addInputFile(file: FileProto): InputFile {
+        return this.addChild(new InputFile(makeInputFileName(this.input, file), this.ctx, this.input, file));
     }
 
     addContentFile(input: Input): ContentFile {
@@ -936,7 +970,34 @@ class InputDir extends Dir<File> {
     }
 
     async createFile(name: string, data: Uint8Array): Promise<File> {
-        throw vscode.FileSystemError.NoPermissions(`Input "${this.input.title}" does not support adding child files`);
+        const ext = path.posix.extname(name);
+        const contentType = makeContentType(ext);
+        if (!contentType) {
+            throw vscode.FileSystemError.NoPermissions(`Input "${this.input.title}" does not support adding "${ext}" files`);
+        }
+        return this.createImageFile(name, data, contentType);
+    }
+
+    async createImageFile(relname: string, data: Uint8Array, contentType: string): Promise<File> {
+        const name = makeInputAssetName(this.input, relname);
+        const sha256 = await this.uploadBlob(name, data);
+        const file: FileProto = {
+            name,
+            contentType,
+            sha256,
+            size: data.byteLength,
+            createdAt: { seconds: Date.now() * 1000 },
+            modifiedAt: { seconds: Date.now() * 1000 },
+        }
+        let fileSet = this.input.fileSet;
+        if (!fileSet) {
+            fileSet = { files: [] };
+        }
+        fileSet.files!.push(file);
+
+        await this.updateFileSet(fileSet);
+
+        return this.addInputFile(file);
     }
 
     async createDirectory(name: string): Promise<File> {
@@ -949,7 +1010,7 @@ class InputDir extends Dir<File> {
     }
 
     protected async fetchInput(login: string, id: string): Promise<Input | undefined> {
-        const client = await this.ctx.client();
+        const client = await this.ctx.inputStreamClient();
         try {
             return client.getInput({ login, id }, { paths: ['content'] });
         } catch (e) {
@@ -959,7 +1020,7 @@ class InputDir extends Dir<File> {
     }
 
     public async updateStatus(status: InputStatus): Promise<Input | undefined> {
-        const client = await this.ctx.client();
+        const client = await this.ctx.inputStreamClient();
         const prevStatus = this.input.status;
         const oldChild = await this.getChild(makeInputContentName(this.input));
         try {
@@ -970,7 +1031,7 @@ class InputDir extends Dir<File> {
             if (oldChild) {
                 this.removeChild(oldChild);
             }
-            this.content = this.addContentFile(this.input);
+            this.addContentFile(this.input);
             return this.input;
         } catch (e) {
             this.input.status = prevStatus;
@@ -979,8 +1040,28 @@ class InputDir extends Dir<File> {
         }
     }
 
+    public async updateFileSet(fileSet: FileSet): Promise<Input | undefined> {
+        const client = await this.ctx.inputStreamClient();
+        const prevFileSet = this.input.fileSet;
+        const oldChild = await this.getChild(makeInputContentName(this.input));
+        try {
+            this.input.fileSet = fileSet;
+            const response = await client.updateInput(this.input, {
+                paths: ['file_set'],
+            });
+            if (oldChild) {
+                this.removeChild(oldChild);
+            }
+            return this.input;
+        } catch (e) {
+            this.input.fileSet = prevFileSet;
+            console.log(`could not update fileSet: ${this.input.login}/${this.input.title}`);
+            return undefined;
+        }
+    }
+
     public async updateTitle(title: string): Promise<Input | undefined> {
-        const client = await this.ctx.client();
+        const client = await this.ctx.inputStreamClient();
         const prevTitle = this.input.title;
         try {
             this.input.title = title;
@@ -993,6 +1074,118 @@ class InputDir extends Dir<File> {
             console.log(`could not update input title: ${this.input.login}/${this.input.title}`);
             return undefined;
         }
+    }
+
+    private async uploadBlob(name: string, data: Uint8Array): Promise<string> {
+        const size = data.byteLength;
+        if (size > MAX_CLIENT_BODY_SIZE) {
+            throw vscode.FileSystemError.NoPermissions(`cannot upload ${name} (${size}b > ${MAX_CLIENT_BODY_SIZE}`);
+        }
+
+        const buffer = Buffer.from(data);
+        const sha256 = sha256Bytes(buffer);
+        const resourceName = makeBytestreamUploadResourceName(this.input.id!, sha256, size);
+
+        await this.writeBlob(name, resourceName, name, buffer);
+
+        return sha256;
+    }
+
+    private async writeBlob(
+        name: string,
+        resourceName: string,
+        contentType: string,
+        buffer: Buffer): Promise<void> {
+
+        return vscode.window.withProgress<void>({
+            location: vscode.ProgressLocation.Notification,
+            title: `Uploading ${path.basename(name)}...`,
+            cancellable: true,
+        }, (progress: vscode.Progress<{
+            message?: string | undefined,
+            increment?: number | undefined,
+        }>, token: vscode.CancellationToken): Promise<void> => {
+            return this.writeBlobWithProgress(progress, token, name, resourceName, contentType, buffer);
+        });
+
+    }
+
+    private async writeBlobWithProgress(
+        progress: vscode.Progress<{ message?: string | undefined, increment?: number | undefined }>,
+        token: vscode.CancellationToken,
+        name: string,
+        resourceName: string,
+        contentType: string,
+        buffer: Buffer): Promise<void> {
+
+        const client = await this.ctx.byteStreamClient();
+        const size = buffer.byteLength;
+        const chunkSize = 65536;
+        const increment = (chunkSize / size) * 100;
+
+        const stream = Readable.from(buffer, {
+            highWaterMark: chunkSize,
+        });
+        // const stream2 = fs.createReadStream(buffer, {
+        //     autoClose: true,
+        //     highWaterMark: chunkSize,
+        // });
+
+        const md = new grpc.Metadata();
+        md.set('filename', name);
+        md.set('file-content-type', contentType);
+
+        const call = client.write((err: grpc.ServiceError | null | undefined, resp: WriteResponse | undefined) => {
+            console.log(`write response: committed size: ${resp?.committedSize}`);
+        }, md);
+        if (!call) {
+            throw vscode.FileSystemError.Unavailable(`bytestream call was unexpectedly undefined`);
+        }
+
+        return new Promise((resolve, reject) => {
+            call.on('status', (status: grpc.StatusObject) => {
+                if (token.isCancellationRequested) {
+                    reject('Cancellation Requested');
+                    return;
+                }
+                switch (status.code) {
+                    case grpc.status.OK:
+                        resolve();
+                        return;
+                    case grpc.status.CANCELLED:
+                        reject(new Error(`file upload cancelled: ${status.details} (code ${status.code})`));
+                        return;
+                    default:
+                        reject(new Error(`file upload failed: ${status.details} (code ${status.code})`));
+                        return;
+                }
+            });
+            call.on('error', reject);
+            call.on('end', resolve);
+
+            let offset = 0;
+            stream.on('data', (chunk: Buffer) => {
+                if (token.isCancellationRequested) {
+                    reject('Cancellation Requested');
+                    return;
+                }
+                const nextOffset = offset + chunk.length;
+                const req: WriteRequest = {
+                    resourceName: resourceName,
+                    writeOffset: offset,
+                    data: chunk,
+                    finishWrite: nextOffset === size,
+                };
+                offset = nextOffset;
+
+                call.write(req);
+
+                progress.report({ increment });
+            });
+            stream.on('error', reject);
+            stream.on('end', () => call.end());
+        });
+
     }
 }
 
@@ -1034,7 +1227,7 @@ class ContentFile extends File {
             throw vscode.FileSystemError.NoPermissions(`ReadOnly File`);
         }
 
-        const client = await this.ctx.client();
+        const client = await this.ctx.inputStreamClient();
 
         this.input.content = {
             shortPost: {
@@ -1060,10 +1253,74 @@ class ContentFile extends File {
     }
 
     private async loadData(): Promise<Uint8Array> {
-        const client = await this.ctx.client();
+        const client = await this.ctx.inputStreamClient();
         const input = await client.getInput({ login: this.input.login, id: this.input.id }, { paths: ['content'] });
         this.input.content = input?.content;
         return new TextEncoder().encode(input?.content?.shortPost?.markdown);
+    }
+}
+
+class InputFile extends File {
+    private data: Uint8Array | undefined;
+
+    constructor(
+        name: string,
+        private ctx: ClientContext,
+        private input: Input,
+        private file: FileProto,
+    ) {
+        super(name);
+        if (file.modifiedAt) {
+            this.mtime = Long.fromValue(file.modifiedAt!.seconds!).toNumber() * 1000;
+        }
+    }
+
+    async getData(): Promise<Uint8Array> {
+        if (!this.data) {
+            this.data = await this.loadData();
+        }
+        return this.data;
+    }
+
+    async setData(data: Uint8Array): Promise<void> {
+        throw vscode.FileSystemError.NoPermissions("File is immutable: to update, remove it and add back with same name");
+    }
+
+    private async loadData(): Promise<Uint8Array> {
+        const client = await this.ctx.byteStreamClient();
+        const resourceName = makeBytestreamDownloadResourceName(this.file.sha256!, Long.fromValue(this.file.size!).toNumber());
+        const buffer = Buffer.alloc(Long.fromValue(this.file.size!).toNumber());
+        const call = client.read({
+            resourceName: resourceName,
+            readOffset: 0,
+            // readLimit: 65536,
+        });
+        return new Promise<Buffer>((resolve, reject) => {
+            call.on('status', (status: grpc.StatusObject) => {
+                switch (status.code) {
+                    case grpc.status.OK:
+                        resolve(buffer);
+                        return;
+                    case grpc.status.CANCELLED:
+                        reject(new Error(`file download cancelled: ${status.details} (code ${status.code})`));
+                        return;
+                    default:
+                        reject(new Error(`file download failed: ${status.details} (code ${status.code})`));
+                        return;
+                }
+            });
+            let offset = 0;
+            call.on('data', (response: ReadResponse) => {
+                if (response.data instanceof Buffer) {
+                    response.data.copy(buffer, offset);
+                    offset += response.data.byteLength;
+                }
+            });
+            call.on('error', reject);
+            call.on('end', () => {
+                resolve(buffer);
+            });
+        });
     }
 }
 
@@ -1112,6 +1369,14 @@ function makeInputContentName(input: Input): string {
     return name;
 }
 
+function makeBytestreamUploadResourceName(id: string, sha256: string, size: number): string {
+    return `/uploads/${id}/blobs/${sha256}/${size}`;
+}
+
+function makeBytestreamDownloadResourceName(sha256: string, size: number): string {
+    return `/blobs/${sha256}/${size}`;
+}
+
 function makeInputDirUri(input: Input): vscode.Uri {
     return vscode.Uri.parse(`page:/${input.login}/${input.title}`);
 }
@@ -1120,10 +1385,47 @@ function makeInputContentFileUri(input: Input): vscode.Uri {
     return vscode.Uri.parse(`page:/${input.login}/${input.title}/${makeInputContentName(input)}`);
 }
 
+function makeInputAssetName(input: Input, name: string): string {
+    return `/${input.login}/${input.id}/${name}`;
+}
+
+function makeInputFileName(input: Input, file: FileProto): string {
+    const prefix = `/${input.login}/${input.id}/`;
+    let filename = file.name!;
+    if (filename.startsWith(prefix)) {
+        filename = filename.slice(prefix.length);
+    }
+    return filename;
+}
+
 function makeInputExternalViewUrl(input: Input): vscode.Uri {
     return vscode.Uri.parse(`https://input.stream/@${input.login}/${input.titleSlug}/view`);
 }
 
 function makeInputExternalWatchUrl(input: Input): vscode.Uri {
     return vscode.Uri.parse(`https://input.stream/@${input.login}/${input.titleSlug}/view/watch`);
+}
+
+function makeContentType(ext: string): string | undefined {
+    switch (ext) {
+        case ".gif":
+            return "image/gif";
+        case ".apng":
+            return "image/apng";
+        case ".png":
+            return "image/png";
+        case ".jpg":
+        // fallthrough
+        case ".jpeg":
+            return "image/jpeg";
+        default:
+            return undefined;
+    }
+}
+
+function sha256Bytes(buf: Buffer): string {
+    const hashSum = crypto.createHash('sha256');
+    hashSum.update(buf);
+    const hex = hashSum.digest('hex');
+    return hex;
 }

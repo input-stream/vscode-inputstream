@@ -16,6 +16,8 @@ export interface ProtoGrpcType {
         v1beta1: {
           CreateInputRequest: MessageTypeDefinition
           CreateUserRequest: MessageTypeDefinition
+          File: MessageTypeDefinition
+          FileSet: MessageTypeDefinition
           GetInputRequest: MessageTypeDefinition
           GetUserRequest: MessageTypeDefinition
           Images: SubtypeConstructor<typeof grpc.Client, _build_stack_inputstream_v1beta1_ImagesClient> & { service: _build_stack_inputstream_v1beta1_ImagesDefinition }

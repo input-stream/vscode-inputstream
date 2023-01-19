@@ -8,6 +8,8 @@ import { WriteRequest } from '../proto/google/bytestream/WriteRequest';
 import { WriteResponse, WriteResponse__Output } from '../proto/google/bytestream/WriteResponse';
 import { QueryWriteStatusRequest } from '../proto/google/bytestream/QueryWriteStatusRequest';
 import { QueryWriteStatusResponse } from '../proto/google/bytestream/QueryWriteStatusResponse';
+import { ReadResponse } from '../proto/google/bytestream/ReadResponse';
+import { ReadRequest } from '../proto/google/bytestream/ReadRequest';
 
 export class BytesClient extends GRPCClient {
     private readonly bytesService: ByteStreamClient;
@@ -74,6 +76,14 @@ export class BytesClient extends GRPCClient {
             md.merge(extraMd);
         }
         return this.bytesService.write(md, { deadline: this.getDeadline() }, onResponse);
+    }
+
+    read(request: ReadRequest, extraMd?: grpc.Metadata): grpc.ClientReadableStream<ReadResponse> {
+        const md = this.getGrpcMetadata();
+        if (extraMd) {
+            md.merge(extraMd);
+        }
+        return this.bytesService.read(request, md, { deadline: this.getDeadline() });
     }
 
     async queryWriteStatus(req: QueryWriteStatusRequest): Promise<QueryWriteStatusResponse> {
