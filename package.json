@@ -214,7 +214,11 @@
             "explorer/context": [
                 {
                     "command": "input.stream.input.publish",
-                    "when": "resourceScheme == page && resourceLangId == markdown"
+                    "when": "resourceScheme == page && resourceFilename =~ /.draft.md$/"
+                },
+                {
+                    "command": "input.stream.input.unpublish",
+                    "when": "resourceScheme == page && resourceFilename =~ /.published.md$/"
                 },
                 {
                     "command": "input.stream.input.create",

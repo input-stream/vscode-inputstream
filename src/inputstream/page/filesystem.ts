@@ -103,27 +103,44 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         return Promise.resolve(this.inputstreamClient!);
     }
 
-    async handleCommandInputPublish(uri: vscode.Uri): Promise<void> {
-        try {
-            const entry = await this._lookup(uri, true);
-            if (!entry) {
-                return;
-            }
-
-        } catch (e) {
-            console.log(`published failed:`, e);
+    private async handleCommandInputPublish(uri: vscode.Uri): Promise<Input | undefined> {
+        const input = await this.updateInputStatus(uri, InputStatus.STATUS_PUBLISHED);
+        if (input) {
+            vscode.env.openExternal(vscode.Uri.parse(`https://input.stream/@${input.login}/${input.titleSlug}`));
         }
+        return input;
     }
 
-    async handleCommandInputUnPublish(uri: vscode.Uri): Promise<void> {
-        try {
-            const entry = await this._lookup(uri, true);
-            if (!entry) {
-                return;
-            }
-        } catch (e) {
-            console.log(`unpublished failed:`, e);
+    private async handleCommandInputUnPublish(uri: vscode.Uri): Promise<Input | undefined> {
+        const input = await this.updateInputStatus(uri, InputStatus.STATUS_DRAFT);
+        if (input) {
+            vscode.env.openExternal(vscode.Uri.parse(`https://input.stream/@${input.login}/${input.id}/view/watch`));
         }
+        return input;
+    }
+
+    private async updateInputStatus(uri: vscode.Uri, status: InputStatus): Promise<Input | undefined> {
+        const entry = await this._lookup(uri, true);
+        if (!entry) {
+            return;
+        }
+        const parent = await this._lookupParentDirectory(uri);
+        if (!(parent instanceof InputDir)) {
+            return;
+        }
+        const input = await parent.updateStatus(status);
+        vscode.commands.executeCommand(BuiltInCommands.CloseActiveEditor);
+        this._fireSoon(
+            { type: vscode.FileChangeType.Deleted, uri },
+            { type: vscode.FileChangeType.Created, uri }
+        );
+        if (input) {
+            setTimeout(() => {
+                const newPath = path.join(path.posix.dirname(uri.path), inputContentName(input));
+                vscode.commands.executeCommand(BuiltInCommands.Open, uri.with({ path: newPath }));
+            }, 20);
+        }
+        return input;
     }
 
     private handleInputStreamClientChange(client: InputStreamClient) {
@@ -847,7 +864,6 @@ class UserDir extends Dir<InputDir> {
 
 }
 
-
 function inputName(input: Input): string {
     return input.title!;
 }
@@ -904,6 +920,28 @@ class InputDir extends Dir<File> {
             return client.getInput({ login, id }, { paths: ['content'] });
         } catch (e) {
             console.log(`could not get input: ${login}/${id}`);
+            return undefined;
+        }
+    }
+
+    public async updateStatus(status: InputStatus): Promise<Input | undefined> {
+        const client = await this.ctx.client();
+        const prevStatus = this.input.status;
+        const oldChild = await this.getChild(inputContentName(this.input));
+        try {
+            this.input.status = status;
+            const response = await client.updateInput(this.input, {
+                paths: ['status'],
+            });
+            const newChild = new ContentFile(inputContentName(this.input), this.ctx, this.input);
+            if (oldChild) {
+                this.removeChild(oldChild);
+            }
+            this.content = this.addChild(newChild);
+            return this.input;
+        } catch (e) {
+            this.input.status = prevStatus;
+            console.log(`could not update input status: ${this.input.login}/${this.input.title}`);
             return undefined;
         }
     }

@@ -17,6 +17,7 @@ export enum Telemetry {
 export enum BuiltInCommands {
     SetContext = 'setContext',
     ClosePanel = 'workbench.action.closePanel',
+    CloseActiveEditor = 'workbench.action.closeActiveEditor',
     MarkdownPreview = 'markdown.showPreview',
     Open = 'vscode.open',
     OpenFolder = 'vscode.openFolder',
