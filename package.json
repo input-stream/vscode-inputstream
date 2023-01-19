@@ -131,6 +131,11 @@
             },
             {
                 "category": "inputstream",
+                "command": "input.stream.input.replace",
+                "title": "Stream: Replace Input in File Explorer (internal command)"
+            },
+            {
+                "category": "inputstream",
                 "command": "input.stream.input.remove",
                 "title": "Stream: Remove Input",
                 "icon": "$(trash)"
@@ -163,6 +168,10 @@
             "commandPalette": [
                 {
                     "command": "input.stream.openExtensionSetting",
+                    "when": "false"
+                },
+                {
+                    "command": "input.stream.input.replace",
                     "when": "false"
                 }
             ],

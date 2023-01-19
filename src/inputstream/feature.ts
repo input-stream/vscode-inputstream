@@ -117,7 +117,6 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable,
                 this.onDidByteStreamClientChange,
                 this.onDidInputChange,
                 this.onDidInputCreate,
-                this.onDidInputRemove,
             ));
 
         this.pageTreeView = this.add(

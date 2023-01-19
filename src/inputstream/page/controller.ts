@@ -27,7 +27,6 @@ export class PageController implements vscode.Disposable {
         private user: User,
         onDidInputStreamClientChange: vscode.EventEmitter<InputStreamClient>,
         onDidByteStreamClientChange: vscode.EventEmitter<BytesClient>,
-        private onDidInputChange: vscode.EventEmitter<Input>,
         private onDidInputCreate: vscode.EventEmitter<Input>,
         private onDidInputRemove: vscode.EventEmitter<Input>,
     ) {
@@ -37,11 +36,10 @@ export class PageController implements vscode.Disposable {
             user,
             onDidInputStreamClientChange.event,
             onDidByteStreamClientChange.event,
-            onDidInputChange);
+        );
         this.disposables.push(this.fs);
 
         this.installWorkspaceFolder();
-        // onDidInputStreamClientChange.event(e => this.installWorkspaceFolder());
 
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputCreate, this.handleCommandInputCreate, this));
@@ -49,8 +47,6 @@ export class PageController implements vscode.Disposable {
             vscode.commands.registerCommand(CommandName.InputRemove, this.handleCommandInputRemove, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputLink, this.handleCommandInputLink, this));
-        this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputPublish, this.handleCommandInputPublish, this));
     }
 
     public filesystem(): vscode.FileSystem {
@@ -187,16 +183,6 @@ export class PageController implements vscode.Disposable {
         }
     }
 
-    async handleCommandInputPublish(uri: vscode.Uri): Promise<void> {
-        // const file = await this.fs.getFile(uri);
-        // this.updateInputStatus(file.input, InputStatus.STATUS_PUBLISHED);
-    }
-
-    async handleCommandInputUnpublish(uri: vscode.Uri): Promise<void> {
-        // const file = await this.fs.getFile(uri);
-        // this.updateInputStatus(file.input, InputStatus.STATUS_DRAFT);
-    }
-
     async handleCommandInputLink(inputOrUri: vscode.Uri | Input) {
         if (isInput(inputOrUri)) {
             this.handleCommandInputLink(getInputURI(inputOrUri as Input));
@@ -215,23 +201,6 @@ export class PageController implements vscode.Disposable {
         }
         const uri = vscode.Uri.parse(target!);
         return vscode.commands.executeCommand(BuiltInCommands.Open, uri);
-    }
-
-    async updateInputStatus(input: Input, status: InputStatus) {
-        input.status = status;
-
-        try {
-            const response = await this.client?.updateInput(input, {
-                paths: ['status'],
-            });
-            if (response?.input) {
-                this.onDidInputChange.fire(response.input);
-            }
-        } catch (err) {
-            if (err instanceof Error) {
-                vscode.window.showErrorMessage(`Could not update input: ${err.message}`);
-            }
-        }
     }
 
     public dispose() {
