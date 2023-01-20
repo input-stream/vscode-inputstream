@@ -22,9 +22,9 @@ export class DeviceLogin implements vscode.Disposable {
         this.disposables.push(this.onDidAuthUserChange);
 
         this.disposables.push(vscode.commands.registerCommand(
-            CommandName.DeviceLogin, this.handleCommandDeviceLogin, this));
+            CommandName.Login, this.handleCommandDeviceLogin, this));
         this.disposables.push(vscode.commands.registerCommand(
-            CommandName.Login, this.handleCommandLogin, this));
+            CommandName.LoginToken, this.handleCommandLoginToken, this));
     }
 
     private handleCommandDeviceLogin() {
@@ -39,7 +39,7 @@ export class DeviceLogin implements vscode.Disposable {
      * vscode://StackBuild.vscode-inputstream/login?token=...
      * @param token 
      */
-    private handleCommandLogin(token: string) {
+    private handleCommandLoginToken(token: string) {
         if (!token) {
             return;
         }

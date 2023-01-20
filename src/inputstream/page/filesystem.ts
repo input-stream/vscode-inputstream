@@ -100,6 +100,8 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
             vscode.commands.registerCommand(CommandName.InputUnpublish, this.handleCommandInputUnPublish, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputDelete, this.handleCommandInputDelete, this));
+        this.disposables.push(
+            vscode.commands.registerCommand(CommandName.ImageUpload, this.handleCommandImageUpload, this));
 
         this.root.addStaticDir(makeUserProfileDir(user));
         this.root.addStaticDir(makeVscodeSettingsDir());
@@ -126,6 +128,69 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         }
         return Promise.resolve(this.bytestreamClient!);
     }
+
+    public async handleCommandImageUpload() {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            return;
+        }
+        const docUri = editor.document.uri;
+        if (!docUri) {
+            return;
+        }
+        const node = await this._lookup<InputNode>(docUri, true, inputNodePredicate);
+        if (!node) {
+            return;
+        }
+
+        const options: vscode.OpenDialogOptions = {
+            canSelectMany: true,
+            openLabel: 'Upload',
+            filters: {
+                'Images': imageExtensionNames,
+            }
+        };
+        const fileUris = await vscode.window.showOpenDialog(options);
+        if (!fileUris || fileUris.length === 0) {
+            return;
+        }
+
+        const files = fileUris.map((uri: vscode.Uri) => {
+            const name = path.posix.basename(uri.fsPath);
+            const contentType = makeImageContentType(name);
+            const data = Buffer.from(fs.readFileSync(uri.fsPath));
+            return { name, contentType, data };
+        });
+
+        const uploaded = await node.uploadFiles(files);
+
+        const uploadedUris = uploaded.map(node => {
+            return docUri.with({ path: path.posix.join(docUri.path, node.name) });
+        });
+
+        const links = uploaded.map(node => {
+            const href = vscode.Uri.file(`./${path.posix.basename(node.file.name!)}`).toString();
+            return `![${node.file.contentType}](./${href})`;
+        });
+        const content = links.join("\n");
+
+        editor.edit((edit) => {
+            const selection = editor.selection;
+            if (selection.isEmpty) {
+                edit.insert(selection.start, content);
+            } else {
+                edit.replace(selection, content);
+            }
+        });
+
+        const events: vscode.FileChangeEvent[] = uploadedUris.map(uri => {
+            return { uri, type: vscode.FileChangeType.Created };
+        });
+        events.push({ uri: docUri, type: vscode.FileChangeType.Changed });
+
+        this._fireSoon(...events);
+    }
+
 
     private async handleCommandInputCreate() {
         const request: Input = {
@@ -205,6 +270,10 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     }
 
     private async handleCommandInputPublish(uri: vscode.Uri): Promise<Input | undefined> {
+        const selection = await vscode.window.showInformationMessage(`This page will be publically accessible.  Update page status?`, 'Proceed', 'Cancel');
+        if (selection !== 'Proceed') {
+            return;
+        }
         const input = await this.updateInputStatus(uri, InputStatus.STATUS_PUBLISHED);
         if (input) {
             vscode.env.openExternal(makeInputExternalViewUrl(input));
@@ -213,6 +282,11 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     }
 
     private async handleCommandInputUnPublish(uri: vscode.Uri): Promise<Input | undefined> {
+        const selection = await vscode.window.showInformationMessage(`This page will no longer be available to the public.  Update page status?`, 'Proceed', 'Cancel');
+        if (selection !== 'Proceed') {
+            return;
+        }
+
         const input = await this.updateInputStatus(uri, InputStatus.STATUS_DRAFT);
         if (input) {
             vscode.env.openExternal(makeInputExternalWatchUrl(input));
@@ -1071,29 +1145,40 @@ class InputNode extends DirNode<FileNode> {
         if (!contentType) {
             throw vscode.FileSystemError.NoPermissions(`Input "${this.input.title}" does not support adding "${ext}" files`);
         }
-        return this.createImageFile(name, data, contentType);
+        const nodes = await this.uploadFiles([{ name, contentType, data: Buffer.from(data) }]);
+        return nodes[0];
     }
 
-    async createImageFile(relname: string, data: Uint8Array, contentType: string): Promise<FileNode> {
-        const name = makeInputAssetName(this.input, relname);
-        const sha256 = await this.uploadBlob(name, data);
-        const file: FileProto = {
-            name,
-            contentType,
-            sha256,
-            size: data.byteLength,
-            createdAt: { seconds: Date.now() * 1000 },
-            modifiedAt: { seconds: Date.now() * 1000 },
-        }
-        let fileSet = this.input.fileSet;
-        if (!fileSet) {
-            fileSet = { files: [] };
-        }
-        fileSet.files!.push(file);
+    async uploadFiles(uploads: FileProto[]): Promise<InputFileNode[]> {
+        const work = uploads.map(f => this.uploadFile(f));
+        const uploaded = await Promise.all(work);
 
-        await this.updateFileSet(fileSet);
+        const byName = new Map<string, FileProto>();
+        for (const child of await this.getChildren()) {
+            if (child instanceof InputFileNode) {
+                byName.set(child.name, child.file);
+            }
+        }
+        uploaded.forEach(f => byName.set(f.name!, f));
+        const files = Array.from(byName.values());
 
-        return this.addInputFile(file);
+        files.sort((a, b) => a.name!.localeCompare(b.name!));
+        await this.updateFileSet({ files });
+
+        return uploaded.map(f => this.addInputFile(f));
+    }
+
+    async uploadFile(file: FileProto): Promise<FileProto> {
+        const buffer = file.data;
+        if (!(buffer instanceof Buffer)) {
+            throw vscode.FileSystemError.NoPermissions(`file to upload must have associated Buffer: ` + file.name);
+        }
+        file.name = makeInputAssetName(this.input, file.name!);
+        file.size = buffer.byteLength;
+        file.createdAt = { seconds: Date.now() * 1000 };
+        file.modifiedAt = { seconds: Date.now() * 1000 };
+        file.sha256 = await this.uploadBlob(file.name, buffer);
+        return file;
     }
 
     async createDirectory(name: string): Promise<FileNode> {
@@ -1172,13 +1257,12 @@ class InputNode extends DirNode<FileNode> {
         }
     }
 
-    private async uploadBlob(name: string, data: Uint8Array): Promise<string> {
-        const size = data.byteLength;
+    public async uploadBlob(name: string, buffer: Buffer): Promise<string> {
+        const size = buffer.byteLength;
         if (size > MAX_CLIENT_BODY_SIZE) {
             throw vscode.FileSystemError.NoPermissions(`cannot upload ${name} (${size}b > ${MAX_CLIENT_BODY_SIZE}`);
         }
 
-        const buffer = Buffer.from(data);
         const sha256 = sha256Bytes(buffer);
         const resourceName = makeBytestreamUploadResourceName(this.input.id!, sha256, size);
 
@@ -1363,7 +1447,7 @@ class InputFileNode extends FileNode {
         name: string,
         private ctx: ClientContext,
         private input: Input,
-        private file: FileProto,
+        public file: FileProto,
     ) {
         super(name);
         if (file.modifiedAt) {
@@ -1506,26 +1590,40 @@ function makeInputExternalWatchUrl(input: Input): vscode.Uri {
     return vscode.Uri.parse(`https://input.stream/@${input.login}/${input.titleSlug}/view/watch`);
 }
 
-function makeContentType(ext: string): string | undefined {
-    switch (ext) {
-        case ".gif":
-            return "image/gif";
-        case ".apng":
-            return "image/apng";
-        case ".png":
-            return "image/png";
-        case ".jpg":
-        // fallthrough
-        case ".jpeg":
-            return "image/jpeg";
-        default:
-            return undefined;
-    }
-}
-
 function sha256Bytes(buf: Buffer): string {
     const hashSum = crypto.createHash('sha256');
     hashSum.update(buf);
     const hex = hashSum.digest('hex');
     return hex;
 }
+
+function makeContentType(ext: string): string | undefined {
+    let contentType = makeImageContentType(ext);
+    if (contentType) {
+        return contentType;
+    }
+    // TODO: add additional text formats?
+}
+
+function makeImageContentType(ext: string): string | undefined {
+    switch (ext) {
+        case '.apng':
+            return 'image/apng';
+        case '.avif':
+            return 'image/avif';
+        case '.gif':
+            return 'image/gif';
+        case '.jpeg':
+            return 'image/jpeg';
+        case '.jpg':
+            return 'image/jpeg';
+        case '.png':
+            return 'image/png';
+        case '.svg':
+            return 'image/svg+xml';
+        case '.webp':
+            return 'image/webp';
+    }
+}
+
+const imageExtensionNames = ['apng', 'avif', 'gif', 'jpeg', 'jpg', 'png', 'svg', 'webp'];

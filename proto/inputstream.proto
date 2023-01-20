@@ -119,6 +119,7 @@ message File {
     string content_type = 5;
     google.protobuf.Timestamp created_at = 6;
     google.protobuf.Timestamp modified_at = 7;
+    bytes data = 8; // optional data if stored inline
 }
 
 message CreateInputRequest {

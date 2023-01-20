@@ -27,7 +27,6 @@ export enum ConfigSection {
  */
 export enum CommandName {
     RefreshSuffix = '.refresh',
-    ImagePaste = 'input.stream.image.paste',
     ImageUpload = 'input.stream.image.upload',
     ImageSearch = 'input.stream.image.search',
     InputCreate = 'input.stream.input.create',
@@ -36,8 +35,8 @@ export enum CommandName {
     InputPublish = 'input.stream.input.publish',
     InputUnpublish = 'input.stream.input.unpublish',
     InputWatch = 'input.stream.input.watch',
+    LoginToken = 'input.stream.loginToken',
     Login = 'input.stream.login',
-    DeviceLogin = 'input.stream.deviceLogin',
     ViewInputstreamExplorer = 'workbench.view.extension.inputstream-explorer',
     OpenSetting = 'input.stream.openExtensionSetting',
 }

@@ -11,6 +11,7 @@ export interface File {
   'contentType'?: (string);
   'createdAt'?: (_google_protobuf_Timestamp | null);
   'modifiedAt'?: (_google_protobuf_Timestamp | null);
+  'data'?: (Buffer | Uint8Array | string);
 }
 
 export interface File__Output {
@@ -21,4 +22,5 @@ export interface File__Output {
   'contentType': (string);
   'createdAt': (_google_protobuf_Timestamp__Output | null);
   'modifiedAt': (_google_protobuf_Timestamp__Output | null);
+  'data': (Buffer);
 }

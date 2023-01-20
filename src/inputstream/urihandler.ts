@@ -32,7 +32,7 @@ export class UriHandler implements vscode.UriHandler, vscode.Disposable {
             return;
         }
         Container.telemetry.sendTelemetryEvent(Telemetry.Login);
-        return vscode.commands.executeCommand(CommandName.Login, token);
+        return vscode.commands.executeCommand(CommandName.LoginToken, token);
     }
 
     private async edit(uri: vscode.Uri): Promise<void> {

@@ -26,8 +26,8 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:input.stream.deviceLogin",
         "onCommand:input.stream.login",
+        "onCommand:input.stream.loginToken",
         "onFileSystem:stream",
         "onUri",
         "onView:input.stream.accountExplorer",
@@ -99,7 +99,7 @@
             {
                 "category": "Stream",
                 "command": "input.stream.image.upload",
-                "title": "Upload Image",
+                "title": "Upload Image(s)...",
                 "icon": "$(upload)"
             },
             {
@@ -127,14 +127,13 @@
             },
             {
                 "category": "Stream",
-                "command": "input.stream.login",
-                "title": "Login to https://input.stream",
-                "icon": "$(log-in)"
+                "command": "input.stream.loginToken",
+                "title": "Login with Token"
             },
             {
                 "category": "Stream",
-                "command": "input.stream.deviceLogin",
-                "title": "Login to https://input.stream",
+                "command": "input.stream.login",
+                "title": "Login",
                 "icon": "$(log-in)"
             }
         ],
@@ -158,6 +157,42 @@
                 {
                     "command": "input.stream.input.replace",
                     "when": "false"
+                },
+                {
+                    "command": "input.stream.loginToken",
+                    "when": "false"
+                },
+                {
+                    "command": "input.stream.login",
+                    "when": "true"
+                },
+                {
+                    "command": "input.stream.input.create",
+                    "when": "true"
+                },
+                {
+                    "command": "input.stream.input.publish",
+                    "when": "resourceScheme == stream && resourceFilename =~ /.draft.md$/"
+                },
+                {
+                    "command": "input.stream.input.unpublish",
+                    "when": "resourceScheme == stream && resourceFilename =~ /.published.md$/"
+                },
+                {
+                    "command": "input.stream.input.watch",
+                    "when": "resourceScheme == stream"
+                },
+                {
+                    "command": "input.stream.input.delete",
+                    "when": "editorFocus && resourceScheme == stream"
+                },
+                {
+                    "command": "input.stream.image.search",
+                    "when": "resourceScheme == stream"
+                },
+                {
+                    "command": "input.stream.image.upload",
+                    "when": "editorFocus && resourceScheme == stream"
                 }
             ],
             "view/title": [
@@ -167,25 +202,12 @@
                     "group": "navigation@0"
                 },
                 {
-                    "command": "input.stream.input.create",
-                    "when": "view == explorer && resourceScheme == stream",
-                    "group": "navigation@1"
-                },
-                {
-                    "command": "input.stream.deviceLogin",
+                    "command": "input.stream.login",
                     "when": "view == input.stream.accountExplorer",
                     "group": "navigation@0"
                 }
             ],
             "explorer/context": [
-                {
-                    "command": "input.stream.input.publish",
-                    "when": "resourceScheme == stream && resourceFilename =~ /.draft.md$/"
-                },
-                {
-                    "command": "input.stream.input.unpublish",
-                    "when": "resourceScheme == stream && resourceFilename =~ /.published.md$/"
-                },
                 {
                     "command": "input.stream.input.create"
                 }

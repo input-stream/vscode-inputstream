@@ -21,12 +21,10 @@ import { PageTreeView } from './page/treeview';
 import { AccountTreeDataProvider } from './login/treeview';
 import { TreeDataProvider } from './treedataprovider';
 import { PageController } from './page/controller';
-import { Paster } from './paster';
-import { FsRegistry } from './fsregistry';
 import { BytesClient } from './byteStreamClient';
 import { MemFS } from './memfs';
 
-export class InputStreamFeature implements IExtensionFeature, vscode.Disposable, FsRegistry {
+export class InputStreamFeature implements IExtensionFeature, vscode.Disposable {
     public readonly name = FeatureName;
 
     private disposables: vscode.Disposable[] = [];
@@ -50,7 +48,6 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable,
         this.add(this.onDidInputCreate);
         this.add(this.onDidInputRemove);
         this.add(new UriHandler());
-        this.add(new Paster(this));
     }
 
     /**
@@ -135,22 +132,6 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable,
         if (oldPageTreeView) {
             oldPageTreeView.dispose();
         }
-    }
-
-    public getFsForURI(uri: vscode.Uri): vscode.FileSystem | undefined {
-        switch (uri.scheme) {
-            case 'stream':
-                return this.getFsForStream(uri.fsPath);
-            default:
-                return vscode.workspace.fs;
-        }
-    }
-
-    private getFsForStream(fsPath: string): vscode.FileSystem | undefined {
-        if (!this.pageController) {
-            return;
-        }
-        return this.pageController.filesystem();
     }
 
     public deactivate() {

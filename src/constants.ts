@@ -9,7 +9,7 @@ export enum Telemetry {
     FeatureActivate = 'feature.activate',
     FeatureDeactivate = 'feature.deactivate',
     Login = 'input.stream.login',
-    DeviceLogin = 'input.stream.deviceLogin',
+    DeviceLogin = 'input.stream.login',
     Edit = 'input.edit',
     Create = 'input.create',
 }
