@@ -86,7 +86,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         vscode.workspace.onDidCloseTextDocument(this.handleTextDocumentClose, this, this.disposables);
 
         this.disposables.push(
-            vscode.workspace.registerFileSystemProvider(Scheme.Stream, this, { isCaseSensitive: true, isReadonly: true }));
+            vscode.workspace.registerFileSystemProvider(Scheme.Stream, this, { isCaseSensitive: true, isReadonly: false }));
 
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputCreate, this.handleCommandInputCreate, this));
@@ -247,7 +247,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
             const input = await client.createInput(request);
             if (input) {
                 const inputUri = makeUserNodeUri(this.user);
-                userNode.addInput(input);
+                userNode.addInputNode(input);
                 this._fireSoon(
                     { type: vscode.FileChangeType.Changed, uri: userUri },
                     { type: vscode.FileChangeType.Created, uri: inputUri }
@@ -1023,7 +1023,7 @@ class UserNode extends DirNode<InputNode> {
             const inputs = await this.loadInputs();
             if (inputs) {
                 for (const input of inputs) {
-                    this.addInput(input);
+                    this.addInputNode(input);
                 }
             }
             this.hasLoaded = true;
@@ -1035,12 +1035,12 @@ class UserNode extends DirNode<InputNode> {
         for (const curr of await this.getChildren()) {
             if (curr.input.id === next.id) {
                 this.removeChild(curr);
-                return this.addInput(next);
+                return this.addInputNode(next);
             }
         }
     }
 
-    public addInput(input: Input): InputNode {
+    public addInputNode(input: Input): InputNode {
         return this.addChild(new InputNode(this.ctx, this.user, input));
     }
 
@@ -1054,7 +1054,7 @@ class UserNode extends DirNode<InputNode> {
             throw vscode.FileSystemError.Unavailable(`rename title operation failed`);
         }
         this.removeChild(oldChild);
-        return this.addInput(input);
+        return this.addInputNode(input);
     }
 
     createFile(name: string, data?: Uint8Array): Promise<InputNode> {
@@ -1089,7 +1089,7 @@ class UserNode extends DirNode<InputNode> {
             vscode.commands.executeCommand(BuiltInCommands.Open, makeInputContentFileNodeUri(input!));
         }, 1);
 
-        return this.addInput(input);
+        return this.addInputNode(input);
     }
 
     async deleteChild(name: string): Promise<void> {
@@ -1116,7 +1116,7 @@ class UserNode extends DirNode<InputNode> {
         if (!input) {
             return;
         }
-        return this.addInput(input);
+        return this.addInputNode(input);
     }
 
     protected async loadInputs(): Promise<Input[] | undefined> {
@@ -1144,13 +1144,15 @@ class UserNode extends DirNode<InputNode> {
 }
 
 class InputNode extends DirNode<FileNode> {
+    private content: ContentFileNode;
+
     constructor(
         protected ctx: ClientContext,
         protected user: User,
         public input: Input,
     ) {
         super(makeInputName(input));
-        this.addContentFile(input);
+        this.content = this.addContentFileNode(input);
         if (input.fileSet) {
             this.addFileSet(input.fileSet);
         }
@@ -1159,16 +1161,16 @@ class InputNode extends DirNode<FileNode> {
     addFileSet(fileSet: FileSet): void {
         if (fileSet.files) {
             for (const inputFile of fileSet.files) {
-                this.addInputFile(inputFile);
+                this.addFileProtoNode(inputFile);
             }
         }
     }
 
-    addInputFile(file: FileProto): InputFileNode {
-        return this.addChild(new InputFileNode(makeInputFileName(this.input, file), this.ctx, this.input, file));
+    addFileProtoNode(file: FileProto): FileProtoNode {
+        return this.addChild(new FileProtoNode(makeInputFileName(this.input, file), this.ctx, this.input, file));
     }
 
-    addContentFile(input: Input): ContentFileNode {
+    addContentFileNode(input: Input): ContentFileNode {
         return this.addChild(new ContentFileNode(makeInputContentName(input), this.ctx, input));
     }
 
@@ -1190,23 +1192,22 @@ class InputNode extends DirNode<FileNode> {
         return nodes[0];
     }
 
-    async uploadFiles(uploads: FileProto[]): Promise<InputFileNode[]> {
+    async uploadFiles(uploads: FileProto[]): Promise<FileProtoNode[]> {
         const work = uploads.map(f => this.uploadFile(f));
         const uploaded = await Promise.all(work);
+        const newNodes = uploaded.map(f => this.addFileProtoNode(f));
 
-        const byName = new Map<string, FileProto>();
+        const files: FileProto[] = [];
         for (const child of await this.getChildren()) {
-            if (child instanceof InputFileNode) {
-                byName.set(child.name, child.file);
+            if (child instanceof FileProtoNode) {
+                files.push(child.file);
             }
         }
-        uploaded.forEach(f => byName.set(f.name!, f));
-        const files = Array.from(byName.values());
-
         files.sort((a, b) => a.name!.localeCompare(b.name!));
+
         await this.updateFileSet({ files });
 
-        return uploaded.map(f => this.addInputFile(f));
+        return newNodes;
     }
 
     async uploadFile(file: FileProto): Promise<FileProto> {
@@ -1253,7 +1254,7 @@ class InputNode extends DirNode<FileNode> {
             if (oldChild) {
                 this.removeChild(oldChild);
             }
-            this.addContentFile(this.input);
+            this.content = this.addContentFileNode(this.input);
             return this.input;
         } catch (e) {
             this.input.status = prevStatus;
@@ -1265,15 +1266,11 @@ class InputNode extends DirNode<FileNode> {
     public async updateFileSet(fileSet: FileSet): Promise<Input | undefined> {
         const client = await this.ctx.inputStreamClient();
         const prevFileSet = this.input.fileSet;
-        const oldChild = await this.getChild(makeInputContentName(this.input));
         try {
             this.input.fileSet = fileSet;
             const response = await client.updateInput(this.input, {
                 paths: ['file_set'],
             });
-            if (oldChild) {
-                this.removeChild(oldChild);
-            }
             return this.input;
         } catch (e) {
             this.input.fileSet = prevFileSet;
@@ -1347,10 +1344,6 @@ class InputNode extends DirNode<FileNode> {
         const stream = Readable.from(buffer, {
             highWaterMark: chunkSize,
         });
-        // const stream2 = fs.createReadStream(buffer, {
-        //     autoClose: true,
-        //     highWaterMark: chunkSize,
-        // });
 
         const md = new grpc.Metadata();
         md.set('filename', name);
@@ -1481,7 +1474,7 @@ class ContentFileNode extends FileNode {
     }
 }
 
-class InputFileNode extends FileNode {
+class FileProtoNode extends FileNode {
     private data: Uint8Array | undefined;
 
     constructor(
