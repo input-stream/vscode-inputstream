@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
-import { Telemetry } from '../constants';
+import { BuiltInCommands, Telemetry } from '../constants';
 import { Container } from '../container';
 import { CommandName } from './constants';
+import { makeInputNodeUri } from './page/filesystem';
 
 export class UriHandler implements vscode.UriHandler, vscode.Disposable {
 
@@ -36,12 +37,17 @@ export class UriHandler implements vscode.UriHandler, vscode.Disposable {
 
     private async edit(uri: vscode.Uri): Promise<void> {
         const query = parseQuery(uri);
-        const inputId = query['input_id'];
-        if (!inputId) {
+        const login = query['login'];
+        if (!login) {
+            return;
+        }
+        const title = query['title'];
+        if (!title) {
             return;
         }
         Container.telemetry.sendTelemetryEvent(Telemetry.Edit);
-        await vscode.commands.executeCommand(CommandName.InputOpen, inputId);
+
+        return vscode.commands.executeCommand(BuiltInCommands.Open, makeInputNodeUri({ login, title }));
     }
 
     private async create(uri: vscode.Uri): Promise<void> {

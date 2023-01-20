@@ -23,12 +23,17 @@ import { User } from '../../proto/build/stack/auth/v1beta1/User';
 import { InputFilterOptions } from '../../proto/build/stack/inputstream/v1beta1/InputFilterOptions';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
 import { BuiltInCommands } from '../../constants';
-import { uuid } from 'vscode-common';
-import { ReadRequest } from '../../proto/google/bytestream/ReadRequest';
 import { ReadResponse } from '../../proto/google/bytestream/ReadResponse';
-import { Duplex, Readable, Writable } from 'stream';
+import { Readable } from 'stream';
+import { InputStep, MultiStepInput } from '../../multiStepInput';
 
 const MAX_CLIENT_BODY_SIZE = 10 * 1024 * 1024; // upload size limit
+
+type selectPredicate = (child: Entry) => boolean;
+
+const defaultSelectPredicate = (child: Entry) => { return false; };
+const inputNodePredicate = (child: Entry) => child instanceof InputNode;
+const userNodePredicate = (child: Entry) => child instanceof UserNode;
 
 class ClientContext {
     listFilterStatus: InputStatus | undefined;
@@ -63,7 +68,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     protected disposables: vscode.Disposable[] = [];
     protected inputstreamClient: InputStreamClient | undefined;
     protected bytestreamClient: BytesClient | undefined;
-    protected root: RootDir = new RootDir(this.createClientContext());
+    protected root: RootNode = new RootNode(this.createClientContext());
     private _emitter = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
     private _bufferedEvents: vscode.FileChangeEvent[] = [];
     private _fireSoonHandle?: NodeJS.Timer;
@@ -71,7 +76,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     readonly onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = this._emitter.event;
 
     constructor(
-        user: User,
+        private user: User,
         onDidInputStreamClientChange: vscode.Event<InputStreamClient>,
         onDidByteStreamClientChange: vscode.Event<BytesClient>,
     ) {
@@ -81,15 +86,22 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         vscode.workspace.onDidCloseTextDocument(this.handleTextDocumentClose, this, this.disposables);
 
         this.disposables.push(
-            vscode.workspace.registerFileSystemProvider(Scheme.Page, this, { isCaseSensitive: true }));
+            vscode.workspace.registerFileSystemProvider(Scheme.Stream, this, { isCaseSensitive: true }));
 
+        this.disposables.push(
+            vscode.commands.registerCommand(CommandName.InputCreate, this.handleCommandInputCreate, this));
+        this.disposables.push(
+            vscode.commands.registerCommand(CommandName.InputReplace, this.handleCommandInputReplace, this));
+        this.disposables.push(
+            vscode.commands.registerCommand(CommandName.InputWatch, this.handleCommandInputWatch, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputPublish, this.handleCommandInputPublish, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputUnpublish, this.handleCommandInputUnPublish, this));
         this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputReplace, this.handleCommandInputReplace, this));
+            vscode.commands.registerCommand(CommandName.InputDelete, this.handleCommandInputDelete, this));
 
+        this.root.addStaticDir(makeUserProfileDir(user));
         this.root.addStaticDir(makeVscodeSettingsDir());
         this.root.addUser(user);
     }
@@ -115,6 +127,83 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         return Promise.resolve(this.bytestreamClient!);
     }
 
+    private async handleCommandInputCreate() {
+        const request: Input = {
+            status: InputStatus.STATUS_DRAFT,
+            owner: this.user.login,
+            login: this.user.login,
+            type: InputType.TYPE_SHORT_POST,
+        };
+
+        const setTitle: InputStep = async (msi) => {
+            const title = await msi.showInputBox({
+                title: 'Title',
+                totalSteps: 1,
+                step: 1,
+                value: '',
+                prompt: 'Choose a title (you can always change it later)',
+                validate: async (value: string) => { return ''; },
+                shouldResume: async () => false,
+            });
+            if (title) {
+                request.title = title;
+            }
+            return undefined;
+        };
+        // Uncomment when we have more than one type of input.
+        //
+        // const pickType: InputStep = async (input) => {
+        //     const picked = await input.showQuickPick({
+        //         title: 'Input Type',
+        //         totalSteps: 2,
+        //         step: 1,
+        //         items: [{
+        //             label: 'Page',
+        //             type: InputType.TYPE_SHORT_POST,
+        //         }],
+        //         placeholder: 'Choose input type',
+        //         shouldResume: async () => false,
+        //     });
+        //     request.type = (picked as InputTypeQuickPickItem).type;
+        //     return setTitle;
+        // };
+        await MultiStepInput.run(setTitle);
+        if (!request.title) {
+            return;
+        }
+
+        try {
+            const userUri = makeUserNodeUri(this.user);
+            const userNode = await this._lookup<UserNode>(userUri, false, userNodePredicate);
+            if (!userNode) {
+                return;
+            }
+            const client = await this.getInputStreamClient();
+            const input = await client.createInput(request);
+            if (input) {
+                const inputUri = makeUserNodeUri(this.user);
+                userNode.addInput(input);
+                this._fireSoon(
+                    { type: vscode.FileChangeType.Changed, uri: userUri },
+                    { type: vscode.FileChangeType.Created, uri: inputUri }
+                );
+                vscode.commands.executeCommand(BuiltInCommands.Open, makeInputContentFileNodeUri(input));
+            }
+        } catch (err) {
+            if (err instanceof Error) {
+                vscode.window.showErrorMessage(`Could not create: ${err.message}`);
+            }
+        }
+    }
+
+    private async handleCommandInputWatch(uri: vscode.Uri): Promise<boolean> {
+        let node = await this._lookup<InputNode>(uri, true, inputNodePredicate);
+        if (!node) {
+            return false
+        }
+        return vscode.env.openExternal(makeInputExternalWatchUrl(node.input));
+    }
+
     private async handleCommandInputPublish(uri: vscode.Uri): Promise<Input | undefined> {
         const input = await this.updateInputStatus(uri, InputStatus.STATUS_PUBLISHED);
         if (input) {
@@ -132,15 +221,14 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     }
 
     private async handleCommandInputReplace(oldUri: vscode.Uri, newUri: vscode.Uri, next: Input): Promise<void> {
-        const userDir = await this._lookupParentDirectory(oldUri);
-        if (!(userDir instanceof UserDir)) {
-            return;
+        let node = await this._lookup<UserNode>(oldUri, true, userNodePredicate);
+        if (!node) {
+            return
         }
-
         const selection = vscode.window.activeTextEditor?.selection;
         vscode.commands.executeCommand(BuiltInCommands.CloseActiveEditor);
 
-        await userDir.replaceInputById(next);
+        await node.replaceInputById(next);
 
         this._fireSoon(
             { type: vscode.FileChangeType.Deleted, uri: oldUri },
@@ -148,23 +236,27 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         );
 
         setTimeout(async () => {
-            await vscode.commands.executeCommand(BuiltInCommands.Open, makeInputContentFileUri(next));
+            await vscode.commands.executeCommand(BuiltInCommands.Open, makeInputContentFileNodeUri(next));
             if (selection && vscode.window.activeTextEditor) {
                 vscode.window.activeTextEditor.selection = selection;
             }
         }, 20);
     }
 
+    async handleCommandInputDelete(uri: vscode.Uri) {
+        let node = await this._lookup<InputNode>(uri, true, inputNodePredicate);
+        if (!node) {
+            return
+        }
+        return this.delete(makeInputNodeUri(node.input));
+    }
+
     private async updateInputStatus(uri: vscode.Uri, status: InputStatus): Promise<Input | undefined> {
-        const entry = await this._lookup(uri, true);
-        if (!entry) {
-            return;
+        let node = await this._lookup<InputNode>(uri, true, inputNodePredicate);
+        if (!node) {
+            return
         }
-        const parent = await this._lookupParentDirectory(uri);
-        if (!(parent instanceof InputDir)) {
-            return;
-        }
-        const input = await parent.updateStatus(status);
+        const input = await node.updateStatus(status);
         vscode.commands.executeCommand(BuiltInCommands.CloseActiveEditor);
         this._fireSoon(
             { type: vscode.FileChangeType.Deleted, uri },
@@ -172,7 +264,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         );
         if (input) {
             setTimeout(() => {
-                vscode.commands.executeCommand(BuiltInCommands.Open, makeInputContentFileUri(input));
+                vscode.commands.executeCommand(BuiltInCommands.Open, makeInputContentFileNodeUri(input));
             }, 20);
         }
         return input;
@@ -301,9 +393,9 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         );
     }
 
-    private async _lookup(uri: vscode.Uri, silent: false): Promise<Entry>;
-    private async _lookup(uri: vscode.Uri, silent: boolean): Promise<Entry | undefined>;
-    private async _lookup(uri: vscode.Uri, silent: boolean): Promise<Entry | undefined> {
+    private async _lookup<T extends Entry>(uri: vscode.Uri, silent: false, select?: selectPredicate): Promise<T>;
+    private async _lookup<T extends Entry>(uri: vscode.Uri, silent: boolean, select?: selectPredicate): Promise<T | undefined>;
+    private async _lookup<T extends Entry>(uri: vscode.Uri, silent: boolean, select: selectPredicate = defaultSelectPredicate): Promise<T | undefined> {
         const parts = uri.path.split('/');
         let entry: Entry = this.root;
         for (const part of parts) {
@@ -311,7 +403,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                 continue;
             }
             let child: Entry | undefined;
-            if (entry instanceof Dir) {
+            if (entry instanceof DirNode) {
                 try {
                     child = await entry.getChild(part);
                 } catch (e) {
@@ -325,28 +417,31 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                     return undefined;
                 }
             }
+            if (select(child)) {
+                return child as T;
+            }
             entry = child;
         }
-        return entry;
+        return entry as T;
     }
 
-    private async _lookupAsDirectory(uri: vscode.Uri, silent: boolean): Promise<Dir<Entry>> {
+    private async _lookupAsDirectory(uri: vscode.Uri, silent: boolean): Promise<DirNode<Entry>> {
         const entry = await this._lookup(uri, silent);
-        if (entry instanceof Dir) {
+        if (entry instanceof DirNode) {
             return entry;
         }
         throw vscode.FileSystemError.FileNotADirectory(uri);
     }
 
-    private async _lookupAsFile(uri: vscode.Uri, silent: boolean): Promise<File> {
+    private async _lookupAsFile(uri: vscode.Uri, silent: boolean): Promise<FileNode> {
         const entry = await this._lookup(uri, silent);
-        if (entry instanceof File) {
+        if (entry instanceof FileNode) {
             return entry;
         }
         throw vscode.FileSystemError.FileIsADirectory(uri);
     }
 
-    private _lookupParentDirectory(uri: vscode.Uri): Promise<Dir<Entry>> {
+    private _lookupParentDirectory(uri: vscode.Uri): Promise<DirNode<Entry>> {
         const dirname = uri.with({ path: path.posix.dirname(uri.path) });
         return this._lookupAsDirectory(dirname, false);
     }
@@ -401,7 +496,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         } catch (e) {
             throw e;
         }
-        if (entry instanceof Dir) {
+        if (entry instanceof DirNode) {
             throw vscode.FileSystemError.FileIsADirectory(uri);
         }
         if (!entry && !options.create) {
@@ -418,7 +513,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                 throw e;
             }
         } else {
-            const file = entry as File;
+            const file = entry as FileNode;
             await file.setData(content);
             this._fireSoon({ type: vscode.FileChangeType.Changed, uri });
         }
@@ -432,9 +527,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     async readFile(uri: vscode.Uri): Promise<Uint8Array> {
         console.log(`readFile:`, uri);
         const file = await this._lookupAsFile(uri, false);
-        const data = await file.getData();
-        return data;
-        // throw vscode.FileSystemError.FileNotFound();
+        return file.getData();
     }
 
     /**
@@ -450,7 +543,6 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
 
         await parent.createDirectory(basename);
         this._fireSoon({ type: vscode.FileChangeType.Changed, uri: dirname }, { type: vscode.FileChangeType.Created, uri });
-
     }
 
     /**
@@ -647,7 +739,7 @@ class Filesystem implements vscode.FileSystem {
     }
 
     public isWritableFileSystem(scheme: string): boolean | undefined {
-        return scheme === Scheme.Page;
+        return scheme === Scheme.Stream;
     }
 }
 
@@ -669,7 +761,7 @@ interface FileEntry extends Entry {
     setData(data: Uint8Array): Promise<void>;
 }
 
-abstract class File implements FileEntry {
+abstract class FileNode implements FileEntry {
     public type = vscode.FileType.File;
     public size: number = 0;
 
@@ -683,35 +775,35 @@ abstract class File implements FileEntry {
     abstract setData(data: Uint8Array): Promise<void>;
 }
 
-abstract class Dir<T extends Entry> implements DirectoryEntry<T> {
-    private entries: Map<string, T>;
+abstract class DirNode<T extends Entry> implements DirectoryEntry<T> {
+    private children: Map<string, T>;
 
     public type = vscode.FileType.Directory;
-    public get size(): number { return this.entries.size; }
+    public get size(): number { return this.children.size; }
 
     constructor(
         public name: string,
         public ctime: number = 0,
         public mtime: number = 0
     ) {
-        this.entries = new Map();
+        this.children = new Map();
     }
 
     public addChild<C extends T>(child: C): C {
-        this.entries.set(child.name, child);
+        this.children.set(child.name, child);
         return child;
     }
 
     public removeChild(child: T): void {
-        this.entries.delete(child.name);
+        this.children.delete(child.name);
     }
 
     async getChild(name: string): Promise<T | undefined> {
-        return this.entries.get(name);
+        return this.children.get(name);
     }
 
     async getChildren(): Promise<T[]> {
-        return Array.from(this.entries.values());
+        return Array.from(this.children.values());
     }
 
     abstract rename(src: string, dst: string): Promise<T>;
@@ -720,7 +812,7 @@ abstract class Dir<T extends Entry> implements DirectoryEntry<T> {
     abstract deleteChild(name: string): Promise<void>;
 }
 
-class StaticFile extends File {
+class StaticFileNode extends FileNode {
     constructor(name: string, private data: Uint8Array) {
         super(name);
     }
@@ -733,13 +825,18 @@ class StaticFile extends File {
         throw vscode.FileSystemError.NoPermissions(`unsupported operation: write`);
     }
 
-    static fromText(name: string, text: string): StaticFile {
-        return new StaticFile(name, new TextEncoder().encode(text));
+    static fromText(name: string, text: string): StaticFileNode {
+        return new StaticFileNode(name, new TextEncoder().encode(text));
     }
+
+    static fromJson(name: string, data: any): StaticFileNode {
+        return StaticFileNode.fromText(name, JSON.stringify(data, null, 4));
+    }
+
 }
 
-class StaticDir extends Dir<StaticFile> {
-    constructor(name: string, files: StaticFile[]) {
+class StaticDirNode extends DirNode<StaticFileNode> {
+    constructor(name: string, files: StaticFileNode[]) {
         super(name);
 
         for (const file of files) {
@@ -747,15 +844,15 @@ class StaticDir extends Dir<StaticFile> {
         }
     }
 
-    rename(src: string, dst: string): Promise<StaticFile> {
+    rename(src: string, dst: string): Promise<StaticFileNode> {
         throw vscode.FileSystemError.NoPermissions(`unsupported operation: rename`);
     }
 
-    createFile(name: string, data?: Uint8Array | undefined): Promise<StaticFile> {
+    createFile(name: string, data?: Uint8Array | undefined): Promise<StaticFileNode> {
         throw vscode.FileSystemError.NoPermissions(`unsupported operation: create file`);
     }
 
-    createDirectory(name: string): Promise<StaticFile> {
+    createDirectory(name: string): Promise<StaticFileNode> {
         throw vscode.FileSystemError.NoPermissions(`unsupported operation: create directory`);
     }
 
@@ -764,40 +861,39 @@ class StaticDir extends Dir<StaticFile> {
     }
 }
 
-class RootDir extends Dir<Entry> {
+class RootNode extends DirNode<Entry> {
     constructor(
         private ctx: ClientContext
     ) {
         super('root');
     }
 
-    addUser(user: User): UserDir {
-        return this.addChild(new UserDir(this.ctx, user));
+    addUser(user: User): UserNode {
+        return this.addChild(new UserNode(this.ctx, user));
     }
 
-    addStaticDir(folder: StaticDir): void {
+    addStaticDir(folder: StaticDirNode): void {
         this.addChild(folder);
     }
 
-    rename(src: string, dst: string): Promise<StaticFile> {
+    rename(src: string, dst: string): Promise<StaticFileNode> {
         throw vscode.FileSystemError.NoPermissions(`unsupported operation: rename`);
     }
 
-    createFile(name: string, data?: Uint8Array): Promise<UserDir> {
+    createFile(name: string, data?: Uint8Array): Promise<UserNode> {
         throw vscode.FileSystemError.NoPermissions('cannot create file at root level');
     }
 
-    createDirectory(name: string): Promise<UserDir> {
+    createDirectory(name: string): Promise<UserNode> {
         throw vscode.FileSystemError.NoPermissions('cannot create directory at root level');
     }
 
     deleteChild(name: string): Promise<void> {
         throw vscode.FileSystemError.NoPermissions('unsupported operation: delete');
     }
-
 }
 
-class UserDir extends Dir<InputDir> {
+class UserNode extends DirNode<InputNode> {
     private hasLoaded = false;
 
     constructor(
@@ -807,7 +903,7 @@ class UserDir extends Dir<InputDir> {
         super(makeUserName(user));
     }
 
-    async getChildren(): Promise<InputDir[]> {
+    async getChildren(): Promise<InputNode[]> {
         if (!this.hasLoaded) {
             const inputs = await this.loadInputs();
             if (inputs) {
@@ -820,7 +916,7 @@ class UserDir extends Dir<InputDir> {
         return super.getChildren();
     }
 
-    public async replaceInputById(next: Input): Promise<InputDir | undefined> {
+    public async replaceInputById(next: Input): Promise<InputNode | undefined> {
         for (const curr of await this.getChildren()) {
             if (curr.input.id === next.id) {
                 this.removeChild(curr);
@@ -829,13 +925,13 @@ class UserDir extends Dir<InputDir> {
         }
     }
 
-    private addInput(input: Input): InputDir {
-        return this.addChild(new InputDir(this.ctx, this.user, input));
+    public addInput(input: Input): InputNode {
+        return this.addChild(new InputNode(this.ctx, this.user, input));
     }
 
-    async rename(src: string, dst: string): Promise<InputDir> {
+    async rename(src: string, dst: string): Promise<InputNode> {
         const oldChild = await this.getChild(src);
-        if (!(oldChild instanceof InputDir)) {
+        if (!(oldChild instanceof InputNode)) {
             throw vscode.FileSystemError.FileNotFound(src);
         }
         const input = await oldChild.updateTitle(dst);
@@ -846,11 +942,11 @@ class UserDir extends Dir<InputDir> {
         return this.addInput(input);
     }
 
-    createFile(name: string, data?: Uint8Array): Promise<InputDir> {
+    createFile(name: string, data?: Uint8Array): Promise<InputNode> {
         throw vscode.FileSystemError.NoPermissions('create file not supported; use create directory to initialize a new Input');
     }
 
-    async createDirectory(name: string): Promise<InputDir> {
+    async createDirectory(name: string): Promise<InputNode> {
         const client = await this.ctx.inputStreamClient();
 
         let input: Input | undefined = {
@@ -875,7 +971,7 @@ class UserDir extends Dir<InputDir> {
         }
 
         setTimeout(() => {
-            vscode.commands.executeCommand(BuiltInCommands.Open, makeInputContentFileUri(input!));
+            vscode.commands.executeCommand(BuiltInCommands.Open, makeInputContentFileNodeUri(input!));
         }, 1);
 
         return this.addInput(input);
@@ -896,7 +992,7 @@ class UserDir extends Dir<InputDir> {
         this.mtime = Date.now();
     }
 
-    async getChild(name: string): Promise<InputDir | undefined> {
+    async getChild(name: string): Promise<InputNode | undefined> {
         let child = await super.getChild(name);
         if (child) {
             return child;
@@ -932,7 +1028,7 @@ class UserDir extends Dir<InputDir> {
 
 }
 
-class InputDir extends Dir<File> {
+class InputNode extends DirNode<FileNode> {
     constructor(
         protected ctx: ClientContext,
         protected user: User,
@@ -953,15 +1049,15 @@ class InputDir extends Dir<File> {
         }
     }
 
-    addInputFile(file: FileProto): InputFile {
-        return this.addChild(new InputFile(makeInputFileName(this.input, file), this.ctx, this.input, file));
+    addInputFile(file: FileProto): InputFileNode {
+        return this.addChild(new InputFileNode(makeInputFileName(this.input, file), this.ctx, this.input, file));
     }
 
-    addContentFile(input: Input): ContentFile {
-        return this.addChild(new ContentFile(makeInputContentName(input), this.ctx, input));
+    addContentFile(input: Input): ContentFileNode {
+        return this.addChild(new ContentFileNode(makeInputContentName(input), this.ctx, input));
     }
 
-    rename(src: string, dst: string): Promise<StaticFile> {
+    rename(src: string, dst: string): Promise<StaticFileNode> {
         throw vscode.FileSystemError.NoPermissions(`unsupported operation: rename`);
     }
 
@@ -969,7 +1065,7 @@ class InputDir extends Dir<File> {
         throw vscode.FileSystemError.NoPermissions('To delete an Input, remove the parent directory');
     }
 
-    async createFile(name: string, data: Uint8Array): Promise<File> {
+    async createFile(name: string, data: Uint8Array): Promise<FileNode> {
         const ext = path.posix.extname(name);
         const contentType = makeContentType(ext);
         if (!contentType) {
@@ -978,7 +1074,7 @@ class InputDir extends Dir<File> {
         return this.createImageFile(name, data, contentType);
     }
 
-    async createImageFile(relname: string, data: Uint8Array, contentType: string): Promise<File> {
+    async createImageFile(relname: string, data: Uint8Array, contentType: string): Promise<FileNode> {
         const name = makeInputAssetName(this.input, relname);
         const sha256 = await this.uploadBlob(name, data);
         const file: FileProto = {
@@ -1000,11 +1096,11 @@ class InputDir extends Dir<File> {
         return this.addInputFile(file);
     }
 
-    async createDirectory(name: string): Promise<File> {
+    async createDirectory(name: string): Promise<FileNode> {
         throw vscode.FileSystemError.NoPermissions(`Input "${this.input.title}" does not support creating child folders`);
     }
 
-    async getChild(name: string): Promise<File | undefined> {
+    async getChild(name: string): Promise<FileNode | undefined> {
         return super.getChild(name);
         // TODO: implement get / set asset
     }
@@ -1189,7 +1285,7 @@ class InputDir extends Dir<File> {
     }
 }
 
-class ContentFile extends File {
+class ContentFileNode extends FileNode {
     private data: Uint8Array | undefined;
 
     constructor(
@@ -1221,7 +1317,7 @@ class ContentFile extends File {
         if (this.input.status === InputStatus.STATUS_PUBLISHED) {
             const selection = await vscode.window.showInformationMessage(`You can't edit a published page.  Would you like to convert it to a draft?`, 'Yes', 'Cancel');
             if (selection === 'Yes') {
-                vscode.commands.executeCommand(CommandName.InputUnpublish, makeInputDirUri(this.input));
+                vscode.commands.executeCommand(CommandName.InputUnpublish, makeInputNodeUri(this.input));
                 return;
             }
             throw vscode.FileSystemError.NoPermissions(`ReadOnly File`);
@@ -1241,7 +1337,7 @@ class ContentFile extends File {
             const current = this.input;
             const next = response.input;
             setTimeout(() => {
-                vscode.commands.executeCommand(CommandName.InputReplace, makeInputDirUri(current), makeInputDirUri(next), next);
+                vscode.commands.executeCommand(CommandName.InputReplace, makeInputNodeUri(current), makeInputNodeUri(next), next);
             }, 50);
         }
 
@@ -1260,7 +1356,7 @@ class ContentFile extends File {
     }
 }
 
-class InputFile extends File {
+class InputFileNode extends FileNode {
     private data: Uint8Array | undefined;
 
     constructor(
@@ -1324,23 +1420,23 @@ class InputFile extends File {
     }
 }
 
-function makeVscodeSettingsDir(): StaticDir {
-    return new StaticDir('.vscode', [
-        StaticFile.fromText('settings.json', `{
+function makeVscodeSettingsDir(): StaticDirNode {
+    return new StaticDirNode('.vscode', [
+        StaticFileNode.fromJson('settings.json', {
             "markdown.experimental.editor.pasteLinks.enabled": true,
-            "editor.experimental.pasteActions.enabled": true       
-        }`),
-        StaticFile.fromText('multiroot.code-workspace', `{
-            "folders": [
-                {
-                    "path": "."
-                },
-                {
-                    "name": "Stream",
-                    "uri": "page:/"
-                }
-            ]
-        }`),
+            "editor.experimental.pasteActions.enabled": true
+        }),
+    ]);
+}
+
+function makeUserProfileDir(user: User): StaticDirNode {
+    return new StaticDirNode('.profile', [
+        StaticFileNode.fromJson('config.json', {
+            "name": user.name,
+            "avatarUrl": user.avatarUrl,
+            "splashUrl": user.splashUrl,
+            "email": user.email,
+        }),
     ]);
 }
 
@@ -1377,12 +1473,16 @@ function makeBytestreamDownloadResourceName(sha256: string, size: number): strin
     return `/blobs/${sha256}/${size}`;
 }
 
-function makeInputDirUri(input: Input): vscode.Uri {
-    return vscode.Uri.parse(`page:/${input.login}/${input.title}`);
+export function makeUserNodeUri(user: User): vscode.Uri {
+    return vscode.Uri.parse(`stream:/${user.login}`);
 }
 
-function makeInputContentFileUri(input: Input): vscode.Uri {
-    return vscode.Uri.parse(`page:/${input.login}/${input.title}/${makeInputContentName(input)}`);
+export function makeInputNodeUri(input: Input): vscode.Uri {
+    return vscode.Uri.parse(`stream:/${input.login}/${input.title}`);
+}
+
+function makeInputContentFileNodeUri(input: Input): vscode.Uri {
+    return vscode.Uri.parse(`stream:/${input.login}/${input.title}/${makeInputContentName(input)}`);
 }
 
 function makeInputAssetName(input: Input, name: string): string {

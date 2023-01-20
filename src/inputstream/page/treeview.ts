@@ -38,9 +38,6 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
 
     registerCommands() {
         super.registerCommands();
-
-        this.disposables.push(
-            vscode.commands.registerCommand(CommandName.InputOpen, this.handleCommandInputOpen, this));
     }
 
     handleVisibilityChange(event: vscode.TreeViewVisibilityChangeEvent) {
@@ -114,33 +111,6 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
         }
     }
 
-    private async handleCommandInputOpen(input: Input | string): Promise<void> {
-        if (types.isString(input)) {
-            const id = path.basename(input as string);
-            let foundItem = this.getInputById(id);
-            if (!foundItem) {
-                foundItem = await this.fetchInputById(id);
-            }
-            if (!foundItem) {
-                return;
-            }
-            return this.handleCommandInputOpen(foundItem);
-        }
-
-        return vscode.commands.executeCommand(
-            BuiltInCommands.Open, getInputURI(input));
-    }
-
-    private getInputById(id: string): Input | undefined {
-        return this.items?.find(item => item.id === id);
-    }
-
-    private async fetchInputById(id: string): Promise<Input | undefined> {
-        return this.client?.getInput({
-            owner: this.user.login,
-            id: id,
-        });
-    }
 }
 
 export class InputItem extends vscode.TreeItem {
@@ -160,11 +130,11 @@ export class InputItem extends vscode.TreeItem {
         this.contextValue = ContextValue.Input;
         this.iconPath = input.status === InputStatus.STATUS_PUBLISHED ? ThemeIconTestingPassed : undefined;
         this.description = `${input.title}`;
-        this.command = {
-            title: 'Open File',
-            command: CommandName.InputOpen,
-            arguments: [this.input],
-        };
+        // this.command = {
+        //     title: 'Open File',
+        //     command: CommandName.InputOpen,
+        //     arguments: [this.input],
+        // };
     }
 
     async getChildren(): Promise<Input[] | undefined> {

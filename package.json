@@ -27,11 +27,8 @@
     ],
     "activationEvents": [
         "onCommand:input.stream.deviceLogin",
-        "onCommand:input.stream.image.paste",
-        "onCommand:input.stream.image.upload",
-        "onCommand:input.stream.image.search",
         "onCommand:input.stream.login",
-        "onFileSystem:page",
+        "onFileSystem:stream",
         "onUri",
         "onView:input.stream.accountExplorer",
         "onView:input.stream.inputExplorer"
@@ -68,88 +65,76 @@
         },
         "commands": [
             {
-                "category": "inputstream",
+                "category": "Stream",
                 "command": "input.stream.openExtensionSetting",
-                "title": "Stream: Goto Extension Setting"
+                "title": "Goto Extension Setting"
             },
             {
-                "category": "inputstream",
+                "category": "Stream",
                 "command": "input.stream.inputExplorer.refresh",
-                "title": "Stream: Refresh Pages",
+                "title": "Refresh Pages",
                 "icon": "$(refresh)"
             },
             {
-                "category": "inputstream",
+                "category": "Stream",
                 "command": "input.stream.input.publish",
-                "title": "Stream: Publish Page 💯",
+                "title": "Publish Page",
                 "icon": "$(rss)"
             },
             {
-                "category": "inputstream",
+                "category": "Stream",
                 "command": "input.stream.input.unpublish",
-                "title": "Stream: UnPublish Page",
+                "title": "Unpublish Page",
                 "icon": "$(shield)"
             },
             {
-                "category": "inputstream",
+                "category": "Stream",
                 "command": "input.stream.image.search",
-                "title": "Stream: Unsplash Image Search",
+                "title": "Unsplash Image Search",
                 "icon": {
                     "dark": "media/unsplash-dark.svg",
                     "light": "media/unsplash-light.svg"
                 }
             },
             {
-                "category": "inputstream",
-                "command": "input.stream.image.paste",
-                "title": "Paste Image",
-                "icon": "$(cloud-upload)"
-            },
-            {
-                "category": "inputstream",
+                "category": "Stream",
                 "command": "input.stream.image.upload",
                 "title": "Upload Image",
                 "icon": "$(upload)"
             },
             {
-                "category": "inputstream",
+                "category": "Stream",
                 "command": "input.stream.input.create",
-                "title": "Stream: Create New Page",
+                "title": "Create New Page...",
                 "icon": "$(add)"
             },
             {
-                "category": "inputstream",
-                "command": "input.stream.input.open",
-                "title": "Stream: Open Page",
-                "icon": "$(open)"
-            },
-            {
-                "category": "inputstream",
-                "command": "input.stream.input.link",
-                "title": "Stream: Watch changes on https://input.stream",
+                "category": "Stream",
+                "command": "input.stream.input.watch",
+                "title": "Watch Page Changes (In Browser)",
                 "icon": "$(eye-watch)"
             },
             {
-                "category": "inputstream",
+                "category": "Stream",
                 "command": "input.stream.input.replace",
-                "title": "Stream: Replace Input in File Explorer (internal command)"
+                "title": "Replace Input in File Explorer (internal command)"
             },
             {
-                "category": "inputstream",
-                "command": "input.stream.input.remove",
-                "title": "Stream: Remove Input",
+                "category": "Stream",
+                "command": "input.stream.input.delete",
+                "title": "Delete Page",
                 "icon": "$(trash)"
             },
             {
-                "category": "inputstream",
+                "category": "Stream",
                 "command": "input.stream.login",
-                "title": "Stream: Login to https://input.stream",
+                "title": "Login to https://input.stream",
                 "icon": "$(log-in)"
             },
             {
-                "category": "inputstream",
+                "category": "Stream",
                 "command": "input.stream.deviceLogin",
-                "title": "Stream: Login to https://input.stream",
+                "title": "Login to https://input.stream",
                 "icon": "$(log-in)"
             }
         ],
@@ -183,13 +168,8 @@
                 },
                 {
                     "command": "input.stream.input.create",
-                    "when": "view == explorer && resourceScheme == page",
+                    "when": "view == explorer && resourceScheme == stream",
                     "group": "navigation@1"
-                },
-                {
-                    "command": "input.stream.image.search",
-                    "when": "view == input.stream.inputExplorer",
-                    "group": "navigation@2"
                 },
                 {
                     "command": "input.stream.deviceLogin",
@@ -197,63 +177,48 @@
                     "group": "navigation@0"
                 }
             ],
-            "explorer/title": [
-                {
-                    "command": "input.stream.input.create",
-                    "when": "resourceScheme == page"
-                },
-                {
-                    "command": "input.stream.image.search"
-                },
-                {
-                    "command": "input.stream.deviceLogin"
-                }
-            ],
-            "view/item/context": [
-                {
-                    "command": "input.stream.input.link",
-                    "when": "view == input.stream.inputExplorer && viewItem == input",
-                    "group": "inline@0"
-                },
-                {
-                    "command": "input.stream.input.publish",
-                    "when": "resourceLangId == markdown"
-                }
-            ],
             "explorer/context": [
                 {
                     "command": "input.stream.input.publish",
-                    "when": "resourceScheme == page && resourceFilename =~ /.draft.md$/"
+                    "when": "resourceScheme == stream && resourceFilename =~ /.draft.md$/"
                 },
                 {
                     "command": "input.stream.input.unpublish",
-                    "when": "resourceScheme == page && resourceFilename =~ /.published.md$/"
+                    "when": "resourceScheme == stream && resourceFilename =~ /.published.md$/"
                 },
                 {
-                    "command": "input.stream.input.create",
-                    "when": "resourceScheme == page"
+                    "command": "input.stream.input.create"
                 }
             ],
             "editor/context": [
                 {
-                    "command": "input.stream.input.link",
-                    "group": "page",
-                    "when": "editorTextFocus"
+                    "command": "input.stream.image.search",
+                    "when": "editorTextFocus && resourceScheme == stream",
+                    "group": "4_search"
+                },
+                {
+                    "command": "input.stream.input.create",
+                    "group": "7_modification"
                 },
                 {
                     "command": "input.stream.input.publish",
-                    "group": "page",
-                    "when": "editorTextFocus"
+                    "group": "7_modification",
+                    "when": "resourceScheme == stream && resourceFilename =~ /.draft.md$/"
                 },
                 {
                     "command": "input.stream.input.unpublish",
-                    "group": "page",
-                    "when": "editorTextFocus"
+                    "group": "7_modification",
+                    "when": "editorTextFocus && resourceScheme == stream && resourceFilename =~ /.published.md$/"
                 },
                 {
-                    "command": "input.stream.input.remove",
-                    "group": "page",
-                    "when": "editorTextFocus"
+                    "command": "input.stream.input.watch",
+                    "group": "7_modification",
+                    "when": "editorTextFocus && resourceScheme == stream"
+                },
+                {
+                    "command": "input.stream.input.delete",
+                    "group": "8_modification",
+                    "when": "editorTextFocus && resourceScheme == stream"
                 }
             ]
         },
