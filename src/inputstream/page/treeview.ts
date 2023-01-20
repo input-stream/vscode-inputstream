@@ -1,38 +1,28 @@
 import path = require('path');
 import * as vscode from 'vscode';
-import { types } from 'vscode-common';
 import { formatTimestampISODate } from '../../common';
 import { BuiltInCommands } from '../../constants';
 import { User } from '../../proto/build/stack/auth/v1beta1/User';
 import {
     Input,
-    _build_stack_inputstream_v1beta1_Input_Type as InputType,
     _build_stack_inputstream_v1beta1_Input_Status as InputStatus
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { InputStreamClient } from '../inputStreamClient';
-import { CommandName, ContextValue, getInputURI, ThemeIconRss, ThemeIconTestingPassed, ViewName } from '../constants';
+import { ContextValue, ThemeIconTestingPassed, ViewName } from '../constants';
 import { InputStreamClientTreeDataProvider } from '../inputstreamclienttreedataprovider';
+import { makeInputContentFileNodeUri } from './filesystem';
 
 /**
  * Renders a view for user pages.
  */
 export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
     private items: Input[] | undefined;
-    private currentInput: Input | undefined;
 
     constructor(
         private user: User,
         onDidInputStreamClientChange: vscode.Event<InputStreamClient>,
-        onDidInputChange: vscode.Event<Input>,
-        onDidInputCreate: vscode.Event<Input>,
-        onDidInputRemove: vscode.Event<Input>,
     ) {
         super(ViewName.InputExplorer, onDidInputStreamClientChange);
-
-        onDidInputChange(this.handleInputChange, this, this.disposables);
-        onDidInputCreate(this.handleInputCreate, this, this.disposables);
-        onDidInputRemove(this.handleInputRemove, this, this.disposables);
-
         this.view.onDidChangeVisibility(this.handleVisibilityChange, this, this.disposables);
     }
 
@@ -44,40 +34,6 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
         if (event.visible) {
             this.refresh();
         }
-    }
-
-    handleInputChange(input: Input) {
-        this._onDidChangeTreeData.fire(input);
-        const shouldRefresh = this.shouldRefreshInputList(input);
-        this.currentInput = input;
-        if (shouldRefresh) {
-            this.refresh();
-        }
-    }
-
-    handleInputCreate(input: Input) {
-        this.refresh();
-        this.items?.push(input);
-    }
-
-    handleInputRemove(input: Input) {
-        this.refresh();
-    }
-
-    shouldRefreshInputList(input: Input): boolean {
-        if (!this.currentInput) {
-            return false;
-        }
-        if (this.currentInput.id !== input.id) {
-            return false;
-        }
-        if (this.currentInput.title !== input.title) {
-            return true;
-        }
-        if (this.currentInput.status !== input.status) {
-            return true;
-        }
-        return false;
     }
 
     public async getParent(input?: Input): Promise<Input | undefined> {
@@ -130,11 +86,11 @@ export class InputItem extends vscode.TreeItem {
         this.contextValue = ContextValue.Input;
         this.iconPath = input.status === InputStatus.STATUS_PUBLISHED ? ThemeIconTestingPassed : undefined;
         this.description = `${input.title}`;
-        // this.command = {
-        //     title: 'Open File',
-        //     command: CommandName.InputOpen,
-        //     arguments: [this.input],
-        // };
+        this.command = {
+            title: 'Open File',
+            command: BuiltInCommands.Open,
+            arguments: [makeInputContentFileNodeUri(input)],
+        };
     }
 
     async getChildren(): Promise<Input[] | undefined> {

@@ -32,9 +32,6 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
     private client: InputStreamClient | undefined;
     private onDidInputStreamClientChange = new vscode.EventEmitter<InputStreamClient>();
     private onDidByteStreamClientChange = new vscode.EventEmitter<BytesClient>();
-    private onDidInputChange = new vscode.EventEmitter<Input>();
-    private onDidInputCreate = new vscode.EventEmitter<Input>();
-    private onDidInputRemove = new vscode.EventEmitter<Input>();
     private authClient: AuthServiceClient | undefined;
     private deviceLogin: DeviceLogin | undefined;
     private accountTreeView: AccountTreeDataProvider | undefined;
@@ -44,9 +41,6 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
     constructor() {
         this.add(this.onDidInputStreamClientChange);
         this.add(this.onDidByteStreamClientChange);
-        this.add(this.onDidInputChange);
-        this.add(this.onDidInputCreate);
-        this.add(this.onDidInputRemove);
         this.add(new UriHandler());
     }
 
@@ -112,18 +106,10 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
                 user,
                 this.onDidInputStreamClientChange,
                 this.onDidByteStreamClientChange,
-                this.onDidInputChange,
-                this.onDidInputCreate,
             ));
 
         this.pageTreeView = this.add(
-            new PageTreeView(
-                user,
-                this.onDidInputStreamClientChange.event,
-                this.onDidInputChange.event,
-                this.onDidInputCreate.event,
-                this.onDidInputRemove.event,
-            ),
+            new PageTreeView(user, this.onDidInputStreamClientChange.event),
         );
 
         if (oldPageController) {

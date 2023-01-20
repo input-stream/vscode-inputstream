@@ -24,7 +24,7 @@ export type UnaryCallOptions = {
 const defaultUnaryCallOptions = {
     limit: 2,
     silent: false,
-}
+};
 
 export class InputStreamClient extends GRPCClient {
     private readonly inputService: InputsClient;

@@ -27,8 +27,6 @@ export class PageController implements vscode.Disposable {
         private user: User,
         onDidInputStreamClientChange: vscode.EventEmitter<InputStreamClient>,
         onDidByteStreamClientChange: vscode.EventEmitter<BytesClient>,
-        private onDidInputCreate: vscode.EventEmitter<Input>,
-        private onDidInputRemove: vscode.EventEmitter<Input>,
     ) {
         onDidInputStreamClientChange.event(this.handleInputStreamClientChange, this, this.disposables);
 
@@ -49,9 +47,9 @@ export class PageController implements vscode.Disposable {
 
     private installWorkspaceFolder(): void {
         const name = FolderName.Stream;
-        const uri = vscode.Uri.parse('stream:/');
+        const uri = vscode.Uri.parse('stream:/pcj');
 
-        let folders = vscode.workspace.workspaceFolders || [];
+        const folders = vscode.workspace.workspaceFolders || [];
         const found = folders.find((f: vscode.WorkspaceFolder) => f.name === name);
         const start = found ? found.index : folders.length;
         const deleteCount = found ? 1 : 0;
@@ -74,7 +72,7 @@ export class PageController implements vscode.Disposable {
         });
         folderData.push({ name, uri: uri.toString() });
 
-        const fsPath = folders[0].uri.fsPath
+        const fsPath = folders[0].uri.fsPath;
         const dirname = path.dirname(fsPath);
         const basename = path.basename(fsPath) + ".code-workspace";
         const filename = path.join(dirname, basename);
