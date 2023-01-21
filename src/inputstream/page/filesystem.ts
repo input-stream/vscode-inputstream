@@ -12,7 +12,7 @@ import {
     _build_stack_inputstream_v1beta1_Input_Status as InputStatus,
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { FileSet } from '../../proto/build/stack/inputstream/v1beta1/FileSet';
-import { File as FileProto } from '../../proto/build/stack/inputstream/v1beta1/File';
+import { File as FilesetFile } from '../../proto/build/stack/inputstream/v1beta1/File';
 import { InputStreamClient, UnaryCallOptions } from '../inputStreamClient';
 import { parseQuery } from '../urihandler';
 import { CommandName, Scheme } from '../constants';
@@ -1161,25 +1161,47 @@ class InputNode extends DirNode<FileNode> {
     addFileSet(fileSet: FileSet): void {
         if (fileSet.files) {
             for (const inputFile of fileSet.files) {
-                this.addFileProtoNode(inputFile);
+                this.addFilesetFileNode(inputFile);
             }
         }
     }
 
-    addFileProtoNode(file: FileProto): FileProtoNode {
-        return this.addChild(new FileProtoNode(makeInputFileName(this.input, file), this.ctx, this.input, file));
+    addFilesetFileNode(file: FilesetFile): FilesetFileNode {
+        return this.addChild(new FilesetFileNode(makeInputFileName(this.input, file), this.ctx, this, this.input, file));
     }
 
     addContentFileNode(input: Input): ContentFileNode {
         return this.addChild(new ContentFileNode(makeInputContentName(input), this.ctx, input));
     }
 
-    rename(src: string, dst: string): Promise<StaticFileNode> {
-        throw vscode.FileSystemError.NoPermissions(`unsupported operation: rename`);
+    async rename(src: string, dst: string): Promise<FileNode> {
+        const b = await this.getChild(dst)
+        if (b) {
+            throw vscode.FileSystemError.FileExists(dst);
+        }
+        const a = await this.getChild(src)
+        if (!(a instanceof FilesetFileNode)) {
+            throw vscode.FileSystemError.NoPermissions(`Rename is not supported for this file`)
+        }
+        this.removeChild(a);
+        a.file.name = dst;
+        const node = this.addFilesetFileNode(a.file);
+        await this.updateFileSet();
+        return node;
     }
 
     async deleteChild(name: string): Promise<void> {
-        throw vscode.FileSystemError.NoPermissions('To delete an Input, remove the parent directory');
+        const child = await this.getChild(name);
+        if (!child) {
+            throw vscode.FileSystemError.FileNotFound(name);
+        }
+        if (!(child instanceof FilesetFileNode)) {
+            throw vscode.FileSystemError.NoPermissions(`This type of file cannot be deleted`);
+        }
+
+        this.removeChild(child);
+
+        await this.updateFileSet();
     }
 
     async createFile(name: string, data: Uint8Array): Promise<FileNode> {
@@ -1192,32 +1214,26 @@ class InputNode extends DirNode<FileNode> {
         return nodes[0];
     }
 
-    async uploadFiles(uploads: FileProto[]): Promise<FileProtoNode[]> {
+    async uploadFiles(uploads: FilesetFile[]): Promise<FilesetFileNode[]> {
         const work = uploads.map(f => this.uploadFile(f));
         const uploaded = await Promise.all(work);
-        const newNodes = uploaded.map(f => this.addFileProtoNode(f));
+        const newNodes = uploaded.map(f => this.addFilesetFileNode(f));
 
-        const files: FileProto[] = [];
-        for (const child of await this.getChildren()) {
-            if (child instanceof FileProtoNode) {
-                files.push(child.file);
-            }
-        }
-        files.sort((a, b) => a.name!.localeCompare(b.name!));
-
-        await this.updateFileSet({ files });
+        await this.updateFileSet();
 
         return newNodes;
     }
 
-    async uploadFile(file: FileProto): Promise<FileProto> {
+    async uploadFile(file: FilesetFile): Promise<FilesetFile> {
         const buffer = file.data;
         if (!(buffer instanceof Buffer)) {
             throw vscode.FileSystemError.NoPermissions(`file to upload must have associated Buffer: ` + file.name);
         }
         file.name = makeInputAssetName(this.input, file.name!);
         file.size = buffer.byteLength;
-        file.createdAt = { seconds: Date.now() * 1000 };
+        if (!file.createdAt) {
+            file.createdAt = { seconds: Date.now() * 1000 };
+        }
         file.modifiedAt = { seconds: Date.now() * 1000 };
         file.sha256 = await this.uploadBlob(file.name, buffer);
         return file;
@@ -1263,11 +1279,20 @@ class InputNode extends DirNode<FileNode> {
         }
     }
 
-    public async updateFileSet(fileSet: FileSet): Promise<Input | undefined> {
+    public async updateFileSet(): Promise<Input | undefined> {
+        const files: FilesetFile[] = [];
+        for (const child of await this.getChildren()) {
+            if (child instanceof FilesetFileNode) {
+                files.push(child.file);
+            }
+        }
+
         const client = await this.ctx.inputStreamClient();
         const prevFileSet = this.input.fileSet;
+        files.sort((a, b) => a.name!.localeCompare(b.name!));
+
         try {
-            this.input.fileSet = fileSet;
+            this.input.fileSet = { files };
             const response = await client.updateInput(this.input, {
                 paths: ['file_set'],
             });
@@ -1474,18 +1499,22 @@ class ContentFileNode extends FileNode {
     }
 }
 
-class FileProtoNode extends FileNode {
-    private data: Uint8Array | undefined;
+class FilesetFileNode extends FileNode {
+    private data: Uint8Array | Buffer | undefined;
 
     constructor(
         name: string,
         private ctx: ClientContext,
+        private parent: InputNode,
         private input: Input,
-        public file: FileProto,
+        public file: FilesetFile,
     ) {
         super(name);
         if (file.modifiedAt) {
             this.mtime = Long.fromValue(file.modifiedAt!.seconds!).toNumber() * 1000;
+        }
+        if (file.data instanceof Buffer || file.data instanceof Uint8Array) {
+            this.data = file.data;
         }
     }
 
@@ -1497,7 +1526,9 @@ class FileProtoNode extends FileNode {
     }
 
     async setData(data: Uint8Array): Promise<void> {
-        throw vscode.FileSystemError.NoPermissions("File is immutable: to update, remove it and add back with same name");
+        this.file.data = data;
+        await this.parent.uploadFile(this.file);
+        this.data = data;
     }
 
     private async loadData(): Promise<Uint8Array> {
@@ -1598,7 +1629,7 @@ function makeInputAssetName(input: Input, name: string): string {
     return `/${input.login}/${input.id}/${name}`;
 }
 
-function makeInputFileName(input: Input, file: FileProto): string {
+function makeInputFileName(input: Input, file: FilesetFile): string {
     const prefix = `/${input.login}/${input.id}/`;
     let filename = file.name!;
     if (filename.startsWith(prefix)) {
