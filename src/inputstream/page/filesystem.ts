@@ -4,6 +4,7 @@ import * as fs from 'fs-extra';
 import * as grpc from '@grpc/grpc-js';
 import Long = require('long');
 import path = require('path');
+import imageSize from 'image-size';
 
 import { BytesClient } from '../byteStreamClient';
 import {
@@ -12,7 +13,7 @@ import {
     _build_stack_inputstream_v1beta1_Input_Status as InputStatus,
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { FileSet } from '../../proto/build/stack/inputstream/v1beta1/FileSet';
-import { File as FilesetFile } from '../../proto/build/stack/inputstream/v1beta1/File';
+import { File as InputFile } from '../../proto/build/stack/inputstream/v1beta1/File';
 import { InputStreamClient, UnaryCallOptions } from '../inputStreamClient';
 import { parseQuery } from '../urihandler';
 import { CommandName, Scheme } from '../constants';
@@ -1161,13 +1162,13 @@ class InputNode extends DirNode<FileNode> {
     addFileSet(fileSet: FileSet): void {
         if (fileSet.files) {
             for (const inputFile of fileSet.files) {
-                this.addFilesetFileNode(inputFile);
+                this.addInputFileNode(inputFile);
             }
         }
     }
 
-    addFilesetFileNode(file: FilesetFile): FilesetFileNode {
-        return this.addChild(new FilesetFileNode(makeInputFileName(this.input, file), this.ctx, this, this.input, file));
+    addInputFileNode(file: InputFile): InputFileNode {
+        return this.addChild(new InputFileNode(makeInputFileName(this.input, file), this.ctx, this, this.input, file));
     }
 
     addContentFileNode(input: Input): ContentFileNode {
@@ -1180,12 +1181,12 @@ class InputNode extends DirNode<FileNode> {
             throw vscode.FileSystemError.FileExists(dst);
         }
         const a = await this.getChild(src)
-        if (!(a instanceof FilesetFileNode)) {
+        if (!(a instanceof InputFileNode)) {
             throw vscode.FileSystemError.NoPermissions(`Rename is not supported for this file`)
         }
         this.removeChild(a);
         a.file.name = dst;
-        const node = this.addFilesetFileNode(a.file);
+        const node = this.addInputFileNode(a.file);
         await this.updateFileSet();
         return node;
     }
@@ -1195,7 +1196,7 @@ class InputNode extends DirNode<FileNode> {
         if (!child) {
             throw vscode.FileSystemError.FileNotFound(name);
         }
-        if (!(child instanceof FilesetFileNode)) {
+        if (!(child instanceof InputFileNode)) {
             throw vscode.FileSystemError.NoPermissions(`This type of file cannot be deleted`);
         }
 
@@ -1214,17 +1215,17 @@ class InputNode extends DirNode<FileNode> {
         return nodes[0];
     }
 
-    async uploadFiles(uploads: FilesetFile[]): Promise<FilesetFileNode[]> {
+    async uploadFiles(uploads: InputFile[]): Promise<InputFileNode[]> {
         const work = uploads.map(f => this.uploadFile(f));
         const uploaded = await Promise.all(work);
-        const newNodes = uploaded.map(f => this.addFilesetFileNode(f));
+        const newNodes = uploaded.map(f => this.addInputFileNode(f));
 
         await this.updateFileSet();
 
         return newNodes;
     }
 
-    async uploadFile(file: FilesetFile): Promise<FilesetFile> {
+    async uploadFile(file: InputFile): Promise<InputFile> {
         if (!file.name) {
             throw vscode.FileSystemError.NoPermissions(`file must have a name`);
         }
@@ -1236,7 +1237,7 @@ class InputNode extends DirNode<FileNode> {
             file.createdAt = { seconds: Date.now() * 1000 };
         }
         file.modifiedAt = { seconds: Date.now() * 1000 };
-        file.sha256 = await this.uploadBlob(file.name, file.data);
+        file.sha256 = await this.uploadBlob(file, file.data);
         return file;
     }
 
@@ -1281,9 +1282,9 @@ class InputNode extends DirNode<FileNode> {
     }
 
     public async updateFileSet(): Promise<Input | undefined> {
-        const files: FilesetFile[] = [];
+        const files: InputFile[] = [];
         for (const child of await this.getChildren()) {
-            if (child instanceof FilesetFileNode) {
+            if (child instanceof InputFileNode) {
                 // clear out any data before we save!  (data field is only a convenience function)
                 child.file.data = undefined;
                 files.push(child.file);
@@ -1323,34 +1324,34 @@ class InputNode extends DirNode<FileNode> {
         }
     }
 
-    public async uploadBlob(name: string, buffer: Buffer): Promise<string> {
+    public async uploadBlob(file: InputFile, buffer: Buffer): Promise<string> {
         const size = buffer.byteLength;
         if (size > MAX_CLIENT_BODY_SIZE) {
-            throw vscode.FileSystemError.NoPermissions(`cannot upload ${name} (${size}b > ${MAX_CLIENT_BODY_SIZE}`);
+            throw vscode.FileSystemError.NoPermissions(`cannot upload ${file.name} (${size}b > ${MAX_CLIENT_BODY_SIZE}`);
         }
 
         const sha256 = sha256Bytes(buffer);
         const resourceName = makeBytestreamUploadResourceName(this.input.id!, sha256, size);
 
-        await this.writeBlob(name, resourceName, buffer);
+        await this.writeBlob(file, resourceName, buffer);
 
         return sha256;
     }
 
     private async writeBlob(
-        name: string,
+        file: InputFile,
         resourceName: string,
         buffer: Buffer): Promise<void> {
 
         return vscode.window.withProgress<void>({
             location: vscode.ProgressLocation.Notification,
-            title: `Uploading ${path.basename(name)}...`,
+            title: `Uploading ${path.basename(file.name!)}...`,
             cancellable: true,
         }, (progress: vscode.Progress<{
             message?: string | undefined,
             increment?: number | undefined,
         }>, token: vscode.CancellationToken): Promise<void> => {
-            return this.writeBlobWithProgress(progress, token, name, resourceName, buffer);
+            return this.writeBlobWithProgress(progress, token, file, resourceName, buffer);
         });
 
     }
@@ -1358,7 +1359,7 @@ class InputNode extends DirNode<FileNode> {
     private async writeBlobWithProgress(
         progress: vscode.Progress<{ message?: string | undefined, increment?: number | undefined }>,
         token: vscode.CancellationToken,
-        name: string,
+        file: InputFile,
         resourceName: string,
         buffer: Buffer): Promise<void> {
 
@@ -1372,7 +1373,11 @@ class InputNode extends DirNode<FileNode> {
         });
 
         const call = client.write((err: grpc.ServiceError | null | undefined, resp: WriteResponse | undefined) => {
-            console.log(`write response: committed size: ${resp?.committedSize}`);
+            if (err) {
+                console.log(`write response error:`, err);
+            } else {
+                console.log(`write response: committed size: ${resp?.committedSize}`);
+            }
         });
         if (!call) {
             throw vscode.FileSystemError.Unavailable(`bytestream call was unexpectedly undefined`);
@@ -1399,6 +1404,7 @@ class InputNode extends DirNode<FileNode> {
             call.on('error', reject);
             call.on('end', resolve);
 
+            let wantImageSize = true;
             let offset = 0;
             stream.on('data', (chunk: Buffer) => {
                 if (token.isCancellationRequested) {
@@ -1416,12 +1422,35 @@ class InputNode extends DirNode<FileNode> {
 
                 call.write(req);
 
+                if (wantImageSize && didCaptureImageInfo(file, chunk)) {
+                    wantImageSize = false;
+                }
+
                 progress.report({ increment });
             });
             stream.on('error', reject);
             stream.on('end', () => call.end());
         });
 
+    }
+}
+
+function didCaptureImageInfo(file: InputFile, chunk: Buffer): boolean {
+    try {
+        const result = imageSize(chunk);
+        if (result.type) {
+            file.contentType = `image/${result.type}`;
+        }
+        file.imageInfo = {
+            height: result.height,
+            width: result.width,
+            orientation: result.orientation,
+        };
+        console.log('imageSize captured!', imageSize);
+        return true;
+    } catch (e) {
+        console.log('imageSize error:', e);
+        return false;
     }
 }
 
@@ -1496,7 +1525,7 @@ class ContentFileNode extends FileNode {
     }
 }
 
-class FilesetFileNode extends FileNode {
+class InputFileNode extends FileNode {
     private data: Uint8Array | Buffer | undefined;
 
     constructor(
@@ -1504,7 +1533,7 @@ class FilesetFileNode extends FileNode {
         private ctx: ClientContext,
         private parent: InputNode,
         private input: Input,
-        public file: FilesetFile,
+        public file: InputFile,
     ) {
         super(name);
         if (file.modifiedAt) {
@@ -1626,7 +1655,7 @@ function makeInputAssetName(input: Input, name: string): string {
     return `/${input.login}/${input.id}/${name}`;
 }
 
-function makeInputFileName(input: Input, file: FilesetFile): string {
+function makeInputFileName(input: Input, file: InputFile): string {
     const prefix = `/${input.login}/${input.id}/`;
     let filename = file.name!;
     if (filename.startsWith(prefix)) {
