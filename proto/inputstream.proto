@@ -120,6 +120,19 @@ message File {
     google.protobuf.Timestamp created_at = 6;
     google.protobuf.Timestamp modified_at = 7;
     bytes data = 8; // optional data if stored inline
+    ImageInfo image_info = 10;
+    LanguageInfo language_info = 11;
+}
+
+message ImageInfo {
+    uint32 height = 1;
+    uint32 width = 2;
+    uint32 orientation = 3;
+}
+
+message LanguageInfo {
+    // ID is the linguist name from https://github.com/github/linguist/blob/master/lib/linguist/languages.yml
+    string id = 1;
 }
 
 message CreateInputRequest {

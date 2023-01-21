@@ -9,7 +9,6 @@ import {
     _build_stack_inputstream_v1beta1_Input_Status as InputStatus
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { InputStreamClient } from '../inputStreamClient';
-import { ButtonName, CommandName, getInputURI, isInput } from '../constants';
 import { PageFileSystemProvider } from './filesystem';
 import { User } from '../../proto/build/stack/auth/v1beta1/User';
 import { BytesClient } from '../byteStreamClient';
@@ -47,7 +46,7 @@ export class PageController implements vscode.Disposable {
 
     private installWorkspaceFolder(): void {
         const name = FolderName.Stream;
-        const uri = vscode.Uri.parse('stream:/pcj');
+        const uri = vscode.Uri.parse('stream:/');
 
         const folders = vscode.workspace.workspaceFolders || [];
         const found = folders.find((f: vscode.WorkspaceFolder) => f.name === name);

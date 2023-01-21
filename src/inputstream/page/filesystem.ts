@@ -1225,17 +1225,18 @@ class InputNode extends DirNode<FileNode> {
     }
 
     async uploadFile(file: FilesetFile): Promise<FilesetFile> {
-        const buffer = file.data;
-        if (!(buffer instanceof Buffer)) {
+        if (!file.name) {
+            throw vscode.FileSystemError.NoPermissions(`file must have a name`);
+        }
+        if (!(file.data instanceof Buffer)) {
             throw vscode.FileSystemError.NoPermissions(`file to upload must have associated Buffer: ` + file.name);
         }
-        file.name = makeInputAssetName(this.input, file.name!);
-        file.size = buffer.byteLength;
+        file.size = file.data.byteLength;
         if (!file.createdAt) {
             file.createdAt = { seconds: Date.now() * 1000 };
         }
         file.modifiedAt = { seconds: Date.now() * 1000 };
-        file.sha256 = await this.uploadBlob(file.name, buffer);
+        file.sha256 = await this.uploadBlob(file.name, file.data);
         return file;
     }
 
@@ -1283,6 +1284,8 @@ class InputNode extends DirNode<FileNode> {
         const files: FilesetFile[] = [];
         for (const child of await this.getChildren()) {
             if (child instanceof FilesetFileNode) {
+                // clear out any data before we save!  (data field is only a convenience function)
+                child.file.data = undefined;
                 files.push(child.file);
             }
         }
@@ -1329,7 +1332,7 @@ class InputNode extends DirNode<FileNode> {
         const sha256 = sha256Bytes(buffer);
         const resourceName = makeBytestreamUploadResourceName(this.input.id!, sha256, size);
 
-        await this.writeBlob(name, resourceName, name, buffer);
+        await this.writeBlob(name, resourceName, buffer);
 
         return sha256;
     }
@@ -1337,7 +1340,6 @@ class InputNode extends DirNode<FileNode> {
     private async writeBlob(
         name: string,
         resourceName: string,
-        contentType: string,
         buffer: Buffer): Promise<void> {
 
         return vscode.window.withProgress<void>({
@@ -1348,7 +1350,7 @@ class InputNode extends DirNode<FileNode> {
             message?: string | undefined,
             increment?: number | undefined,
         }>, token: vscode.CancellationToken): Promise<void> => {
-            return this.writeBlobWithProgress(progress, token, name, resourceName, contentType, buffer);
+            return this.writeBlobWithProgress(progress, token, name, resourceName, buffer);
         });
 
     }
@@ -1358,7 +1360,6 @@ class InputNode extends DirNode<FileNode> {
         token: vscode.CancellationToken,
         name: string,
         resourceName: string,
-        contentType: string,
         buffer: Buffer): Promise<void> {
 
         const client = await this.ctx.byteStreamClient();
@@ -1370,13 +1371,9 @@ class InputNode extends DirNode<FileNode> {
             highWaterMark: chunkSize,
         });
 
-        const md = new grpc.Metadata();
-        md.set('filename', name);
-        md.set('file-content-type', contentType);
-
         const call = client.write((err: grpc.ServiceError | null | undefined, resp: WriteResponse | undefined) => {
             console.log(`write response: committed size: ${resp?.committedSize}`);
-        }, md);
+        });
         if (!call) {
             throw vscode.FileSystemError.Unavailable(`bytestream call was unexpectedly undefined`);
         }
