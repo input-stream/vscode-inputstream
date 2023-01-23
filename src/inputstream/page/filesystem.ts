@@ -94,6 +94,8 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputReplace, this.handleCommandInputReplace, this));
         this.disposables.push(
+            vscode.commands.registerCommand(CommandName.InputView, this.handleCommandInputView, this));
+        this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputWatch, this.handleCommandInputWatch, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputPublish, this.handleCommandInputPublish, this));
@@ -260,6 +262,14 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                 vscode.window.showErrorMessage(`Could not create: ${err.message}`);
             }
         }
+    }
+
+    private async handleCommandInputView(uri: vscode.Uri): Promise<boolean> {
+        const node = await this._lookup<InputNode>(uri, true, inputNodePredicate);
+        if (!node) {
+            return false;
+        }
+        return vscode.env.openExternal(makeInputExternalViewUrl(node.input));
     }
 
     private async handleCommandInputWatch(uri: vscode.Uri): Promise<boolean> {
@@ -1176,13 +1186,13 @@ class InputNode extends DirNode<FileNode> {
     }
 
     async rename(src: string, dst: string): Promise<FileNode> {
-        const b = await this.getChild(dst)
+        const b = await this.getChild(dst);
         if (b) {
             throw vscode.FileSystemError.FileExists(dst);
         }
-        const a = await this.getChild(src)
+        const a = await this.getChild(src);
         if (!(a instanceof InputFileNode)) {
-            throw vscode.FileSystemError.NoPermissions(`Rename is not supported for this file`)
+            throw vscode.FileSystemError.NoPermissions(`Rename is not supported for this file`);
         }
         this.removeChild(a);
         a.file.name = dst;
@@ -1687,7 +1697,7 @@ function makeContentType(ext: string): string | undefined {
     // TODO: add additional text formats?
 }
 
-function makeImageContentType(ext: string): string | undefined {
+export function makeImageContentType(ext: string): string | undefined {
     switch (ext) {
         case '.apng':
             return 'image/apng';

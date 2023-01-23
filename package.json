@@ -110,8 +110,14 @@
             },
             {
                 "category": "Stream",
+                "command": "input.stream.input.view",
+                "title": "View Page...",
+                "icon": "$(eye)"
+            },
+            {
+                "category": "Stream",
                 "command": "input.stream.input.watch",
-                "title": "Watch Page Changes (In Browser)",
+                "title": "Watch Page Changes...",
                 "icon": "$(eye-watch)"
             },
             {
@@ -179,6 +185,10 @@
                     "when": "resourceScheme == stream && resourceFilename =~ /.published.md$/"
                 },
                 {
+                    "command": "input.stream.input.view",
+                    "when": "resourceScheme == stream"
+                },
+                {
                     "command": "input.stream.input.watch",
                     "when": "resourceScheme == stream"
                 },
@@ -231,6 +241,11 @@
                     "command": "input.stream.input.unpublish",
                     "group": "7_modification",
                     "when": "editorTextFocus && resourceScheme == stream && resourceFilename =~ /.published.md$/"
+                },
+                {
+                    "command": "input.stream.input.view",
+                    "group": "7_modification",
+                    "when": "editorTextFocus && resourceScheme == stream"
                 },
                 {
                     "command": "input.stream.input.watch",

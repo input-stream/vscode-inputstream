@@ -34,6 +34,7 @@ export enum CommandName {
     InputReplace = 'input.stream.input.replace',
     InputPublish = 'input.stream.input.publish',
     InputUnpublish = 'input.stream.input.unpublish',
+    InputView = 'input.stream.input.view',
     InputWatch = 'input.stream.input.watch',
     LoginToken = 'input.stream.loginToken',
     Login = 'input.stream.login',
