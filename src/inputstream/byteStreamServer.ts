@@ -1,18 +1,14 @@
 import * as grpc from '@grpc/grpc-js';
+
+import { ByteStreamClient } from '../proto/google/bytestream/ByteStream';
+import { loadByteStreamProtos } from './configuration';
 import { ProtoGrpcType as ByteStreamProtoType } from '../proto/bytestream';
-import { WriteRequest } from '../proto/google/bytestream/WriteRequest';
-import { WriteResponse } from '../proto/google/bytestream/WriteResponse';
 import { QueryWriteStatusRequest } from '../proto/google/bytestream/QueryWriteStatusRequest';
 import { QueryWriteStatusResponse } from '../proto/google/bytestream/QueryWriteStatusResponse';
-import { ReadResponse } from '../proto/google/bytestream/ReadResponse';
 import { ReadRequest } from '../proto/google/bytestream/ReadRequest';
-import { loadByteStreamProtos } from './configuration';
-import { ByteStreamClient } from '../proto/google/bytestream/ByteStream';
-
-export interface IByteStreamClient {
-    read(request: ReadRequest, extraMd?: grpc.Metadata): grpc.ClientReadableStream<ReadResponse>;
-    write(onResponse: (error?: grpc.ServiceError | null, out?: WriteResponse | undefined) => void, extraMd?: grpc.Metadata): grpc.ClientWritableStream<WriteRequest>;
-}
+import { ReadResponse } from '../proto/google/bytestream/ReadResponse';
+import { WriteRequest } from '../proto/google/bytestream/WriteRequest';
+import { WriteResponse } from '../proto/google/bytestream/WriteResponse';
 
 export type Chunk = Buffer | Uint8Array | string;
 

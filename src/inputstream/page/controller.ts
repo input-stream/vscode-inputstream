@@ -1,27 +1,26 @@
 import * as vscode from 'vscode';
 import * as fsExtra from 'fs-extra';
-import { BuiltInCommands, FolderName } from '../../constants';
-import { InputStreamClient } from '../inputStreamClient';
-import { PageFileSystemProvider } from './filesystem';
-import { User } from '../../proto/build/stack/auth/v1beta1/User';
-import { IByteStreamClient } from '../byteStreamClient';
+
 import path = require('path');
 
-/**
- * Controller for page commands.
- */
+import { BuiltInCommands, FolderName } from '../../constants';
+import { IByteStreamClient } from '../byteStreamClient';
+import { InputsGRPCClient } from '../inputStreamClient';
+import { PageFileSystemProvider } from './filesystem';
+import { User } from '../../proto/build/stack/auth/v1beta1/User';
+
 export class PageController implements vscode.Disposable {
     protected disposables: vscode.Disposable[] = [];
     protected fs: PageFileSystemProvider;
 
     constructor(
         user: User,
-        inputStreamClient: InputStreamClient,
+        inputsClient: InputsGRPCClient,
         bytestreamClient: IByteStreamClient,
     ) {
         this.fs = new PageFileSystemProvider(
             user,
-            inputStreamClient,
+            inputsClient,
             bytestreamClient,
         );
         this.disposables.push(this.fs);

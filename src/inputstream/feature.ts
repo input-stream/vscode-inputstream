@@ -2,15 +2,15 @@ import * as vscode from 'vscode';
 
 import { AccountTreeDataProvider } from './login/treeview';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
-import { BytestreamClientImpl } from './byteStreamClient';
+import { ByteStreamGRPCClient as BytestreamGRPCClient } from './byteStreamClient';
 import { Closeable, makeChannelCredentials } from './grpcclient';
 import { DeviceLogin } from './device_login';
 import { EmptyView } from './emptyview';
 import { FeatureName, ViewName } from './constants';
 import { IExtensionFeature } from '../common';
 import { ImageSearch } from './imagesearch/imagesearch';
-import { ImageSearchClient } from './imageSearchClient';
-import { InputStreamClient as InputStreamClient } from './inputStreamClient';
+import { ImageSearchClient as ImagesGRPCClient } from './imageSearchClient';
+import { InputsGRPCClient } from './inputStreamClient';
 import { PageController } from './page/controller';
 import { PageTreeView } from './page/treeview';
 import { TreeDataProvider } from './treedataprovider';
@@ -30,10 +30,10 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
     private disposables: vscode.Disposable[] = [];
     private closeables: Closeable[] = [];
 
-    private inputStreamClient: InputStreamClient | undefined;
+    private inputsClient: InputsGRPCClient | undefined;
     private authClient: AuthServiceClient | undefined;
-    private bytestreamClient: BytestreamClientImpl | undefined;
-    private imageSearchClient: ImageSearchClient | undefined;
+    private bytestreamClient: BytestreamGRPCClient | undefined;
+    private imagesClient: ImagesGRPCClient | undefined;
 
     private deviceLogin: DeviceLogin | undefined;
     private accountTreeView: AccountTreeDataProvider | undefined;
@@ -59,25 +59,25 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
         this.deviceLogin.onDidAuthUserChange.event(this.handleAuthUserChange, this, this.disposables);
         this.deviceLogin.onDidLoginTokenChange.event(token => {
             this.bytestreamClient?.setToken(token);
-            this.imageSearchClient?.setToken(token);
-            this.inputStreamClient?.setToken(token);
+            this.imagesClient?.setToken(token);
+            this.inputsClient?.setToken(token);
         });
 
-        this.bytestreamClient = new BytestreamClientImpl(
+        this.bytestreamClient = new BytestreamGRPCClient(
             new byteStreamProtos.google.bytestream.ByteStream(
                 cfg.bytestream.address,
                 makeChannelCredentials(cfg.bytestream.address)
             ),
             this.deviceLogin
         );
-        this.inputStreamClient = new InputStreamClient(
+        this.inputsClient = new InputsGRPCClient(
             new inputStreamProtos.build.stack.inputstream.v1beta1.Inputs(
                 cfg.inputstream.address,
                 makeChannelCredentials(cfg.inputstream.address)
             ),
             this.deviceLogin
         );
-        this.imageSearchClient = new ImageSearchClient(
+        this.imagesClient = new ImagesGRPCClient(
             new inputStreamProtos.build.stack.inputstream.v1beta1.Images(
                 cfg.inputstream.address,
                 makeChannelCredentials(cfg.inputstream.address)
@@ -87,12 +87,12 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
 
         this.closeables.push(this.authClient);
         this.closeables.push(this.bytestreamClient);
-        this.closeables.push(this.inputStreamClient);
-        this.closeables.push(this.imageSearchClient);
+        this.closeables.push(this.inputsClient);
+        this.closeables.push(this.imagesClient);
 
         this.deviceLogin.restoreSaved();
 
-        this.add(new ImageSearch(this.imageSearchClient));
+        this.add(new ImageSearch(this.imagesClient));
         this.accountTreeView = this.add(new AccountTreeDataProvider());
     }
 
@@ -111,12 +111,12 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
         this.pageController = this.add(
             new PageController(
                 user,
-                this.inputStreamClient!,
+                this.inputsClient!,
                 this.bytestreamClient!,
             ));
 
         this.pageTreeView = this.add(
-            new PageTreeView(user, this.inputStreamClient!),
+            new PageTreeView(user, this.inputsClient!),
         );
 
         if (oldPageController) {

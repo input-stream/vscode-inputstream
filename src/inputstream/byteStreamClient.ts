@@ -15,7 +15,7 @@ export interface IByteStreamClient {
     write(onResponse: (error?: grpc.ServiceError | null, out?: WriteResponse | undefined) => void, extraMd?: grpc.Metadata): grpc.ClientWritableStream<WriteRequest>;
 }
 
-export class BytestreamClientImpl extends GRPCClient<ByteStreamClient> {
+export class ByteStreamGRPCClient extends GRPCClient<ByteStreamClient> implements IByteStreamClient {
 
     constructor(
         client: ByteStreamClient,

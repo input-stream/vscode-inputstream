@@ -12,13 +12,13 @@ import { CommandName, Scheme } from '../constants';
 import { FieldMask } from '../../proto/google/protobuf/FieldMask';
 import { File as InputFile } from '../../proto/build/stack/inputstream/v1beta1/File';
 import { FileSet } from '../../proto/build/stack/inputstream/v1beta1/FileSet';
-import { IByteStreamClient } from '../byteStreamClient';
+import { IByteStreamClient as IByteStreamGRPCClient } from '../byteStreamClient';
 import {
     Input,
     _build_stack_inputstream_v1beta1_Input_Type as InputType,
     _build_stack_inputstream_v1beta1_Input_Status as InputStatus,
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
-import { IInputStreamClient } from '../inputStreamClient';
+import { IInputsClient as IInputsGRPCClient } from '../inputStreamClient';
 import { InputFilterOptions } from '../../proto/build/stack/inputstream/v1beta1/InputFilterOptions';
 import { InputStep, MultiStepInput } from '../../multiStepInput';
 import { parseQuery } from '../urihandler';
@@ -40,8 +40,8 @@ const inputNodePredicate = (child: Entry) => child instanceof InputNode;
 const userNodePredicate = (child: Entry) => child instanceof UserNode;
 
 export type ClientContext = {
-    inputStreamClient: IInputStreamClient;
-    byteStreamClient: IByteStreamClient;
+    inputsClient: IInputsGRPCClient;
+    byteStreamClient: IByteStreamGRPCClient;
 }
 
 /**
@@ -49,52 +49,52 @@ export type ClientContext = {
  * Modeled after https://github.com/microsoft/vscode-extension-samples/blob/9b8701dceac5fab83345356743170bca609c87f9/fsprovider-sample/src/fileSystemProvider.ts
  */
 export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSystemProvider {
-    protected disposables: vscode.Disposable[] = [];
-    protected root: RootNode;
+    private _disposables: vscode.Disposable[] = [];
     private _emitter = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
     private _bufferedEvents: vscode.FileChangeEvent[] = [];
     private _fireSoonHandle?: NodeJS.Timer;
+    private _root: RootNode;
 
     readonly onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = this._emitter.event;
 
     constructor(
         private user: User,
-        private inputStreamClient: IInputStreamClient,
-        private byteStreamClient: IByteStreamClient,
+        private inputsClient: IInputsGRPCClient,
+        private byteStreamClient: IByteStreamGRPCClient,
     ) {
-        this.root = new RootNode({
-            inputStreamClient,
+        this._root = new RootNode({
+            inputsClient,
             byteStreamClient,
         });
-        this.root.addStaticDir(makeUserProfileDir(this.user));
-        this.root.addStaticDir(new VscodeDirNode(this._fireSoon.bind(this)));
-        this.root.addUser(this.user);
+        this._root.addStaticDir(makeUserProfileDir(this.user));
+        this._root.addStaticDir(new VscodeDirNode(this._fireSoon.bind(this)));
+        this._root.addUser(this.user);
 
         this.registerCommands();
         this.registerFilesystem();
     }
 
     private registerCommands(): void {
-        this.disposables.push(
+        this._disposables.push(
             vscode.commands.registerCommand(CommandName.InputCreate, this.handleCommandInputCreate, this));
-        this.disposables.push(
+        this._disposables.push(
             vscode.commands.registerCommand(CommandName.InputReplace, this.handleCommandInputReplace, this));
-        this.disposables.push(
+        this._disposables.push(
             vscode.commands.registerCommand(CommandName.InputView, this.handleCommandInputView, this));
-        this.disposables.push(
+        this._disposables.push(
             vscode.commands.registerCommand(CommandName.InputWatch, this.handleCommandInputWatch, this));
-        this.disposables.push(
+        this._disposables.push(
             vscode.commands.registerCommand(CommandName.InputPublish, this.handleCommandInputPublish, this));
-        this.disposables.push(
+        this._disposables.push(
             vscode.commands.registerCommand(CommandName.InputUnpublish, this.handleCommandInputUnPublish, this));
-        this.disposables.push(
+        this._disposables.push(
             vscode.commands.registerCommand(CommandName.InputDelete, this.handleCommandInputDelete, this));
-        this.disposables.push(
+        this._disposables.push(
             vscode.commands.registerCommand(CommandName.ImageUpload, this.handleCommandImageUpload, this));
     }
 
     private registerFilesystem(): void {
-        this.disposables.push(
+        this._disposables.push(
             vscode.workspace.registerFileSystemProvider(Scheme.Stream, this, {
                 isCaseSensitive: true,
                 isReadonly: false
@@ -217,7 +217,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
             if (!userNode) {
                 return;
             }
-            const client = this.inputStreamClient;
+            const client = this.inputsClient;
             const input = await client.createInput(request);
             if (input) {
                 const inputUri = makeUserNodeUri(this.user);
@@ -442,7 +442,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     private async _lookup<T extends Entry>(uri: vscode.Uri, silent: boolean, select?: selectPredicate): Promise<T | undefined>;
     private async _lookup<T extends Entry>(uri: vscode.Uri, silent: boolean, select: selectPredicate = defaultSelectPredicate): Promise<T | undefined> {
         const parts = uri.path.split('/');
-        let entry: Entry = this.root;
+        let entry: Entry = this._root;
         for (const part of parts) {
             if (!part) {
                 continue;
@@ -652,10 +652,10 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
      * dispose implements part of the vscode.Disposable interface.
      */
     public dispose() {
-        for (const disposable of this.disposables) {
+        for (const disposable of this._disposables) {
             disposable.dispose();
         }
-        this.disposables.length = 0;
+        this._disposables.length = 0;
     }
 
     private _fireSoon(...events: vscode.FileChangeEvent[]): void {
@@ -1033,7 +1033,7 @@ class UserNode extends DirNode<InputNode> {
     }
 
     async createDirectory(name: string): Promise<InputNode> {
-        const client = this.ctx.inputStreamClient;
+        const client = this.ctx.inputsClient;
 
         let input: Input | undefined = {
             status: 'STATUS_DRAFT',
@@ -1068,7 +1068,7 @@ class UserNode extends DirNode<InputNode> {
         if (!child) {
             throw vscode.FileSystemError.FileNotFound(name);
         }
-        const client = this.ctx.inputStreamClient;
+        const client = this.ctx.inputsClient;
         const selection = await vscode.window.showInformationMessage(`Are you sure you want to delete ${name}?`, 'Delete', 'Cancel');
         if (selection !== 'Delete') {
             return;
@@ -1091,14 +1091,14 @@ class UserNode extends DirNode<InputNode> {
     }
 
     protected async loadInputs(): Promise<Input[] | undefined> {
-        const client = this.ctx.inputStreamClient;
+        const client = this.ctx.inputsClient;
         return client.listInputs({
             login: this.user.login,
         });
     }
 
     protected async fetchInputByTitle(login: string, title: string): Promise<Input | undefined> {
-        const client = this.ctx.inputStreamClient;
+        const client = this.ctx.inputsClient;
         try {
             const filter: InputFilterOptions = { login, title };
             const mask: FieldMask = { paths: ['content'] };
@@ -1220,7 +1220,7 @@ class InputNode extends DirNode<FileNode> {
     }
 
     protected async fetchInput(login: string, id: string): Promise<Input | undefined> {
-        const client = this.ctx.inputStreamClient;
+        const client = this.ctx.inputsClient;
         try {
             return client.getInput({ login, id }, { paths: ['content'] });
         } catch (e) {
@@ -1230,7 +1230,7 @@ class InputNode extends DirNode<FileNode> {
     }
 
     public async updateStatus(status: InputStatus): Promise<Input | undefined> {
-        const client = this.ctx.inputStreamClient;
+        const client = this.ctx.inputsClient;
         const prevStatus = this.input.status;
         const oldChild = await this.getChild(makeInputContentName(this.input));
         try {
@@ -1260,7 +1260,7 @@ class InputNode extends DirNode<FileNode> {
             }
         }
 
-        const client = this.ctx.inputStreamClient;
+        const client = this.ctx.inputsClient;
         const prevFileSet = this.input.fileSet;
         files.sort((a, b) => a.name!.localeCompare(b.name!));
 
@@ -1278,7 +1278,7 @@ class InputNode extends DirNode<FileNode> {
     }
 
     public async updateTitle(title: string): Promise<Input | undefined> {
-        const client = this.ctx.inputStreamClient;
+        const client = this.ctx.inputsClient;
         const prevTitle = this.input.title;
         try {
             this.input.title = title;
@@ -1461,7 +1461,7 @@ class ContentFileNode extends FileNode {
             throw vscode.FileSystemError.NoPermissions(`ReadOnly File`);
         }
 
-        const client = this.ctx.inputStreamClient;
+        const client = this.ctx.inputsClient;
 
         this.input.content = {
             shortPost: {
@@ -1487,7 +1487,7 @@ class ContentFileNode extends FileNode {
     }
 
     private async loadData(): Promise<Uint8Array> {
-        const client = this.ctx.inputStreamClient;
+        const client = this.ctx.inputsClient;
         const input = await client.getInput({ login: this.input.login, id: this.input.id }, { paths: ['content'] });
         this.input.content = input?.content;
         return new TextEncoder().encode(input?.content?.shortPost?.markdown);

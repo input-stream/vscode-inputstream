@@ -31,9 +31,10 @@ export class ImageSearch implements vscode.Disposable {
         private client: ImageSearchClient,
     ) {
         this.disposables.push(this.onDidSearchImageClick);
+        this.onDidSearchImageClick.event(this.handleCommandSearchImageClick, this, this.disposables);
+
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.ImageSearch, this.handleCommandImageSearch, this));
-        this.onDidSearchImageClick.event(this.handleCommandSearchImageClick, this, this.disposables);
     }
 
     getOrCreateWebview(): ImageSearchWebview {

@@ -10,15 +10,15 @@ import { ListInputsResponse } from '../proto/build/stack/inputstream/v1beta1/Lis
 import { RemoveInputResponse } from '../proto/build/stack/inputstream/v1beta1/RemoveInputResponse';
 import { UpdateInputResponse } from '../proto/build/stack/inputstream/v1beta1/UpdateInputResponse';
 
-export interface IInputStreamClient {
-    listInputs(filter: InputFilterOptions, options?: UnaryCallOptions): Promise<Input[] | undefined>;
-    getInput(filter: InputFilterOptions, mask?: FieldMask, options?: UnaryCallOptions): Promise<Input | undefined>;
+export interface IInputsClient {
     createInput(input: Input, options?: UnaryCallOptions): Promise<Input | undefined>;
-    removeInput(id: string, options?: UnaryCallOptions): Promise<RemoveInputResponse>;
+    getInput(filter: InputFilterOptions, mask?: FieldMask, options?: UnaryCallOptions): Promise<Input | undefined>;
+    listInputs(filter: InputFilterOptions, options?: UnaryCallOptions): Promise<Input[] | undefined>;
     updateInput(input: Input, mask: FieldMask, options?: UnaryCallOptions): Promise<UpdateInputResponse>;
+    removeInput(id: string, options?: UnaryCallOptions): Promise<RemoveInputResponse>;
 }
 
-export class InputStreamClient extends GRPCClient<InputsClient> {
+export class InputsGRPCClient extends GRPCClient<InputsClient> implements IInputsClient {
 
     constructor(
         client: InputsClient,

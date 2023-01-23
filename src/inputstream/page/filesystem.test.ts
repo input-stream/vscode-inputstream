@@ -1,18 +1,11 @@
-import * as grpc from '@grpc/grpc-js';
+
 import { describe, it } from "@jest/globals";
 import { expect } from "chai";
-import {
-    Input,
-    _build_stack_inputstream_v1beta1_Input_Type as InputType,
-    _build_stack_inputstream_v1beta1_Input_Status as InputStatus,
-} from "../../proto/build/stack/inputstream/v1beta1/Input";
+import { exportedForTesting, FileEntry } from "./filesystem";
 import { File } from "../../proto/build/stack/inputstream/v1beta1/File";
-import { ClientContext, exportedForTesting, FileEntry, IFileUploader } from "./filesystem";
-import { User } from "../../proto/build/stack/auth/v1beta1/User";
+import { Input, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from "../../proto/build/stack/inputstream/v1beta1/Input";
 import { TextDecoder } from "util";
-import { IInputStreamClient } from "../inputStreamClient";
-import { IByteStreamClient } from "../byteStreamClient";
-import { BytestreamClientServer } from '../byteStreamServer';
+import { User } from "../../proto/build/stack/auth/v1beta1/User";
 
 describe('Filesystem', () => {
     it('should pass sanity check', () => { });

@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { BuiltInCommands } from '../../constants';
 import { ContextValue, ThemeIconTestingPassed, ViewName } from '../constants';
 import { formatTimestampISODate } from '../../common';
-import { IInputStreamClient } from '../inputStreamClient';
+import { IInputsClient } from '../inputStreamClient';
 import { Input, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { makeInputContentFileNodeUri } from './filesystem';
 import { TreeDataProvider } from '../treedataprovider';
@@ -16,7 +16,7 @@ export class PageTreeView extends TreeDataProvider<Input> {
 
     constructor(
         private user: User,
-        private client: IInputStreamClient,
+        private client: IInputsClient,
     ) {
         super(ViewName.InputExplorer);
 

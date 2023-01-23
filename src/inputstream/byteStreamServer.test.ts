@@ -1,10 +1,12 @@
 import * as grpc from '@grpc/grpc-js';
+
+import Long = require('long');
+
+import { BytestreamClientServer, InMemoryBytestreamService } from "./byteStreamServer";
 import { describe, it } from "@jest/globals";
 import { expect } from "chai";
-import { BytestreamClientServer, Chunk, InMemoryBytestreamService } from "./byteStreamServer";
-import { WriteResponse } from '../proto/google/bytestream/WriteResponse';
 import { ReadResponse } from '../proto/google/bytestream/ReadResponse';
-import Long = require('long');
+import { WriteResponse } from '../proto/google/bytestream/WriteResponse';
 
 describe('InMemoryBytestreamService', () => {
     it('constructor', () => {
