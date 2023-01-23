@@ -1179,7 +1179,7 @@ class InputNode extends DirNode<FileNode> {
     }
 
     addInputFileNode(file: InputFile): InputFileNode {
-        return this.addChild(new InputFileNode(makeInputFileName(this.input, file), this.ctx, this, this.input, file));
+        return this.addChild(new InputFileNode(makeInputFileName(file), this.ctx, this, this.input, file));
     }
 
     addContentFileNode(input: Input): ContentFileNode {
@@ -1606,6 +1606,7 @@ class InputFileNode extends FileNode {
     }
 }
 
+// TODO(test)
 function makeUserProfileDir(user: User): StaticDirNode {
     return new StaticDirNode('.profile', [
         StaticFileNode.fromJson('config.json', {
@@ -1650,7 +1651,7 @@ function makeBytestreamDownloadResourceName(sha256: string, size: number): strin
     return `/blobs/${sha256}/${size}`;
 }
 
-export function makeUserNodeUri(user: User): vscode.Uri {
+function makeUserNodeUri(user: User): vscode.Uri {
     return vscode.Uri.parse(`stream:/${user.login}`);
 }
 
@@ -1659,20 +1660,11 @@ export function makeInputNodeUri(input: Input): vscode.Uri {
 }
 
 export function makeInputContentFileNodeUri(input: Input): vscode.Uri {
-    return vscode.Uri.parse(`stream:/${input.login}/${input.title}/${makeInputContentName(input)}`);
+    return vscode.Uri.parse(`${Scheme.Stream}:/${input.login}/${input.title}/${makeInputContentName(input)}`);
 }
 
-function makeInputAssetName(input: Input, name: string): string {
-    return `/${input.login}/${input.id}/${name}`;
-}
-
-function makeInputFileName(input: Input, file: InputFile): string {
-    const prefix = `/${input.login}/${input.id}/`;
-    let filename = file.name!;
-    if (filename.startsWith(prefix)) {
-        filename = filename.slice(prefix.length);
-    }
-    return filename;
+function makeInputFileName(file: InputFile): string {
+    return file.name!;
 }
 
 function makeInputExternalViewUrl(input: Input): vscode.Uri {
@@ -1690,7 +1682,7 @@ function sha256Bytes(buf: Buffer): string {
     return hex;
 }
 
-export function getContentTypeForExtension(ext: string): string | undefined {
+function getContentTypeForExtension(ext: string): string | undefined {
     switch (ext) {
         case '.apng':
             return 'image/apng';
@@ -1711,4 +1703,31 @@ export function getContentTypeForExtension(ext: string): string | undefined {
     }
 }
 
-const imageExtensionNames = ['apng', 'avif', 'gif', 'jpeg', 'jpg', 'png', 'svg', 'webp'];
+const imageExtensionNames = [
+    'apng',
+    'avif',
+    'gif',
+    'jpeg',
+    'jpg',
+    'png',
+    'svg',
+    'webp',
+];
+
+export const exportedForTesting = {
+    getContentTypeForExtension,
+    makeInputExternalViewUrl,
+    makeInputExternalWatchUrl,
+    sha256Bytes,
+    makeInputFileName,
+    makeInputContentName,
+    makeInputContentFileNodeUri,
+    makeInputNodeUri,
+    makeUserNodeUri,
+    makeBytestreamDownloadResourceName,
+    makeBytestreamUploadResourceName,
+    makeInputName,
+    makeUserName,
+    makeUserProfileDir,
+};
+
