@@ -7,18 +7,12 @@ import { QueryWriteStatusResponse } from '../proto/google/bytestream/QueryWriteS
 import { ReadResponse } from '../proto/google/bytestream/ReadResponse';
 import { ReadRequest } from '../proto/google/bytestream/ReadRequest';
 import { loadByteStreamProtos } from './configuration';
+import { ByteStreamClient } from '../proto/google/bytestream/ByteStream';
 
 export interface IByteStreamClient {
     read(request: ReadRequest, extraMd?: grpc.Metadata): grpc.ClientReadableStream<ReadResponse>;
     write(onResponse: (error?: grpc.ServiceError | null, out?: WriteResponse | undefined) => void, extraMd?: grpc.Metadata): grpc.ClientWritableStream<WriteRequest>;
 }
-
-// function createBytestreamServer(
-//     impl: grpc.UntypedServiceImplementation,
-// ): grpc.Server {
-//     const server = new grpc.Server();
-//     return server;
-// }
 
 export type Chunk = Buffer | Uint8Array | string;
 
@@ -82,5 +76,48 @@ export class InMemoryBytestreamService {
 
     addTo(proto: ByteStreamProtoType, server: grpc.Server): void {
         server.addService(proto.google.bytestream.ByteStream.service, this.implementation);
+    }
+}
+
+export class BytestreamClientServer {
+    proto: ByteStreamProtoType;
+    server: grpc.Server;
+    service: InMemoryBytestreamService;
+    _client: ByteStreamClient | undefined;
+
+    constructor(private host = '0.0.0.0', private port = '0') {
+        this.proto = loadByteStreamProtos('./proto/bytestream.proto');
+        this.service = new InMemoryBytestreamService();
+        this.server = new grpc.Server();
+        this.service.addTo(this.proto, this.server);
+    }
+
+    get client(): ByteStreamClient {
+        return this._client!;
+    }
+
+    async connect(): Promise<ByteStreamClient> {
+        return new Promise<ByteStreamClient>((resolve, reject) => {
+            this.server.bindAsync(`${this.host}:${this.port}`, grpc.ServerCredentials.createInsecure(), (err: Error | null, port: number) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                this.server.start();
+
+                this._client = new this.proto.google.bytestream.ByteStream(
+                    `${this.host}:${port}`,
+                    grpc.credentials.createInsecure());
+                const deadline = new Date();
+                deadline.setSeconds(deadline.getSeconds() + 2);
+                this._client.waitForReady(deadline, (err: Error | undefined) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    resolve(this._client!);
+                });
+            });
+        });
     }
 }

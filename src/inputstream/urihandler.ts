@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
+
 import { BuiltInCommands, Telemetry } from '../constants';
-import { Container } from '../container';
 import { CommandName } from './constants';
+import { Container } from '../container';
 import { makeInputNodeUri } from './page/filesystem';
 
 export class UriHandler implements vscode.UriHandler, vscode.Disposable {
-
     private disposables: vscode.Disposable[] = [];
 
     constructor() {
@@ -64,7 +64,6 @@ export class UriHandler implements vscode.UriHandler, vscode.Disposable {
         }
         this.disposables.length = 0;
     }
-
 }
 
 export function parseQuery(uri: vscode.Uri): { [key: string]: string } {

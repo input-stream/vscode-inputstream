@@ -1,14 +1,10 @@
 import * as grpc from '@grpc/grpc-js';
 import { describe, it } from "@jest/globals";
 import { expect } from "chai";
-import { ByteStreamClient } from '../proto/google/bytestream/ByteStream';
-import { Chunk, InMemoryBytestreamService } from "./byteStreamServer";
-import { loadByteStreamProtos } from './configuration';
-import { ProtoGrpcType as ByteStreamProtoType } from '../proto/bytestream';
+import { BytestreamClientServer, Chunk, InMemoryBytestreamService } from "./byteStreamServer";
 import { WriteResponse } from '../proto/google/bytestream/WriteResponse';
-import Long = require('long');
-import { resolve } from 'path';
 import { ReadResponse } from '../proto/google/bytestream/ReadResponse';
+import Long = require('long');
 
 describe('InMemoryBytestreamService', () => {
     it('constructor', () => {
@@ -18,53 +14,26 @@ describe('InMemoryBytestreamService', () => {
         expect(service.writeData).to.exist;
     });
     describe('server', () => {
-        const proto: ByteStreamProtoType = loadByteStreamProtos('./proto/bytestream.proto');
-        let client: ByteStreamClient;
-        let server: grpc.Server;
-        let service: InMemoryBytestreamService;
+        let bytestream: BytestreamClientServer;
 
         beforeEach(async () => {
-            service = new InMemoryBytestreamService();
-            server = new grpc.Server();
-            service.addTo(proto, server);
-
-            return new Promise((resolve, reject) => {
-                server.bindAsync('0.0.0.0:0', grpc.ServerCredentials.createInsecure(), (err: Error | null, port: number) => {
-                    if (err) {
-                        reject(err);
-                        return;
-                    }
-                    server.start();
-
-                    client = new proto.google.bytestream.ByteStream(
-                        `0.0.0.0:${port}`,
-                        grpc.credentials.createInsecure());
-                    const deadline = new Date();
-                    deadline.setSeconds(deadline.getSeconds() + 2);
-                    client.waitForReady(deadline, (err: Error | undefined) => {
-                        if (err) {
-                            reject(err);
-                            return;
-                        }
-                        resolve();
-                    });
-                });
-            });
+            bytestream = new BytestreamClientServer();
+            return bytestream.connect();
         });
 
         afterEach(() => {
-            server.forceShutdown();
+            bytestream.server.forceShutdown();
         });
 
         it('ready', () => {
-            expect(server).to.exist;
-            expect(client).to.exist;
+            expect(bytestream.server).to.exist;
+            expect(bytestream.client).to.exist;
         });
 
         it('write', async () => {
             const md = new grpc.Metadata();
             const committedSize = await new Promise<number>((resolve, reject) => {
-                const call = client.write(md, {}, (err?: grpc.ServiceError | null, out?: WriteResponse | undefined) => {
+                const call = bytestream.client.write(md, {}, (err?: grpc.ServiceError | null, out?: WriteResponse | undefined) => {
                     if (err) {
                         reject(err);
                         return;
@@ -78,18 +47,18 @@ describe('InMemoryBytestreamService', () => {
                 call.end();
             });
             expect(committedSize).to.equal(13);
-            expect(service.writeData.get('greeting')).to.have.length(1);
-            expect(service.writeData.get('greeting')![0].toString()).to.equal('hello, world!');
+            expect(bytestream.service.writeData.get('greeting')).to.have.length(1);
+            expect(bytestream.service.writeData.get('greeting')![0].toString()).to.equal('hello, world!');
         });
 
         it('read', async () => {
-            service.readData.set(
+            bytestream.service.readData.set(
                 'greeting',
                 [Buffer.from('hello, world!', 'utf-8')]
             );
             const md = new grpc.Metadata();
             const read = await new Promise<string>((resolve, reject) => {
-                const call = client.read({ resourceName: 'greeting' });
+                const call = bytestream.client.read({ resourceName: 'greeting' });
 
                 let readSize = 0;
                 const chunks: Buffer[] = [];
@@ -115,15 +84,6 @@ describe('InMemoryBytestreamService', () => {
                 call.on('end', () => {
                     resolve(Buffer.concat(chunks).toString());
                 });
-                // const call = client.write(md, {}, (err?: grpc.ServiceError | null, out?: WriteResponse | undefined) => {
-                //     if (err) {
-                //         reject(err);
-                //         return;
-                //     }
-                //     resolve(Long.fromValue(out!.committedSize!).toNumber());
-                // });
-                // call.write({ data: Buffer.from('hello, world!', 'utf-8') });
-                // call.end();
             });
             expect(read).to.equal('hello, world!');
         });

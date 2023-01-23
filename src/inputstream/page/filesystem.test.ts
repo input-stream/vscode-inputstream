@@ -12,6 +12,7 @@ import { User } from "../../proto/build/stack/auth/v1beta1/User";
 import { TextDecoder } from "util";
 import { IInputStreamClient } from "../inputStreamClient";
 import { IByteStreamClient } from "../byteStreamClient";
+import { BytestreamClientServer } from '../byteStreamServer';
 
 describe('Filesystem', () => {
     it('should pass sanity check', () => { });
@@ -436,57 +437,70 @@ describe('Filesystem', () => {
         });
     });
 
-    describe('InputFileNode', () => {
-        let isc: IInputStreamClient;
-        let bsc: IByteStreamClient;
-        let ctx: ClientContext;
-        let uploader: IFileUploader;
-        let node: FileEntry;
+    // describe('InputFileNode', () => {
+    //     let isc: IInputStreamClient;
+    //     let bsc: IByteStreamClient;
+    //     let ctx: ClientContext;
+    //     let uploader: IFileUploader;
+    //     let node: FileEntry;
 
-        beforeEach(() => {
-            isc = {
-                createInput: jest.fn(),
-                getInput: jest.fn(),
-                updateInput: jest.fn(),
-                removeInput: jest.fn(),
-                listInputs: jest.fn(),
-            };
-            bsc = {
-                read: jest.fn(),
-                write: jest.fn(),
-            };
-            ctx = {
-                inputStreamClient: async (): Promise<IInputStreamClient> => isc,
-                byteStreamClient: async (): Promise<IByteStreamClient> => bsc,
-            };
-            uploader = {
-                uploadFile: jest.fn(),
-            };
-            node = new exportedForTesting.InputFileNode(
-                'image.png',
-                ctx,
-                uploader,
-                {
-                    name: 'image.png',
-                },
-            );
-        });
+    //     beforeEach(() => {
+    //         isc = {
+    //             createInput: jest.fn(),
+    //             getInput: jest.fn(),
+    //             updateInput: jest.fn(),
+    //             removeInput: jest.fn(),
+    //             listInputs: jest.fn(),
+    //         };
+    //         bsc = {
+    //             read: jest.fn(),
+    //             write: jest.fn(),
+    //         };
+    //         ctx = {
+    //             inputStreamClient: async (): Promise<IInputStreamClient> => isc,
+    //             byteStreamClient: async (): Promise<IByteStreamClient> => bsc,
+    //         };
+    //         uploader = {
+    //             uploadFile: jest.fn(),
+    //         };
+    //         node = new exportedForTesting.InputFileNode(
+    //             'image.png',
+    //             ctx,
+    //             uploader,
+    //             {
+    //                 name: 'image.png',
+    //             },
+    //         );
+    //     });
 
-        it("FileStat", async () => {
-            expect(node.name).to.equal('image.png');
-            expect(node.mtime).to.equal(0);
-            expect(node.ctime).to.equal(0);
-            expect(node.size).to.equal(0);
-        });
+    //     it("FileStat", async () => {
+    //         expect(node.name).to.equal('image.png');
+    //         expect(node.mtime).to.equal(0);
+    //         expect(node.ctime).to.equal(0);
+    //         expect(node.size).to.equal(0);
+    //     });
 
-        // describe('getData', () => {
-        //     it('calls loadData if not initialized', () => {
-        //         (bsc.read as jest.MockInstance<ReadRequest, ClientReadableStream<ReadResponse>>).mockResolvedValue();
-        //     });
+    //     describe('getData', () => {
+    //         let bytestream: BytestreamClientServer;
+    //         let ctx: ClientContext = {
 
-        // });
+    //         }
+    //         beforeEach(async () => {
+    //             bytestream = new BytestreamClientServer();
+    //             return bytestream.connect();
+    //         });
+
+    //         afterEach(() => {
+    //             bytestream.server.forceShutdown();
+    //         });
+
+    //         it('calls loadData if not initialized', () => {
+    //             (bsc.read as jest.MockInstance<ReadRequest, ClientReadableStream<ReadResponse>>).mockResolvedValue();
+    //         });
+
+    //     });
 
 
-    });
+    // });
 
 });

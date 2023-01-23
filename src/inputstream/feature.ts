@@ -1,9 +1,21 @@
 import * as vscode from 'vscode';
-import { IExtensionFeature } from '../common';
+
+import { AccountTreeDataProvider } from './login/treeview';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
-import { User } from '../proto/build/stack/auth/v1beta1/User';
-import { Input } from '../proto/build/stack/inputstream/v1beta1/Input';
+import { BytestreamClientImpl } from './byteStreamClient';
+import { Closeable, makeChannelCredentials } from './grpcclient';
+import { DeviceLogin } from './device_login';
+import { EmptyView } from './emptyview';
+import { FeatureName, ViewName } from './constants';
+import { IExtensionFeature } from '../common';
+import { ImageSearch } from './imagesearch/imagesearch';
+import { ImageSearchClient } from './imageSearchClient';
 import { InputStreamClient as InputStreamClient } from './inputStreamClient';
+import { PageController } from './page/controller';
+import { PageTreeView } from './page/treeview';
+import { TreeDataProvider } from './treedataprovider';
+import { UriHandler } from './urihandler';
+import { User } from '../proto/build/stack/auth/v1beta1/User';
 import {
     createAuthServiceClient,
     createInputStreamConfiguration,
@@ -11,36 +23,24 @@ import {
     loadInputStreamProtos,
     loadByteStreamProtos,
 } from './configuration';
-import { FeatureName, ViewName } from './constants';
-import { DeviceLogin } from './device_login';
-import { Closeable } from './grpcclient';
-import { ImageSearch } from './imagesearch/imagesearch';
-import { UriHandler } from './urihandler';
-import { EmptyView } from './emptyview';
-import { PageTreeView } from './page/treeview';
-import { AccountTreeDataProvider } from './login/treeview';
-import { TreeDataProvider } from './treedataprovider';
-import { PageController } from './page/controller';
-import { BytestreamClientImpl } from './byteStreamClient';
-import { MemFS } from './memfs';
 
 export class InputStreamFeature implements IExtensionFeature, vscode.Disposable {
     public readonly name = FeatureName;
 
     private disposables: vscode.Disposable[] = [];
     private closeables: Closeable[] = [];
-    private client: InputStreamClient | undefined;
-    private onDidInputStreamClientChange = new vscode.EventEmitter<InputStreamClient>();
-    private onDidByteStreamClientChange = new vscode.EventEmitter<BytestreamClientImpl>();
+
+    private inputStreamClient: InputStreamClient | undefined;
     private authClient: AuthServiceClient | undefined;
+    private bytestreamClient: BytestreamClientImpl | undefined;
+    private imageSearchClient: ImageSearchClient | undefined;
+
     private deviceLogin: DeviceLogin | undefined;
     private accountTreeView: AccountTreeDataProvider | undefined;
     private pageTreeView: TreeDataProvider<any> | undefined;
     private pageController: PageController | undefined;
 
     constructor() {
-        this.add(this.onDidInputStreamClientChange);
-        this.add(this.onDidByteStreamClientChange);
         this.add(new UriHandler());
     }
 
@@ -50,43 +50,50 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
     async activate(ctx: vscode.ExtensionContext, config: vscode.WorkspaceConfiguration): Promise<any> {
         const cfg = await createInputStreamConfiguration(ctx.asAbsolutePath.bind(ctx), ctx.globalStoragePath, config);
 
-        const inputStreamProtos = loadInputStreamProtos(cfg.inputstream.protofile);
-        const byteStreamProtos = loadByteStreamProtos(cfg.bytestream.protofile);
         const authProtos = loadAuthProtos(cfg.auth.protofile);
+        const byteStreamProtos = loadByteStreamProtos(cfg.bytestream.protofile);
+        const inputStreamProtos = loadInputStreamProtos(cfg.inputstream.protofile);
 
         this.authClient = createAuthServiceClient(authProtos, cfg.auth.address);
-        // const target = this.authClient.getChannel().getTarget();
-        // vscode.window.showInformationMessage(`auth target: ${target} (address=${cfg.auth.address})`);
-        this.closeables.push(this.authClient);
-
-        this.add(
-            new ImageSearch(this.onDidInputStreamClientChange.event));
-        this.accountTreeView = this.add(
-            new AccountTreeDataProvider());
-        this.deviceLogin = this.add(
-            new DeviceLogin(this.authClient));
-
+        this.deviceLogin = this.add(new DeviceLogin(this.authClient));
         this.deviceLogin.onDidAuthUserChange.event(this.handleAuthUserChange, this, this.disposables);
         this.deviceLogin.onDidLoginTokenChange.event(token => {
-            this.client = this.add(
-                new InputStreamClient(
-                    inputStreamProtos,
-                    cfg.inputstream.address,
-                    token,
-                    () => this.deviceLogin!.refreshAccessToken()));
-            const bytesClient = this.add(
-                new BytestreamClientImpl(
-                    byteStreamProtos,
-                    cfg.bytestream.address,
-                    token,
-                    () => this.deviceLogin!.refreshAccessToken()));
-            this.onDidInputStreamClientChange.fire(this.client);
-            this.onDidByteStreamClientChange.fire(bytesClient);
-        }, this.disposables);
+            this.bytestreamClient?.setToken(token);
+            this.imageSearchClient?.setToken(token);
+            this.inputStreamClient?.setToken(token);
+        });
 
-        vscode.workspace.registerFileSystemProvider("memfs", new MemFS());
+        this.bytestreamClient = new BytestreamClientImpl(
+            new byteStreamProtos.google.bytestream.ByteStream(
+                cfg.bytestream.address,
+                makeChannelCredentials(cfg.bytestream.address)
+            ),
+            this.deviceLogin
+        );
+        this.inputStreamClient = new InputStreamClient(
+            new inputStreamProtos.build.stack.inputstream.v1beta1.Inputs(
+                cfg.inputstream.address,
+                makeChannelCredentials(cfg.inputstream.address)
+            ),
+            this.deviceLogin
+        );
+        this.imageSearchClient = new ImageSearchClient(
+            new inputStreamProtos.build.stack.inputstream.v1beta1.Images(
+                cfg.inputstream.address,
+                makeChannelCredentials(cfg.inputstream.address)
+            ),
+            this.deviceLogin
+        );
+
+        this.closeables.push(this.authClient);
+        this.closeables.push(this.bytestreamClient);
+        this.closeables.push(this.inputStreamClient);
+        this.closeables.push(this.imageSearchClient);
 
         this.deviceLogin.restoreSaved();
+
+        this.add(new ImageSearch(this.imageSearchClient));
+        this.accountTreeView = this.add(new AccountTreeDataProvider());
     }
 
     /**
@@ -104,12 +111,12 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
         this.pageController = this.add(
             new PageController(
                 user,
-                this.onDidInputStreamClientChange,
-                this.onDidByteStreamClientChange,
+                this.inputStreamClient!,
+                this.bytestreamClient!,
             ));
 
         this.pageTreeView = this.add(
-            new PageTreeView(user, this.onDidInputStreamClientChange.event),
+            new PageTreeView(user, this.inputStreamClient!),
         );
 
         if (oldPageController) {

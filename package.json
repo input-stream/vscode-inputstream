@@ -338,6 +338,7 @@
         "graceful-fs": "4.2.4",
         "jest": "^28.1.3",
         "jest-mock-vscode": "1.3.0",
+        "jest-mock": "28.1.3",
         "mocha": "^7.1.2",
         "rimraf": "3.0.2",
         "tmp": "^0.2.1",

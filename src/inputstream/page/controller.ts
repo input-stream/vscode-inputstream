@@ -1,17 +1,10 @@
 import * as vscode from 'vscode';
 import * as fsExtra from 'fs-extra';
-import { formatTimestampISODate } from '../../common';
-import { InputStep, MultiStepInput } from '../../multiStepInput';
 import { BuiltInCommands, FolderName } from '../../constants';
-import {
-    Input,
-    _build_stack_inputstream_v1beta1_Input_Type as InputType,
-    _build_stack_inputstream_v1beta1_Input_Status as InputStatus
-} from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { InputStreamClient } from '../inputStreamClient';
 import { PageFileSystemProvider } from './filesystem';
 import { User } from '../../proto/build/stack/auth/v1beta1/User';
-import { BytestreamClientImpl } from '../byteStreamClient';
+import { IByteStreamClient } from '../byteStreamClient';
 import path = require('path');
 
 /**
@@ -19,29 +12,21 @@ import path = require('path');
  */
 export class PageController implements vscode.Disposable {
     protected disposables: vscode.Disposable[] = [];
-    protected client: InputStreamClient | undefined;
     protected fs: PageFileSystemProvider;
 
     constructor(
-        private user: User,
-        onDidInputStreamClientChange: vscode.EventEmitter<InputStreamClient>,
-        onDidByteStreamClientChange: vscode.EventEmitter<BytestreamClientImpl>,
+        user: User,
+        inputStreamClient: InputStreamClient,
+        bytestreamClient: IByteStreamClient,
     ) {
-        onDidInputStreamClientChange.event(this.handleInputStreamClientChange, this, this.disposables);
-
         this.fs = new PageFileSystemProvider(
             user,
-            onDidInputStreamClientChange.event,
-            onDidByteStreamClientChange.event,
+            inputStreamClient,
+            bytestreamClient,
         );
         this.disposables.push(this.fs);
 
         this.installWorkspaceFolder();
-
-    }
-
-    public filesystem(): vscode.FileSystem {
-        return this.fs.filesystem();
     }
 
     private installWorkspaceFolder(): void {
@@ -77,23 +62,8 @@ export class PageController implements vscode.Disposable {
         const filename = path.join(dirname, basename);
 
         fsExtra.writeFileSync(filename, JSON.stringify({ folders: folderData }));
+
         vscode.commands.executeCommand(BuiltInCommands.OpenFolder, vscode.Uri.file(filename));
-    }
-
-    private handleInputStreamClientChange(client: InputStreamClient) {
-        this.client = client;
-    }
-
-    async openHtmlUrl(input: Input, watch = true) {
-        let target = input.htmlUrl;
-        if (!target) {
-            target = input.status === InputStatus.STATUS_PUBLISHED ? input.titleSlug : input.id;
-        }
-        if (watch) {
-            target += '/view/watch';
-        }
-        const uri = vscode.Uri.parse(target!);
-        return vscode.commands.executeCommand(BuiltInCommands.Open, uri);
     }
 
     public dispose() {

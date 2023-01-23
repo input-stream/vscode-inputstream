@@ -1,107 +1,36 @@
 import * as grpc from '@grpc/grpc-js';
-import * as vscode from 'vscode';
-import { ListInputsResponse } from '../proto/build/stack/inputstream/v1beta1/ListInputsResponse';
-import { Input } from '../proto/build/stack/inputstream/v1beta1/Input';
-import { InputsClient } from '../proto/build/stack/inputstream/v1beta1/Inputs';
-import { RemoveInputResponse } from '../proto/build/stack/inputstream/v1beta1/RemoveInputResponse';
-import { ProtoGrpcType as inputstreamProtoGrpcType } from '../proto/inputstream';
-import { GRPCClient } from './grpcclient';
+
+import { AccessTokenRefresher } from './device_login';
 import { FieldMask } from '../proto/google/protobuf/FieldMask';
-import { ButtonName } from './constants';
-import { ImagesClient } from '../proto/build/stack/inputstream/v1beta1/Images';
-import { SearchImagesResponse } from '../proto/build/stack/inputstream/v1beta1/SearchImagesResponse';
-import { SearchImagesRequest } from '../proto/build/stack/inputstream/v1beta1/SearchImagesRequest';
-import { UpdateInputResponse } from '../proto/build/stack/inputstream/v1beta1/UpdateInputResponse';
+import { GRPCClient, UnaryCallOptions } from './grpcclient';
+import { Input } from '../proto/build/stack/inputstream/v1beta1/Input';
 import { InputFilterOptions } from '../proto/build/stack/inputstream/v1beta1/InputFilterOptions';
+import { InputsClient } from '../proto/build/stack/inputstream/v1beta1/Inputs';
+import { ListInputsResponse } from '../proto/build/stack/inputstream/v1beta1/ListInputsResponse';
+import { RemoveInputResponse } from '../proto/build/stack/inputstream/v1beta1/RemoveInputResponse';
+import { UpdateInputResponse } from '../proto/build/stack/inputstream/v1beta1/UpdateInputResponse';
 
-grpc.setLogVerbosity(grpc.logVerbosity.DEBUG);
-
-export type UnaryCallOptions = {
-    limit: number;
-    silent: boolean;
+export interface IInputStreamClient {
+    listInputs(filter: InputFilterOptions, options?: UnaryCallOptions): Promise<Input[] | undefined>;
+    getInput(filter: InputFilterOptions, mask?: FieldMask, options?: UnaryCallOptions): Promise<Input | undefined>;
+    createInput(input: Input, options?: UnaryCallOptions): Promise<Input | undefined>;
+    removeInput(id: string, options?: UnaryCallOptions): Promise<RemoveInputResponse>;
+    updateInput(input: Input, mask: FieldMask, options?: UnaryCallOptions): Promise<UpdateInputResponse>;
 }
 
-const defaultUnaryCallOptions = {
-    limit: 2,
-    silent: false,
-};
-
-export class InputStreamClient extends GRPCClient {
-    private readonly inputService: InputsClient;
-    private readonly imagesService: ImagesClient;
+export class InputStreamClient extends GRPCClient<InputsClient> {
 
     constructor(
-        readonly proto: inputstreamProtoGrpcType,
-        readonly address: string,
-        private token: string,
-        readonly refreshAccessToken: () => Promise<void>,
+        client: InputsClient,
+        refresher: AccessTokenRefresher,
     ) {
-        super(address);
-
-        const v1beta1 = proto.build.stack.inputstream.v1beta1;
-        const creds = this.getCredentials(address);
-        this.inputService = this.add(new v1beta1.Inputs(address, creds));
-        this.imagesService = this.add(new v1beta1.Images(address, creds));
-    }
-
-    httpURL(): string {
-        const address = this.address;
-        const scheme = address.endsWith(':443') ? 'https' : 'http';
-        return `${scheme}://${address}`;
-    }
-
-    /**
-     * Execute a grpc unary call having response type S.  If the call fails,
-     * user will be prompted to retry up to the limit (defaults to 2).
-     *
-     * @param fn The function to invoke during an attempt.  Should return the
-     * response type or fail to a grpc.ServiceError.
-     * @param limit Max number of retries.
-     */
-    async unaryCall<S>(desc: string, fn: () => Promise<S>, limit = 2, silent = false): Promise<S> {
-        try {
-            return await fn();
-        } catch (e) {
-            const err = e as grpc.ServiceError;
-
-            // Reached terminal attempt, report error and bail
-            if (limit === 0) {
-                if (!silent) {
-                    vscode.window.showErrorMessage(`${desc}: ${err.message} (operation will not be retried)`);
-                }
-                throw err;
-            }
-
-            // Attempt to refresh the token if we are unauthenticated
-            if (err.code === grpc.status.UNAUTHENTICATED) {
-                try {
-                    await this.refreshAccessToken();
-                    return this.unaryCall(desc, fn, Math.max(0, limit - 1));
-                } catch (e2) {
-                    if (!silent) {
-                        vscode.window.showWarningMessage('Could not refresh access token: ' + JSON.stringify(e2));
-                    }
-                }
-            }
-
-            // Prompt user to retry
-            if (!silent) {
-                const action = await vscode.window.showInformationMessage(
-                    `${desc} failed: ${err.message} (${limit} attempts remaining)`,
-                    ButtonName.Retry, ButtonName.Cancel);
-                if (action !== ButtonName.Retry) {
-                    throw err;
-                }
-            }
-
-            return this.unaryCall(desc, fn, Math.max(0, limit - 1), silent);
-        }
+        super(client, refresher);
     }
 
     async listInputs(filter: InputFilterOptions, options?: UnaryCallOptions): Promise<Input[] | undefined> {
         return this.unaryCall<Input[] | undefined>('List Inputs', (): Promise<Input[] | undefined> => {
             return new Promise<Input[]>((resolve, reject) => {
-                this.inputService.listInputs(
+                this.client.listInputs(
                     {
                         filter: filter,
                         wantPrivate: true,
@@ -126,7 +55,7 @@ export class InputStreamClient extends GRPCClient {
     async createInput(input: Input, options?: UnaryCallOptions): Promise<Input | undefined> {
         return this.unaryCall<Input>('Create Input', (): Promise<Input> => {
             return new Promise<Input>((resolve, reject) => {
-                this.inputService.createInput(
+                this.client.createInput(
                     { input },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
@@ -144,7 +73,7 @@ export class InputStreamClient extends GRPCClient {
     async getInput(filter: InputFilterOptions, mask?: FieldMask, options?: UnaryCallOptions): Promise<Input | undefined> {
         return this.unaryCall<Input>('Get Input', (): Promise<Input> => {
             return new Promise<Input>((resolve, reject) => {
-                this.inputService.getInput(
+                this.client.getInput(
                     { filter, mask },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
@@ -162,7 +91,7 @@ export class InputStreamClient extends GRPCClient {
     async updateInput(input: Input, mask: FieldMask, options?: UnaryCallOptions): Promise<UpdateInputResponse> {
         return this.unaryCall<UpdateInputResponse>('Update Input', (): Promise<UpdateInputResponse> => {
             return new Promise<UpdateInputResponse>((resolve, reject) => {
-                this.inputService.updateInput(
+                this.client.updateInput(
                     { input, mask },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
@@ -180,7 +109,7 @@ export class InputStreamClient extends GRPCClient {
     async removeInput(id: string, options?: UnaryCallOptions): Promise<RemoveInputResponse> {
         return this.unaryCall<RemoveInputResponse>('Remove Input', (): Promise<RemoveInputResponse> => {
             return new Promise<RemoveInputResponse>((resolve, reject) => {
-                this.inputService.removeInput(
+                this.client.removeInput(
                     { id },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
@@ -193,30 +122,6 @@ export class InputStreamClient extends GRPCClient {
                     });
             });
         }, options?.limit, options?.silent);
-    }
-
-    async searchImages(request: SearchImagesRequest): Promise<SearchImagesResponse> {
-        return new Promise<SearchImagesResponse>((resolve, reject) => {
-            this.imagesService.searchImages(
-                request,
-                this.getGrpcMetadata(),
-                { deadline: this.getDeadline() },
-                async (err: grpc.ServiceError | null, resp?: SearchImagesResponse) => {
-                    if (err) {
-                        reject(this.handleError(err));
-                    } else {
-                        resolve(resp!);
-                    }
-                });
-        });
-    }
-
-    getGrpcMetadata(): grpc.Metadata {
-        const md = new grpc.Metadata({
-            waitForReady: true,
-        });
-        md.add('Authorization', `Bearer ${this.token}`);
-        return md;
     }
 
 }

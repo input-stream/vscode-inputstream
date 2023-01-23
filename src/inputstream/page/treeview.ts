@@ -1,33 +1,26 @@
-import path = require('path');
 import * as vscode from 'vscode';
-import { formatTimestampISODate } from '../../common';
+
 import { BuiltInCommands } from '../../constants';
-import { User } from '../../proto/build/stack/auth/v1beta1/User';
-import {
-    Input,
-    _build_stack_inputstream_v1beta1_Input_Status as InputStatus
-} from '../../proto/build/stack/inputstream/v1beta1/Input';
-import { InputStreamClient } from '../inputStreamClient';
 import { ContextValue, ThemeIconTestingPassed, ViewName } from '../constants';
-import { InputStreamClientTreeDataProvider } from '../inputstreamclienttreedataprovider';
+import { formatTimestampISODate } from '../../common';
+import { IInputStreamClient } from '../inputStreamClient';
+import { Input, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { makeInputContentFileNodeUri } from './filesystem';
+import { TreeDataProvider } from '../treedataprovider';
+import { User } from '../../proto/build/stack/auth/v1beta1/User';
 
 /**
  * Renders a view for user pages.
  */
-export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
-    private items: Input[] | undefined;
+export class PageTreeView extends TreeDataProvider<Input> {
 
     constructor(
         private user: User,
-        onDidInputStreamClientChange: vscode.Event<InputStreamClient>,
+        private client: IInputStreamClient,
     ) {
-        super(ViewName.InputExplorer, onDidInputStreamClientChange);
-        this.view.onDidChangeVisibility(this.handleVisibilityChange, this, this.disposables);
-    }
+        super(ViewName.InputExplorer);
 
-    registerCommands() {
-        super.registerCommands();
+        this.view.onDidChangeVisibility(this.handleVisibilityChange, this, this.disposables);
     }
 
     handleVisibilityChange(event: vscode.TreeViewVisibilityChangeEvent) {
@@ -52,7 +45,7 @@ export class PageTreeView extends InputStreamClientTreeDataProvider<Input> {
             return undefined;
         }
         try {
-            const inputs = this.items = await this.client.listInputs({
+            const inputs = await this.client.listInputs({
                 owner: this.user.login!,
             });
             if (!inputs) {

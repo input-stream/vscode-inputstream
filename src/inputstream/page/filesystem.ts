@@ -2,44 +2,46 @@ import * as vscode from 'vscode';
 import * as crypto from 'crypto';
 import * as fs from 'fs-extra';
 import * as grpc from '@grpc/grpc-js';
+
 import Long = require('long');
 import path = require('path');
 import imageSize from 'image-size';
 
-import { BytestreamClientImpl, IByteStreamClient } from '../byteStreamClient';
+import { BuiltInCommands } from '../../constants';
+import { CommandName, Scheme } from '../constants';
+import { FieldMask } from '../../proto/google/protobuf/FieldMask';
+import { File as InputFile } from '../../proto/build/stack/inputstream/v1beta1/File';
+import { FileSet } from '../../proto/build/stack/inputstream/v1beta1/FileSet';
+import { IByteStreamClient } from '../byteStreamClient';
 import {
     Input,
     _build_stack_inputstream_v1beta1_Input_Type as InputType,
     _build_stack_inputstream_v1beta1_Input_Status as InputStatus,
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
-import { FileSet } from '../../proto/build/stack/inputstream/v1beta1/FileSet';
-import { File as InputFile } from '../../proto/build/stack/inputstream/v1beta1/File';
-import { IInputStreamClient, InputStreamClient, UnaryCallOptions } from '../inputStreamClient';
+import { IInputStreamClient } from '../inputStreamClient';
+import { InputFilterOptions } from '../../proto/build/stack/inputstream/v1beta1/InputFilterOptions';
+import { InputStep, MultiStepInput } from '../../multiStepInput';
 import { parseQuery } from '../urihandler';
-import { CommandName, Scheme } from '../constants';
+import { Readable } from 'stream';
+import { ReadResponse } from '../../proto/google/bytestream/ReadResponse';
 import { TextDecoder, TextEncoder } from 'util';
+import { UnaryCallOptions } from '../grpcclient';
+import { User } from '../../proto/build/stack/auth/v1beta1/User';
 import { WriteRequest } from '../../proto/google/bytestream/WriteRequest';
 import { WriteResponse } from '../../proto/google/bytestream/WriteResponse';
-import { User } from '../../proto/build/stack/auth/v1beta1/User';
-import { InputFilterOptions } from '../../proto/build/stack/inputstream/v1beta1/InputFilterOptions';
-import { FieldMask } from '../../proto/google/protobuf/FieldMask';
-import { BuiltInCommands } from '../../constants';
-import { ReadResponse } from '../../proto/google/bytestream/ReadResponse';
-import { Readable } from 'stream';
-import { InputStep, MultiStepInput } from '../../multiStepInput';
 
-type selectPredicate = (child: Entry) => boolean;
 
 const MAX_CLIENT_BODY_SIZE = 10 * 1024 * 1024; // upload size limit
 const activeCodeWorkspaceName = 'active.code-workspace';
+
+type selectPredicate = (child: Entry) => boolean;
 const defaultSelectPredicate = (child: Entry) => { return false; };
 const inputNodePredicate = (child: Entry) => child instanceof InputNode;
 const userNodePredicate = (child: Entry) => child instanceof UserNode;
 
 export type ClientContext = {
-    listFilterStatus?: InputStatus;
-    inputStreamClient: () => Promise<IInputStreamClient>;
-    byteStreamClient: () => Promise<IByteStreamClient>;
+    inputStreamClient: IInputStreamClient;
+    byteStreamClient: IByteStreamClient;
 }
 
 /**
@@ -48,9 +50,7 @@ export type ClientContext = {
  */
 export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSystemProvider {
     protected disposables: vscode.Disposable[] = [];
-    protected inputstreamClient: IInputStreamClient | undefined;
-    protected bytestreamClient: IByteStreamClient | undefined;
-    protected root: RootNode = new RootNode(this.createClientContext());
+    protected root: RootNode;
     private _emitter = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
     private _bufferedEvents: vscode.FileChangeEvent[] = [];
     private _fireSoonHandle?: NodeJS.Timer;
@@ -59,19 +59,22 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
 
     constructor(
         private user: User,
-        onDidInputStreamClientChange: vscode.Event<IInputStreamClient>,
-        onDidByteStreamClientChange: vscode.Event<IByteStreamClient>,
+        private inputStreamClient: IInputStreamClient,
+        private byteStreamClient: IByteStreamClient,
     ) {
-        onDidInputStreamClientChange(this.handleInputStreamClientChange, this, this.disposables);
-        onDidByteStreamClientChange(this.handleBytestreamClientChange, this, this.disposables);
+        this.root = new RootNode({
+            inputStreamClient,
+            byteStreamClient,
+        });
+        this.root.addStaticDir(makeUserProfileDir(this.user));
+        this.root.addStaticDir(new VscodeDirNode(this._fireSoon.bind(this)));
+        this.root.addUser(this.user);
 
-        vscode.workspace.onDidCloseTextDocument(this.handleTextDocumentClose, this, this.disposables);
+        this.registerCommands();
+        this.registerFilesystem();
+    }
 
-        vscode.workspace.onDidChangeTextDocument;
-
-        this.disposables.push(
-            vscode.workspace.registerFileSystemProvider(Scheme.Stream, this, { isCaseSensitive: true, isReadonly: false }));
-
+    private registerCommands(): void {
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.InputCreate, this.handleCommandInputCreate, this));
         this.disposables.push(
@@ -88,31 +91,15 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
             vscode.commands.registerCommand(CommandName.InputDelete, this.handleCommandInputDelete, this));
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.ImageUpload, this.handleCommandImageUpload, this));
-
-        this.root.addStaticDir(makeUserProfileDir(user));
-        this.root.addStaticDir(new VscodeDirNode(this._fireSoon.bind(this)));
-        this.root.addUser(user);
     }
 
-    createClientContext(): ClientContext {
-        return {
-            inputStreamClient: this.getInputStreamClient.bind(this),
-            byteStreamClient: this.getByteStreamClient.bind(this),
-        };
-    }
-
-    private getInputStreamClient(): Promise<IInputStreamClient> {
-        if (!this.inputstreamClient) {
-            Promise.reject(vscode.FileSystemError.Unavailable('inputstream client not yet available'));
-        }
-        return Promise.resolve(this.inputstreamClient!);
-    }
-
-    private getByteStreamClient(): Promise<IByteStreamClient> {
-        if (!this.bytestreamClient) {
-            Promise.reject(vscode.FileSystemError.Unavailable('Bytestream client not yet available'));
-        }
-        return Promise.resolve(this.bytestreamClient!);
+    private registerFilesystem(): void {
+        this.disposables.push(
+            vscode.workspace.registerFileSystemProvider(Scheme.Stream, this, {
+                isCaseSensitive: true,
+                isReadonly: false
+            })
+        );
     }
 
     public async handleCommandImageUpload() {
@@ -230,7 +217,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
             if (!userNode) {
                 return;
             }
-            const client = await this.getInputStreamClient();
+            const client = this.inputStreamClient;
             const input = await client.createInput(request);
             if (input) {
                 const inputUri = makeUserNodeUri(this.user);
@@ -339,17 +326,6 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         return input;
     }
 
-    private handleInputStreamClientChange(client: IInputStreamClient) {
-        this.inputstreamClient = client;
-    }
-
-    private handleBytestreamClientChange(client: IByteStreamClient) {
-        this.bytestreamClient = client;
-    }
-
-    private handleTextDocumentClose(doc: vscode.TextDocument) {
-    }
-
     public filesystem(): vscode.FileSystem {
         return new Filesystem(this);
     }
@@ -390,7 +366,7 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
                     }
 
                     // prepare the call.
-                    const call = this.bytestreamClient?.write((err: grpc.ServiceError | null | undefined, resp: WriteResponse | undefined) => {
+                    const call = this.byteStreamClient?.write((err: grpc.ServiceError | null | undefined, resp: WriteResponse | undefined) => {
                         console.log(`write response: committed size: ${resp?.committedSize}`);
                     }, md);
 
@@ -1057,7 +1033,7 @@ class UserNode extends DirNode<InputNode> {
     }
 
     async createDirectory(name: string): Promise<InputNode> {
-        const client = await this.ctx.inputStreamClient();
+        const client = this.ctx.inputStreamClient;
 
         let input: Input | undefined = {
             status: 'STATUS_DRAFT',
@@ -1092,7 +1068,7 @@ class UserNode extends DirNode<InputNode> {
         if (!child) {
             throw vscode.FileSystemError.FileNotFound(name);
         }
-        const client = await this.ctx.inputStreamClient();
+        const client = this.ctx.inputStreamClient;
         const selection = await vscode.window.showInformationMessage(`Are you sure you want to delete ${name}?`, 'Delete', 'Cancel');
         if (selection !== 'Delete') {
             return;
@@ -1115,15 +1091,14 @@ class UserNode extends DirNode<InputNode> {
     }
 
     protected async loadInputs(): Promise<Input[] | undefined> {
-        const client = await this.ctx.inputStreamClient();
+        const client = this.ctx.inputStreamClient;
         return client.listInputs({
             login: this.user.login,
-            status: this.ctx.listFilterStatus,
         });
     }
 
     protected async fetchInputByTitle(login: string, title: string): Promise<Input | undefined> {
-        const client = await this.ctx.inputStreamClient();
+        const client = this.ctx.inputStreamClient;
         try {
             const filter: InputFilterOptions = { login, title };
             const mask: FieldMask = { paths: ['content'] };
@@ -1245,7 +1220,7 @@ class InputNode extends DirNode<FileNode> {
     }
 
     protected async fetchInput(login: string, id: string): Promise<Input | undefined> {
-        const client = await this.ctx.inputStreamClient();
+        const client = this.ctx.inputStreamClient;
         try {
             return client.getInput({ login, id }, { paths: ['content'] });
         } catch (e) {
@@ -1255,7 +1230,7 @@ class InputNode extends DirNode<FileNode> {
     }
 
     public async updateStatus(status: InputStatus): Promise<Input | undefined> {
-        const client = await this.ctx.inputStreamClient();
+        const client = this.ctx.inputStreamClient;
         const prevStatus = this.input.status;
         const oldChild = await this.getChild(makeInputContentName(this.input));
         try {
@@ -1285,7 +1260,7 @@ class InputNode extends DirNode<FileNode> {
             }
         }
 
-        const client = await this.ctx.inputStreamClient();
+        const client = this.ctx.inputStreamClient;
         const prevFileSet = this.input.fileSet;
         files.sort((a, b) => a.name!.localeCompare(b.name!));
 
@@ -1303,7 +1278,7 @@ class InputNode extends DirNode<FileNode> {
     }
 
     public async updateTitle(title: string): Promise<Input | undefined> {
-        const client = await this.ctx.inputStreamClient();
+        const client = this.ctx.inputStreamClient;
         const prevTitle = this.input.title;
         try {
             this.input.title = title;
@@ -1357,7 +1332,7 @@ class InputNode extends DirNode<FileNode> {
         resourceName: string,
         buffer: Buffer): Promise<void> {
 
-        const client = await this.ctx.byteStreamClient();
+        const client = this.ctx.byteStreamClient;
         const size = buffer.byteLength;
         const chunkSize = 65536;
         const increment = (chunkSize / size) * 100;
@@ -1486,7 +1461,7 @@ class ContentFileNode extends FileNode {
             throw vscode.FileSystemError.NoPermissions(`ReadOnly File`);
         }
 
-        const client = await this.ctx.inputStreamClient();
+        const client = this.ctx.inputStreamClient;
 
         this.input.content = {
             shortPost: {
@@ -1512,7 +1487,7 @@ class ContentFileNode extends FileNode {
     }
 
     private async loadData(): Promise<Uint8Array> {
-        const client = await this.ctx.inputStreamClient();
+        const client = this.ctx.inputStreamClient;
         const input = await client.getInput({ login: this.input.login, id: this.input.id }, { paths: ['content'] });
         this.input.content = input?.content;
         return new TextEncoder().encode(input?.content?.shortPost?.markdown);
@@ -1555,7 +1530,7 @@ class InputFileNode extends FileNode {
     }
 
     private async loadData(): Promise<Uint8Array> {
-        const client = await this.ctx.byteStreamClient();
+        const client = this.ctx.byteStreamClient;
         const resourceName = makeBytestreamDownloadResourceName(this.file.sha256!, Long.fromValue(this.file.size!).toNumber());
         const buffer = Buffer.alloc(Long.fromValue(this.file.size!).toNumber());
         const call = client.read({

@@ -1,15 +1,20 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
-import { isTimestampPast, setCommandContext } from '../common';
-import { BuiltInCommands, ExtensionID } from '../constants';
-import { Container } from '../container';
+
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
+import { BuiltInCommands, ExtensionID } from '../constants';
+import { CommandName, ContextName, MementoName } from './constants';
+import { Container } from '../container';
 import { DeviceLoginResponse } from '../proto/build/stack/auth/v1beta1/DeviceLoginResponse';
+import { isTimestampPast, setCommandContext } from '../common';
 import { LoginResponse } from '../proto/build/stack/auth/v1beta1/LoginResponse';
 import { User } from '../proto/build/stack/auth/v1beta1/User';
-import { CommandName, ContextName, MementoName } from './constants';
 
-export class DeviceLogin implements vscode.Disposable {
+export interface AccessTokenRefresher {
+    refreshAccessToken(): Promise<void>;
+}
+
+export class DeviceLogin implements vscode.Disposable, AccessTokenRefresher {
     private disposables: vscode.Disposable[] = [];
 
     public onDidLoginTokenChange = new vscode.EventEmitter<string>();
