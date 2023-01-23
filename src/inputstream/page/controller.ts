@@ -11,7 +11,7 @@ import {
 import { InputStreamClient } from '../inputStreamClient';
 import { PageFileSystemProvider } from './filesystem';
 import { User } from '../../proto/build/stack/auth/v1beta1/User';
-import { BytesClient } from '../byteStreamClient';
+import { BytestreamClientImpl } from '../byteStreamClient';
 import path = require('path');
 
 /**
@@ -25,7 +25,7 @@ export class PageController implements vscode.Disposable {
     constructor(
         private user: User,
         onDidInputStreamClientChange: vscode.EventEmitter<InputStreamClient>,
-        onDidByteStreamClientChange: vscode.EventEmitter<BytesClient>,
+        onDidByteStreamClientChange: vscode.EventEmitter<BytestreamClientImpl>,
     ) {
         onDidInputStreamClientChange.event(this.handleInputStreamClientChange, this, this.disposables);
 

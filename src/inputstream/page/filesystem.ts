@@ -6,7 +6,7 @@ import Long = require('long');
 import path = require('path');
 import imageSize from 'image-size';
 
-import { BytesClient } from '../byteStreamClient';
+import { BytestreamClientImpl, IByteStreamClient } from '../byteStreamClient';
 import {
     Input,
     _build_stack_inputstream_v1beta1_Input_Type as InputType,
@@ -14,7 +14,7 @@ import {
 } from '../../proto/build/stack/inputstream/v1beta1/Input';
 import { FileSet } from '../../proto/build/stack/inputstream/v1beta1/FileSet';
 import { File as InputFile } from '../../proto/build/stack/inputstream/v1beta1/File';
-import { InputStreamClient, UnaryCallOptions } from '../inputStreamClient';
+import { IInputStreamClient, InputStreamClient, UnaryCallOptions } from '../inputStreamClient';
 import { parseQuery } from '../urihandler';
 import { CommandName, Scheme } from '../constants';
 import { TextDecoder, TextEncoder } from 'util';
@@ -36,29 +36,10 @@ const defaultSelectPredicate = (child: Entry) => { return false; };
 const inputNodePredicate = (child: Entry) => child instanceof InputNode;
 const userNodePredicate = (child: Entry) => child instanceof UserNode;
 
-class ClientContext {
-    listFilterStatus: InputStatus | undefined;
-
-    constructor(
-        public inputStreamClient: () => Promise<InputStreamClient>,
-        public byteStreamClient: () => Promise<BytesClient>,
-    ) {
-    }
-
-    clone(): ClientContext {
-        const ctx = new ClientContext(
-            this.inputStreamClient,
-            this.byteStreamClient,
-        );
-        ctx.listFilterStatus = this.listFilterStatus;
-        return ctx;
-    }
-
-    withListFilterStatus(status: InputStatus): ClientContext {
-        const ctx = this.clone();
-        ctx.listFilterStatus = status;
-        return ctx;
-    }
+export type ClientContext = {
+    listFilterStatus?: InputStatus;
+    inputStreamClient: () => Promise<IInputStreamClient>;
+    byteStreamClient: () => Promise<IByteStreamClient>;
 }
 
 /**
@@ -67,8 +48,8 @@ class ClientContext {
  */
 export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSystemProvider {
     protected disposables: vscode.Disposable[] = [];
-    protected inputstreamClient: InputStreamClient | undefined;
-    protected bytestreamClient: BytesClient | undefined;
+    protected inputstreamClient: IInputStreamClient | undefined;
+    protected bytestreamClient: IByteStreamClient | undefined;
     protected root: RootNode = new RootNode(this.createClientContext());
     private _emitter = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
     private _bufferedEvents: vscode.FileChangeEvent[] = [];
@@ -78,13 +59,15 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
 
     constructor(
         private user: User,
-        onDidInputStreamClientChange: vscode.Event<InputStreamClient>,
-        onDidByteStreamClientChange: vscode.Event<BytesClient>,
+        onDidInputStreamClientChange: vscode.Event<IInputStreamClient>,
+        onDidByteStreamClientChange: vscode.Event<IByteStreamClient>,
     ) {
         onDidInputStreamClientChange(this.handleInputStreamClientChange, this, this.disposables);
         onDidByteStreamClientChange(this.handleBytestreamClientChange, this, this.disposables);
 
         vscode.workspace.onDidCloseTextDocument(this.handleTextDocumentClose, this, this.disposables);
+
+        vscode.workspace.onDidChangeTextDocument;
 
         this.disposables.push(
             vscode.workspace.registerFileSystemProvider(Scheme.Stream, this, { isCaseSensitive: true, isReadonly: false }));
@@ -112,20 +95,20 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
     }
 
     createClientContext(): ClientContext {
-        return new ClientContext(
-            this.getInputStreamClient.bind(this),
-            this.getByteStreamClient.bind(this),
-        );
+        return {
+            inputStreamClient: this.getInputStreamClient.bind(this),
+            byteStreamClient: this.getByteStreamClient.bind(this),
+        };
     }
 
-    private getInputStreamClient(): Promise<InputStreamClient> {
+    private getInputStreamClient(): Promise<IInputStreamClient> {
         if (!this.inputstreamClient) {
             Promise.reject(vscode.FileSystemError.Unavailable('inputstream client not yet available'));
         }
         return Promise.resolve(this.inputstreamClient!);
     }
 
-    private getByteStreamClient(): Promise<BytesClient> {
+    private getByteStreamClient(): Promise<IByteStreamClient> {
         if (!this.bytestreamClient) {
             Promise.reject(vscode.FileSystemError.Unavailable('Bytestream client not yet available'));
         }
@@ -356,11 +339,11 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         return input;
     }
 
-    private handleInputStreamClientChange(client: InputStreamClient) {
+    private handleInputStreamClientChange(client: IInputStreamClient) {
         this.inputstreamClient = client;
     }
 
-    private handleBytestreamClientChange(client: BytesClient) {
+    private handleBytestreamClientChange(client: IByteStreamClient) {
         this.bytestreamClient = client;
     }
 
@@ -829,7 +812,7 @@ interface DirectoryEntry<T extends Entry> extends Entry {
     deleteChild(name: string): Promise<void>;
 }
 
-interface FileEntry extends Entry {
+export interface FileEntry extends Entry {
     getData(): Promise<Uint8Array>;
     setData(data: Uint8Array): Promise<void>;
 }
@@ -1179,7 +1162,7 @@ class InputNode extends DirNode<FileNode> {
     }
 
     addInputFileNode(file: InputFile): InputFileNode {
-        return this.addChild(new InputFileNode(makeInputFileName(file), this.ctx, this, this.input, file));
+        return this.addChild(new InputFileNode(makeInputFileName(file), this.ctx, this, file));
     }
 
     addContentFileNode(input: Input): ContentFileNode {
@@ -1536,14 +1519,17 @@ class ContentFileNode extends FileNode {
     }
 }
 
+export interface IFileUploader {
+    uploadFile(file: InputFile): Promise<InputFile>
+}
+
 class InputFileNode extends FileNode {
     private data: Uint8Array | Buffer | undefined;
 
     constructor(
         name: string,
         private ctx: ClientContext,
-        private parent: InputNode,
-        private input: Input,
+        private uploader: IFileUploader,
         public file: InputFile,
     ) {
         super(name);
@@ -1564,7 +1550,7 @@ class InputFileNode extends FileNode {
 
     async setData(data: Uint8Array): Promise<void> {
         this.file.data = data;
-        await this.parent.uploadFile(this.file);
+        await this.uploader.uploadFile(this.file);
         this.data = data;
     }
 
@@ -1606,7 +1592,6 @@ class InputFileNode extends FileNode {
     }
 }
 
-// TODO(test)
 function makeUserProfileDir(user: User): StaticDirNode {
     return new StaticDirNode('.profile', [
         StaticFileNode.fromJson('config.json', {
@@ -1729,5 +1714,6 @@ export const exportedForTesting = {
     makeInputName,
     makeUserName,
     makeUserProfileDir,
+    InputFileNode,
 };
 

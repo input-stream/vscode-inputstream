@@ -5,14 +5,19 @@ import { GRPCClient } from './grpcclient';
 import { ButtonName } from './constants';
 import { ByteStreamClient } from '../proto/google/bytestream/ByteStream';
 import { WriteRequest } from '../proto/google/bytestream/WriteRequest';
-import { WriteResponse, WriteResponse__Output } from '../proto/google/bytestream/WriteResponse';
+import { WriteResponse } from '../proto/google/bytestream/WriteResponse';
 import { QueryWriteStatusRequest } from '../proto/google/bytestream/QueryWriteStatusRequest';
 import { QueryWriteStatusResponse } from '../proto/google/bytestream/QueryWriteStatusResponse';
 import { ReadResponse } from '../proto/google/bytestream/ReadResponse';
 import { ReadRequest } from '../proto/google/bytestream/ReadRequest';
 
-export class BytesClient extends GRPCClient {
-    private readonly bytesService: ByteStreamClient;
+export interface IByteStreamClient {
+    read(request: ReadRequest, extraMd?: grpc.Metadata): grpc.ClientReadableStream<ReadResponse>;
+    write(onResponse: (error?: grpc.ServiceError | null, out?: WriteResponse | undefined) => void, extraMd?: grpc.Metadata): grpc.ClientWritableStream<WriteRequest>;
+}
+
+export class BytestreamClientImpl extends GRPCClient {
+    private readonly bytestreamClient: ByteStreamClient;
 
     constructor(
         readonly proto: bytestreamProtoGrpcType,
@@ -23,7 +28,7 @@ export class BytesClient extends GRPCClient {
         super(address, 300 /* five minute timeout */);
 
         const creds = this.getCredentials(address);
-        this.bytesService = this.add(
+        this.bytestreamClient = this.add(
             new proto.google.bytestream.ByteStream(address, creds)
         );
     }
@@ -75,7 +80,7 @@ export class BytesClient extends GRPCClient {
         if (extraMd) {
             md.merge(extraMd);
         }
-        return this.bytesService.write(md, { deadline: this.getDeadline() }, onResponse);
+        return this.bytestreamClient.write(md, { deadline: this.getDeadline() }, onResponse);
     }
 
     read(request: ReadRequest, extraMd?: grpc.Metadata): grpc.ClientReadableStream<ReadResponse> {
@@ -83,13 +88,13 @@ export class BytesClient extends GRPCClient {
         if (extraMd) {
             md.merge(extraMd);
         }
-        return this.bytesService.read(request, md, { deadline: this.getDeadline() });
+        return this.bytestreamClient.read(request, md, { deadline: this.getDeadline() });
     }
 
     async queryWriteStatus(req: QueryWriteStatusRequest): Promise<QueryWriteStatusResponse> {
         return this.unaryCall<QueryWriteStatusResponse>('QueryWriteStatus', (): Promise<QueryWriteStatusResponse> => {
             return new Promise<QueryWriteStatusResponse>((resolve, reject) => {
-                this.bytesService.queryWriteStatus(
+                this.bytestreamClient.queryWriteStatus(
                     req,
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },

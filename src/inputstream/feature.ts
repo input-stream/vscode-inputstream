@@ -21,7 +21,7 @@ import { PageTreeView } from './page/treeview';
 import { AccountTreeDataProvider } from './login/treeview';
 import { TreeDataProvider } from './treedataprovider';
 import { PageController } from './page/controller';
-import { BytesClient } from './byteStreamClient';
+import { BytestreamClientImpl } from './byteStreamClient';
 import { MemFS } from './memfs';
 
 export class InputStreamFeature implements IExtensionFeature, vscode.Disposable {
@@ -31,7 +31,7 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
     private closeables: Closeable[] = [];
     private client: InputStreamClient | undefined;
     private onDidInputStreamClientChange = new vscode.EventEmitter<InputStreamClient>();
-    private onDidByteStreamClientChange = new vscode.EventEmitter<BytesClient>();
+    private onDidByteStreamClientChange = new vscode.EventEmitter<BytestreamClientImpl>();
     private authClient: AuthServiceClient | undefined;
     private deviceLogin: DeviceLogin | undefined;
     private accountTreeView: AccountTreeDataProvider | undefined;
@@ -75,7 +75,7 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
                     token,
                     () => this.deviceLogin!.refreshAccessToken()));
             const bytesClient = this.add(
-                new BytesClient(
+                new BytestreamClientImpl(
                     byteStreamProtos,
                     cfg.bytestream.address,
                     token,

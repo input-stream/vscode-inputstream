@@ -1,4 +1,4 @@
-
+import * as grpc from '@grpc/grpc-js';
 import { describe, it } from "@jest/globals";
 import { expect } from "chai";
 import {
@@ -7,8 +7,11 @@ import {
     _build_stack_inputstream_v1beta1_Input_Status as InputStatus,
 } from "../../proto/build/stack/inputstream/v1beta1/Input";
 import { File } from "../../proto/build/stack/inputstream/v1beta1/File";
-import { exportedForTesting } from "./filesystem";
+import { ClientContext, exportedForTesting, FileEntry, IFileUploader } from "./filesystem";
 import { User } from "../../proto/build/stack/auth/v1beta1/User";
+import { TextDecoder } from "util";
+import { IInputStreamClient } from "../inputStreamClient";
+import { IByteStreamClient } from "../byteStreamClient";
 
 describe('Filesystem', () => {
     it('should pass sanity check', () => { });
@@ -402,26 +405,88 @@ describe('Filesystem', () => {
     });
 
     describe('makeUserProfileDir', () => {
-        const testCases: {
-            [key: string]: {
-                user: User,
-                want: any,
-            }
-        } = {
-            "example": {
-                user: {
-                    login: "user",
-                },
-                want: {},
-            },
-        };
-        for (const name in testCases) {
-            const tc = testCases[name];
-            xit(name, () => {
-                const got = exportedForTesting.makeUserProfileDir(tc.user);
-                expect(got).to.deep.equal(tc.want);
+        it("should pass", async () => {
+            const got = exportedForTesting.makeUserProfileDir({
+                login: "octocat",
+                name: 'Octo Cat',
+                email: 'octocat@example.com',
+                avatarUrl: 'https://github.com/octocat.png'
             });
-        }
+            expect(got.name).to.equal('.profile');
+            expect(got.mtime).to.equal(0);
+            expect(got.ctime).to.equal(0);
+            expect(got.size).to.equal(1);
+
+            const children = await got.getChildren();
+            expect(children).to.have.length(1);
+
+            const file = children[0] as FileEntry;
+            expect(file.name).to.equal('config.json');
+            expect(file.mtime).to.equal(0);
+            expect(file.ctime).to.equal(0);
+            expect(file.size).to.equal(0);
+
+            const data = await file.getData();
+            const text = new TextDecoder().decode(data);
+            expect(JSON.parse(text)).to.deep.equal({
+                "avatarUrl": "https://github.com/octocat.png",
+                "email": "octocat@example.com",
+                "name": "Octo Cat",
+            });
+        });
+    });
+
+    describe('InputFileNode', () => {
+        let isc: IInputStreamClient;
+        let bsc: IByteStreamClient;
+        let ctx: ClientContext;
+        let uploader: IFileUploader;
+        let node: FileEntry;
+
+        beforeEach(() => {
+            isc = {
+                createInput: jest.fn(),
+                getInput: jest.fn(),
+                updateInput: jest.fn(),
+                removeInput: jest.fn(),
+                listInputs: jest.fn(),
+            };
+            bsc = {
+                read: jest.fn(),
+                write: jest.fn(),
+            };
+            ctx = {
+                inputStreamClient: async (): Promise<IInputStreamClient> => isc,
+                byteStreamClient: async (): Promise<IByteStreamClient> => bsc,
+            };
+            uploader = {
+                uploadFile: jest.fn(),
+            };
+            node = new exportedForTesting.InputFileNode(
+                'image.png',
+                ctx,
+                uploader,
+                {
+                    name: 'image.png',
+                },
+            );
+        });
+
+        it("FileStat", async () => {
+            expect(node.name).to.equal('image.png');
+            expect(node.mtime).to.equal(0);
+            expect(node.ctime).to.equal(0);
+            expect(node.size).to.equal(0);
+        });
+
+        // describe('getData', () => {
+        //     it('calls loadData if not initialized', () => {
+        //         (bsc.read as jest.MockInstance<ReadRequest, ClientReadableStream<ReadResponse>>).mockResolvedValue();
+        //     });
+
+        // });
+
+
     });
 
 });
