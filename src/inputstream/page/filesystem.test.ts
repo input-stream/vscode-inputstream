@@ -1,29 +1,50 @@
 
 import { describe, it } from "@jest/globals";
-import { makeImageContentType } from "./filesystem";
+import { expect } from "chai";
+import { getContentTypeForExtension } from "./filesystem";
 
-interface testCase {
-    contentType: string
-    want: string
-}
 
 describe('Filesystem', () => {
-    it('should pass', () => {
+    it('should pass sanity check', () => { });
 
-    });
+    // case '.apng':
+    //     return 'image/apng';
+    // case '.avif':
+    //     return 'image/avif';
+    // case '.gif':
+    //     return 'image/gif';
+    // case '.jpeg':
+    //     return 'image/jpeg';
+    // case '.jpg':
+    //     return 'image/jpeg';
+    // case '.png':
+    //     return 'image/png';
+    // case '.svg':
+    //     return 'image/svg+xml';
+    // case '.webp':
+    //     return 'image/webp';
 
-    describe('makeImageContentType', () => {
-        const testCases: { [key: string]: testCase } = {
-            "degenerate": {
-                contentType: "image/png",
-                want: "png"
-            },
+    describe('getContentTypeForExtension', () => {
+        const testCases: {
+            [key: string]: {
+                ext: string,
+                want: string,
+            }
+        } = {
+            ".apng": { want: "image/apng", ext: ".apng" },
+            ".avif": { want: "image/avif", ext: ".avif" },
+            ".gif": { want: "image/gif", ext: ".gif" },
+            ".jpeg": { want: "image/jpeg", ext: ".jpeg" },
+            ".jpg": { want: "image/jpeg", ext: ".jpg" },
+            ".png": { want: "image/png", ext: ".png" },
+            ".svg": { want: "image/svg+xml", ext: ".svg" },
+            ".webp": { want: "image/webp", ext: ".webp" },
         };
         for (const name in testCases) {
             const tc = testCases[name];
             it(name, () => {
-                const got = makeImageContentType(tc.contentType);
-                // expect(got).to.equal(tc.want);
+                const got = getContentTypeForExtension(tc.ext);
+                expect(got).to.equal(tc.want);
             });
         }
     });

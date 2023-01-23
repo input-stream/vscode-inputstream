@@ -160,7 +160,8 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
 
         const files = fileUris.map((uri: vscode.Uri) => {
             const name = path.posix.basename(uri.fsPath);
-            const contentType = makeImageContentType(name);
+            const ext = path.posix.extname(name);
+            const contentType = getContentTypeForExtension(ext);
             const data = Buffer.from(fs.readFileSync(uri.fsPath));
             return { name, contentType, data };
         });
@@ -1217,7 +1218,7 @@ class InputNode extends DirNode<FileNode> {
 
     async createFile(name: string, data: Uint8Array): Promise<FileNode> {
         const ext = path.posix.extname(name);
-        const contentType = makeContentType(ext);
+        const contentType = getContentTypeForExtension(ext);
         if (!contentType) {
             throw vscode.FileSystemError.NoPermissions(`Input "${this.input.title}" does not support adding "${ext}" files`);
         }
@@ -1689,15 +1690,7 @@ function sha256Bytes(buf: Buffer): string {
     return hex;
 }
 
-function makeContentType(ext: string): string | undefined {
-    const contentType = makeImageContentType(ext);
-    if (contentType) {
-        return contentType;
-    }
-    // TODO: add additional text formats?
-}
-
-export function makeImageContentType(ext: string): string | undefined {
+export function getContentTypeForExtension(ext: string): string | undefined {
     switch (ext) {
         case '.apng':
             return 'image/apng';
