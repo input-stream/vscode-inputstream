@@ -4,4 +4,4 @@ Blogging for software developers.
 
 [input.stream](https://input.stream) extension for Visual Studio Code.
 
-Status: Experimental.
+Status: Experimental.  Data loss may occur.
