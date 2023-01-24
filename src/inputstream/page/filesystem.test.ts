@@ -499,7 +499,11 @@ describe('Filesystem', () => {
             const resourceName = '/uploads/1/blobs/a7e5d18e9589d2575428a419626b56896c11bcf1e99e927c3296b1b9dd6dcb23/14';
             await inputFileNode.setData(smallGif);
             expect(Array.from(bytestream.service.writeData.keys())).to.deep.equal([resourceName]);
-            expect(Array.from(bytestream.service.writeData.values())).to.deep.equal([smallGif]);
+            const chunks = bytestream.service.writeData.get(resourceName);
+            expect(chunks).to.have.length(1);
+            const got = chunks![0];
+            const want = smallGif;
+            expect(want).to.deep.equal(got);
         });
 
     });
