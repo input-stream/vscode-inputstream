@@ -10,6 +10,7 @@ module.exports = {
 		'eslint:recommended',
 		'plugin:@typescript-eslint/recommended',
 	],
+	ignorePatterns: ["src/proto/**/*.ts"],
 	rules: {
 		'semi': [
 			2,
