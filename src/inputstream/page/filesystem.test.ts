@@ -1,11 +1,16 @@
 
 import { describe, it } from "@jest/globals";
 import { expect } from "chai";
-import { exportedForTesting, FileEntry } from "./filesystem";
+import { ClientContext, DirectoryEntry, Entry, exportedForTesting, FileEntry, IFileUploader, sha256Bytes } from "./filesystem";
 import { File } from "../../proto/build/stack/inputstream/v1beta1/File";
 import { Input, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from "../../proto/build/stack/inputstream/v1beta1/Input";
 import { TextDecoder } from "util";
 import { User } from "../../proto/build/stack/auth/v1beta1/User";
+import { InputsClientServer } from "../inputStreamServer";
+import { BytestreamClientServer } from "../byteStreamServer";
+import { InputsGRPCClient } from "../inputStreamClient";
+
+const smallGif = Buffer.from([47, 49, 46, 38, 39, 61, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 21]);
 
 describe('Filesystem', () => {
     it('should pass sanity check', () => { });
@@ -430,70 +435,73 @@ describe('Filesystem', () => {
         });
     });
 
-    // describe('InputFileNode', () => {
-    //     let isc: IInputStreamClient;
-    //     let bsc: IByteStreamClient;
-    //     let ctx: ClientContext;
-    //     let uploader: IFileUploader;
-    //     let node: FileEntry;
+    describe('InputFileNode', () => {
+        const user: User = { login: 'octocat' };
+        let bytestream: BytestreamClientServer;
+        let inputs: InputsClientServer;
+        let ctx: ClientContext;
+        let uploader: IFileUploader;
+        let inputFileNode: FileEntry;
 
-    //     beforeEach(() => {
-    //         isc = {
-    //             createInput: jest.fn(),
-    //             getInput: jest.fn(),
-    //             updateInput: jest.fn(),
-    //             removeInput: jest.fn(),
-    //             listInputs: jest.fn(),
-    //         };
-    //         bsc = {
-    //             read: jest.fn(),
-    //             write: jest.fn(),
-    //         };
-    //         ctx = {
-    //             inputStreamClient: async (): Promise<IInputStreamClient> => isc,
-    //             byteStreamClient: async (): Promise<IByteStreamClient> => bsc,
-    //         };
-    //         uploader = {
-    //             uploadFile: jest.fn(),
-    //         };
-    //         node = new exportedForTesting.InputFileNode(
-    //             'image.png',
-    //             ctx,
-    //             uploader,
-    //             {
-    //                 name: 'image.png',
-    //             },
-    //         );
-    //     });
+        afterEach(() => {
+            bytestream.server.forceShutdown();
+            inputs.server.forceShutdown();
+        });
 
-    //     it("FileStat", async () => {
-    //         expect(node.name).to.equal('image.png');
-    //         expect(node.mtime).to.equal(0);
-    //         expect(node.ctime).to.equal(0);
-    //         expect(node.size).to.equal(0);
-    //     });
+        beforeEach(async () => {
+            inputs = new InputsClientServer();
+            bytestream = new BytestreamClientServer();
+            await Promise.all([bytestream.connect(), inputs.connect()]);
 
-    //     describe('getData', () => {
-    //         let bytestream: BytestreamClientServer;
-    //         let ctx: ClientContext = {
+            ctx = {
+                user,
+                inputsClient: new InputsGRPCClient(inputs.client),
+                byteStreamClient: bytestream.client,
+                wantFileProgress: false,
+            };
 
-    //         }
-    //         beforeEach(async () => {
-    //             bytestream = new BytestreamClientServer();
-    //             return bytestream.connect();
-    //         });
+            uploader = new exportedForTesting.InputNode(ctx, user, {
+                id: '1',
+                title: 'My Title',
+                titleSlug: 'my-title',
+                status: InputStatus.STATUS_DRAFT,
+            });
 
-    //         afterEach(() => {
-    //             bytestream.server.forceShutdown();
-    //         });
+            inputFileNode = new exportedForTesting.InputFileNode(
+                'image.gif',
+                ctx,
+                uploader,
+                {
+                    name: 'image.gif',
+                    size: smallGif.byteLength,
+                    sha256: sha256Bytes(smallGif),
+                },
+            );
 
-    //         it('calls loadData if not initialized', () => {
-    //             (bsc.read as jest.MockInstance<ReadRequest, ClientReadableStream<ReadResponse>>).mockResolvedValue();
-    //         });
+        });
 
-    //     });
+        it("FileStat", async () => {
+            expect(inputFileNode.name).to.equal('image.gif');
+            expect(inputFileNode.mtime).to.equal(0);
+            expect(inputFileNode.ctime).to.equal(0);
+            expect(inputFileNode.size).to.equal(0);
+        });
 
+        it('getData reads from bytestream', async () => {
+            const want = smallGif;
+            const resourceName = '/blobs/a7e5d18e9589d2575428a419626b56896c11bcf1e99e927c3296b1b9dd6dcb23/14';
+            bytestream.service.readData.set(resourceName, [want]);
+            const got = await inputFileNode.getData();
+            expect(got).to.deep.equal(want);
+        });
 
-    // });
+        // it('setData writes to bytestream', async () => {
+        //     const resourceName = '/uploads/1/blobs/a7e5d18e9589d2575428a419626b56896c11bcf1e99e927c3296b1b9dd6dcb23/14';
+        //     await inputFileNode.setData(smallGif);
+        //     expect(Array.from(bytestream.service.writeData.keys())).to.deep.equal([resourceName]);
+        //     expect(Array.from(bytestream.service.writeData.values())).to.deep.equal([smallGif]);
+        // });
+
+    });
 
 });

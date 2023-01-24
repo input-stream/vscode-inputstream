@@ -1,6 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 
-import { ByteStreamClient } from '../proto/google/bytestream/ByteStream';
+import { ByteStreamClient, ByteStreamDefinition } from '../proto/google/bytestream/ByteStream';
 import { loadByteStreamProtos } from './configuration';
 import { ProtoGrpcType as ByteStreamProtoType } from '../proto/bytestream';
 import { QueryWriteStatusRequest } from '../proto/google/bytestream/QueryWriteStatusRequest';
@@ -9,6 +9,7 @@ import { ReadRequest } from '../proto/google/bytestream/ReadRequest';
 import { ReadResponse } from '../proto/google/bytestream/ReadResponse';
 import { WriteRequest } from '../proto/google/bytestream/WriteRequest';
 import { WriteResponse } from '../proto/google/bytestream/WriteResponse';
+import { MethodDefinition } from '@grpc/proto-loader';
 
 export type Chunk = Buffer | Uint8Array | string;
 
@@ -64,9 +65,9 @@ export class InMemoryBytestreamService {
 
     get implementation(): grpc.UntypedServiceImplementation {
         return {
-            read: this.read.bind(this),
-            write: this.write.bind(this),
-            queryWriteStatus: this.queryWriteStatus.bind(this),
+            Read: this.read.bind(this),
+            Write: this.write.bind(this),
+            QueryWriteStatus: this.queryWriteStatus.bind(this),
         };
     }
 
@@ -79,7 +80,7 @@ export class BytestreamClientServer {
     proto: ByteStreamProtoType;
     server: grpc.Server;
     service: InMemoryBytestreamService;
-    _client: ByteStreamClient | undefined;
+    private _client: ByteStreamClient | undefined;
 
     constructor(private host = '0.0.0.0', private port = '0') {
         this.proto = loadByteStreamProtos('./proto/bytestream.proto');

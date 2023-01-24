@@ -40,8 +40,10 @@ const inputNodePredicate = (child: Entry) => child instanceof InputNode;
 const userNodePredicate = (child: Entry) => child instanceof UserNode;
 
 export type ClientContext = {
+    user: User;
     inputsClient: IInputsGRPCClient;
     byteStreamClient: IByteStreamGRPCClient;
+    wantFileProgress?: boolean;
 }
 
 /**
@@ -63,8 +65,10 @@ export class PageFileSystemProvider implements vscode.Disposable, vscode.FileSys
         private byteStreamClient: IByteStreamGRPCClient,
     ) {
         this._root = new RootNode({
+            user,
             inputsClient,
             byteStreamClient,
+            wantFileProgress: true,
         });
         this._root.addStaticDir(makeUserProfileDir(this.user));
         this._root.addStaticDir(new VscodeDirNode(this._fireSoon.bind(this)));
@@ -775,11 +779,11 @@ class Filesystem implements vscode.FileSystem {
     }
 }
 
-interface Entry extends vscode.FileStat {
+export interface Entry extends vscode.FileStat {
     name: string;
 }
 
-interface DirectoryEntry<T extends Entry> extends Entry {
+export interface DirectoryEntry<T extends Entry> extends Entry {
     getChild(name: string): Promise<T | undefined>;
     getChildren(): Promise<T[]>;
     createFile(name: string, content: Uint8Array): Promise<T>;
@@ -795,7 +799,7 @@ export interface FileEntry extends Entry {
 
 abstract class FileNode implements FileEntry {
     public type = vscode.FileType.File;
-    public size = 0;
+    public get size() { return 0; }
 
     constructor(
         public name: string,
@@ -1302,35 +1306,44 @@ class InputNode extends DirNode<FileNode> {
         const sha256 = sha256Bytes(buffer);
         const resourceName = makeBytestreamUploadResourceName(this.input.id!, sha256, size);
 
-        await this.writeBlob(file, resourceName, buffer);
+        if (this.ctx.wantFileProgress) {
+            await vscode.window.withProgress<void>({
+                location: vscode.ProgressLocation.Notification,
+                title: `Uploading ${path.basename(file.name!)}...`,
+                cancellable: true,
+            }, (progress: vscode.Progress<{
+                message?: string | undefined,
+                increment?: number | undefined,
+            }>, token: vscode.CancellationToken): Promise<void> => {
+                return this.writeBlob(progress, token, file, resourceName, buffer);
+            });
+        } else {
+            // const tokenSource = new vscode.CancellationTokenSource();
+            const emitter = new vscode.EventEmitter();
+            await this.writeBlob(
+                {
+                    report: (update: { message: string | undefined, increment: number | undefined }) => { return; },
+                },
+                {
+                    isCancellationRequested: false,
+                    onCancellationRequested: emitter.event,
+                },
+                file,
+                resourceName,
+                buffer,
+            );
+        }
 
         return sha256;
     }
 
     private async writeBlob(
-        file: InputFile,
-        resourceName: string,
-        buffer: Buffer): Promise<void> {
-
-        return vscode.window.withProgress<void>({
-            location: vscode.ProgressLocation.Notification,
-            title: `Uploading ${path.basename(file.name!)}...`,
-            cancellable: true,
-        }, (progress: vscode.Progress<{
-            message?: string | undefined,
-            increment?: number | undefined,
-        }>, token: vscode.CancellationToken): Promise<void> => {
-            return this.writeBlobWithProgress(progress, token, file, resourceName, buffer);
-        });
-
-    }
-
-    private async writeBlobWithProgress(
         progress: vscode.Progress<{ message?: string | undefined, increment?: number | undefined }>,
         token: vscode.CancellationToken,
         file: InputFile,
         resourceName: string,
-        buffer: Buffer): Promise<void> {
+        buffer: Buffer,
+    ): Promise<void> {
 
         const client = this.ctx.byteStreamClient;
         const size = buffer.byteLength;
@@ -1426,6 +1439,10 @@ function didCaptureImageInfo(file: InputFile, chunk: Buffer): boolean {
 class ContentFileNode extends FileNode {
     private data: Uint8Array | undefined;
 
+    get size(): number {
+        return this.data ? this.data.byteLength : 0;
+    }
+
     constructor(
         name: string,
         private ctx: ClientContext,
@@ -1440,7 +1457,6 @@ class ContentFileNode extends FileNode {
         }
         if (input.content?.shortPost?.markdown) {
             this.data = new TextEncoder().encode(input.content?.shortPost?.markdown);
-            this.size = this.data.byteLength;
         }
     }
 
@@ -1481,9 +1497,7 @@ class ContentFileNode extends FileNode {
 
         // this.mtime = response.input?.modifiedAt; // NEED THIS
         this.mtime = this.mtime + 1;
-
         this.data = data;
-        this.size = data.byteLength;
     }
 
     private async loadData(): Promise<Uint8Array> {
@@ -1500,6 +1514,10 @@ export interface IFileUploader {
 
 class InputFileNode extends FileNode {
     private data: Uint8Array | Buffer | undefined;
+
+    get size(): number {
+        return this.data ? this.data.byteLength : 0;
+    }
 
     constructor(
         name: string,
@@ -1530,9 +1548,16 @@ class InputFileNode extends FileNode {
     }
 
     private async loadData(): Promise<Uint8Array> {
+        if (!this.file.sha256) {
+            throw vscode.FileSystemError.NoPermissions(`file sha256 is mandatory`);
+        }
+        if (!this.file.size) {
+            throw vscode.FileSystemError.NoPermissions(`file size is mandatory`);
+        }
+
         const client = this.ctx.byteStreamClient;
-        const resourceName = makeBytestreamDownloadResourceName(this.file.sha256!, Long.fromValue(this.file.size!).toNumber());
-        const buffer = Buffer.alloc(Long.fromValue(this.file.size!).toNumber());
+        const resourceName = makeBytestreamDownloadResourceName(this.file.sha256, Long.fromValue(this.file.size).toNumber());
+        const buffer = Buffer.alloc(Long.fromValue(this.file.size).toNumber());
         const call = client.read({
             resourceName: resourceName,
             readOffset: 0,
@@ -1635,7 +1660,7 @@ function makeInputExternalWatchUrl(input: Input): vscode.Uri {
     return vscode.Uri.parse(`https://input.stream/@${input.login}/${input.titleSlug}/view/watch`);
 }
 
-function sha256Bytes(buf: Buffer): string {
+export function sha256Bytes(buf: Buffer): string {
     const hashSum = crypto.createHash('sha256');
     hashSum.update(buf);
     const hex = hashSum.digest('hex');
@@ -1690,5 +1715,6 @@ export const exportedForTesting = {
     makeUserName,
     makeUserProfileDir,
     InputFileNode,
+    InputNode,
 };
 

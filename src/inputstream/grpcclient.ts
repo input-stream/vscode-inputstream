@@ -26,7 +26,7 @@ export class GRPCClient<T extends grpc.Client> implements vscode.Disposable {
 
     constructor(
         protected readonly client: T,
-        private readonly refresher: AccessTokenRefresher,
+        private readonly refresher?: AccessTokenRefresher,
         private defaultDeadlineSeconds = 30,
     ) {
     }
@@ -74,12 +74,14 @@ export class GRPCClient<T extends grpc.Client> implements vscode.Disposable {
 
             // Attempt to refresh the token if we are unauthenticated
             if (err.code === grpc.status.UNAUTHENTICATED) {
-                try {
-                    await this.refresher.refreshAccessToken();
-                    return this.unaryCall(desc, fn, Math.max(0, limit - 1));
-                } catch (e2) {
-                    if (!silent) {
-                        vscode.window.showWarningMessage('Could not refresh access token: ' + JSON.stringify(e2));
+                if (this.refresher) {
+                    try {
+                        await this.refresher.refreshAccessToken();
+                        return this.unaryCall(desc, fn, Math.max(0, limit - 1));
+                    } catch (e2) {
+                        if (!silent) {
+                            vscode.window.showWarningMessage('Could not refresh access token: ' + JSON.stringify(e2));
+                        }
                     }
                 }
             }

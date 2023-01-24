@@ -22,7 +22,7 @@ export class InputsGRPCClient extends GRPCClient<InputsClient> implements IInput
 
     constructor(
         client: InputsClient,
-        refresher: AccessTokenRefresher,
+        refresher?: AccessTokenRefresher,
     ) {
         super(client, refresher);
     }
