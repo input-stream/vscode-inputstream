@@ -1,14 +1,15 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
-import { event } from 'vscode-common';
-import { InputStreamClient } from '../inputStreamClient';
+
 import { CommandName } from '../constants';
-import { ImageSearchPanel as ImageSearchWebview, ImageSearchRenderProvider, Message } from './webview';
 import { Container } from '../../container';
-import { SearchImagesRequest } from '../../proto/build/stack/inputstream/v1beta1/SearchImagesRequest';
 import { Duration } from 'luxon';
+import { event } from 'vscode-common';
+import { ImageSearchClient } from '../imageSearchClient';
+import { ImageSearchPanel as ImageSearchWebview, ImageSearchRenderProvider, Message } from './webview';
 import { ImageSearchRenderer } from './renderer';
 import { SearchImage } from '../../proto/build/stack/inputstream/v1beta1/SearchImage';
+import { SearchImagesRequest } from '../../proto/build/stack/inputstream/v1beta1/SearchImagesRequest';
 import { UnsplashImage } from '../../proto/build/stack/inputstream/v1beta1/UnsplashImage';
 
 /**
@@ -16,7 +17,6 @@ import { UnsplashImage } from '../../proto/build/stack/inputstream/v1beta1/Unspl
  */
 export class ImageSearch implements vscode.Disposable {
     protected disposables: vscode.Disposable[] = [];
-    protected client: InputStreamClient | undefined;
     protected webview: ImageSearchWebview | undefined;
     protected renderer = new ImageSearchRenderer();
     protected onDidSearchImageClick = new vscode.EventEmitter<SearchImage>();
@@ -28,17 +28,13 @@ export class ImageSearch implements vscode.Disposable {
     private imagesById = new Map<string, SearchImage>();
 
     constructor(
-        onDidInputStreamClientChange: vscode.Event<InputStreamClient>,
+        private client: ImageSearchClient,
     ) {
-        onDidInputStreamClientChange(this.handleInputStreamClientChange, this, this.disposables);
         this.disposables.push(this.onDidSearchImageClick);
+        this.onDidSearchImageClick.event(this.handleCommandSearchImageClick, this, this.disposables);
+
         this.disposables.push(
             vscode.commands.registerCommand(CommandName.ImageSearch, this.handleCommandImageSearch, this));
-        this.onDidSearchImageClick.event(this.handleCommandSearchImageClick, this, this.disposables);
-    }
-
-    handleInputStreamClientChange(client: InputStreamClient) {
-        this.client = client;
     }
 
     getOrCreateWebview(): ImageSearchWebview {
@@ -110,9 +106,7 @@ export class ImageSearch implements vscode.Disposable {
     }
 
     async searchImages(): Promise<void> {
-
         const webview = this.getOrCreateWebview();
-
         const requestChangeEmitter = new event.Emitter<SearchImagesRequest>();
 
         const requestDidChange = event.Event.debounce(
@@ -151,8 +145,12 @@ export class ImageSearch implements vscode.Disposable {
 
                 // Save the images
                 this.imagesById.clear();
-                response.image?.forEach(
-                    image => this.imagesById.set(image.unsplash?.id!, image));
+                response.image?.forEach(image => {
+                    if (!image.unsplash?.id) {
+                        return;
+                    }
+                    this.imagesById.set(image.unsplash.id, image);
+                });
 
                 // Update summary
                 webview.onDidChangeHTMLSummary.fire('Rendering results...');

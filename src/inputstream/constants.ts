@@ -9,7 +9,7 @@ export enum ViewName {
 }
 
 export enum Scheme {
-    Page = 'page',
+    Stream = 'stream',
 }
 
 export enum ConfigSection {
@@ -27,17 +27,17 @@ export enum ConfigSection {
  */
 export enum CommandName {
     RefreshSuffix = '.refresh',
-    ImagePaste = 'input.stream.image.paste',
     ImageUpload = 'input.stream.image.upload',
     ImageSearch = 'input.stream.image.search',
     InputCreate = 'input.stream.input.create',
-    InputOpen = 'input.stream.input.open',
-    InputLink = 'input.stream.input.link',
-    InputRemove = 'input.stream.input.remove',
+    InputDelete = 'input.stream.input.delete',
+    InputReplace = 'input.stream.input.replace',
     InputPublish = 'input.stream.input.publish',
     InputUnpublish = 'input.stream.input.unpublish',
+    InputView = 'input.stream.input.view',
+    InputWatch = 'input.stream.input.watch',
+    LoginToken = 'input.stream.loginToken',
     Login = 'input.stream.login',
-    DeviceLogin = 'input.stream.deviceLogin',
     ViewInputstreamExplorer = 'workbench.view.extension.inputstream-explorer',
     OpenSetting = 'input.stream.openExtensionSetting',
 }
@@ -93,7 +93,7 @@ export enum ButtonName {
 }
 
 export function getInputURI(input: Input): vscode.Uri {
-    const url = `${Scheme.Page}://input.stream/${input.owner}/${input.id}/${input.titleSlug}.md`;
+    const url = `${Scheme.Stream}:/${input.owner}/${input.id}/${input.titleSlug}.md`;
     return vscode.Uri.parse(url);
 }
 

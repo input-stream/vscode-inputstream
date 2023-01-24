@@ -20,6 +20,10 @@ export interface InputFilterOptions {
    */
   'titleSlug'?: (string);
   /**
+   * filter by title
+   */
+  'title'?: (string);
+  /**
    * filter by tag
    */
   'tag'?: (string);
@@ -46,6 +50,10 @@ export interface InputFilterOptions__Output {
    * filter by title_slug
    */
   'titleSlug': (string);
+  /**
+   * filter by title
+   */
+  'title': (string);
   /**
    * filter by tag
    */

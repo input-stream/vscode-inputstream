@@ -9,16 +9,21 @@ export enum Telemetry {
     FeatureActivate = 'feature.activate',
     FeatureDeactivate = 'feature.deactivate',
     Login = 'input.stream.login',
-    DeviceLogin = 'input.stream.deviceLogin',
+    DeviceLogin = 'input.stream.login',
     Edit = 'input.edit',
     Create = 'input.create',
 }
 
 export enum BuiltInCommands {
-	SetContext = 'setContext',
+    SetContext = 'setContext',
     ClosePanel = 'workbench.action.closePanel',
+    CloseActiveEditor = 'workbench.action.closeActiveEditor',
     MarkdownPreview = 'markdown.showPreview',
     Open = 'vscode.open',
     OpenFolder = 'vscode.openFolder',
     OpenSettings = 'workbench.action.openSettings',
+}
+
+export enum FolderName {
+    Stream = 'Stream',
 }

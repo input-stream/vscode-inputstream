@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
-import { Telemetry } from '../constants';
-import { Container } from '../container';
+
+import { BuiltInCommands, Telemetry } from '../constants';
 import { CommandName } from './constants';
+import { Container } from '../container';
+import { makeInputNodeUri } from './page/filesystem';
 
 export class UriHandler implements vscode.UriHandler, vscode.Disposable {
-
     private disposables: vscode.Disposable[] = [];
 
     constructor() {
@@ -31,17 +32,22 @@ export class UriHandler implements vscode.UriHandler, vscode.Disposable {
             return;
         }
         Container.telemetry.sendTelemetryEvent(Telemetry.Login);
-        return vscode.commands.executeCommand(CommandName.Login, token);
+        return vscode.commands.executeCommand(CommandName.LoginToken, token);
     }
 
     private async edit(uri: vscode.Uri): Promise<void> {
         const query = parseQuery(uri);
-        const inputId = query['input_id'];
-        if (!inputId) {
+        const login = query['login'];
+        if (!login) {
+            return;
+        }
+        const title = query['title'];
+        if (!title) {
             return;
         }
         Container.telemetry.sendTelemetryEvent(Telemetry.Edit);
-        await vscode.commands.executeCommand(CommandName.InputOpen, inputId);
+
+        return vscode.commands.executeCommand(BuiltInCommands.Open, makeInputNodeUri({ login, title }));
     }
 
     private async create(uri: vscode.Uri): Promise<void> {
@@ -58,7 +64,6 @@ export class UriHandler implements vscode.UriHandler, vscode.Disposable {
         }
         this.disposables.length = 0;
     }
-
 }
 
 export function parseQuery(uri: vscode.Uri): { [key: string]: string } {

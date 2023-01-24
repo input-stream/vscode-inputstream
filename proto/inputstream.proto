@@ -103,6 +103,36 @@ message Input {
     string html_url = 17;
     // the owner of the input
     string owner = 18;
+    // associated files for the input
+    FileSet file_set = 19;
+}
+
+message FileSet {
+    repeated File files = 1;
+}
+
+message File {
+    string sha256 = 1;
+    string name = 2;
+    int64 size = 3;
+    uint32 mode = 4;
+    string content_type = 5;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp modified_at = 7;
+    bytes data = 8; // optional data if stored inline
+    ImageInfo image_info = 10;
+    LanguageInfo language_info = 11;
+}
+
+message ImageInfo {
+    uint32 height = 1;
+    uint32 width = 2;
+    uint32 orientation = 3;
+}
+
+message LanguageInfo {
+    // ID is the linguist name from https://github.com/github/linguist/blob/master/lib/linguist/languages.yml
+    string id = 1;
 }
 
 message CreateInputRequest {
@@ -158,10 +188,12 @@ message InputFilterOptions {
     string id = 3;
     // filter by title_slug
     string title_slug = 4;
+    // filter by title
+    string title = 5;
     // filter by tag
-    string tag = 5;
+    string tag = 6;
     // filter by input status
-    Input.Status status = 6;
+    Input.Status status = 7;
 }
 
 message ListInputsResponse {

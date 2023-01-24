@@ -3,6 +3,7 @@
 import type { InputContent as _build_stack_inputstream_v1beta1_InputContent, InputContent__Output as _build_stack_inputstream_v1beta1_InputContent__Output } from '../../../../build/stack/inputstream/v1beta1/InputContent';
 import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../../google/protobuf/Timestamp';
 import type { User as _build_stack_inputstream_v1beta1_User, User__Output as _build_stack_inputstream_v1beta1_User__Output } from '../../../../build/stack/inputstream/v1beta1/User';
+import type { FileSet as _build_stack_inputstream_v1beta1_FileSet, FileSet__Output as _build_stack_inputstream_v1beta1_FileSet__Output } from '../../../../build/stack/inputstream/v1beta1/FileSet';
 import type { Long } from '@grpc/proto-loader';
 
 // Original file: proto/inputstream.proto
@@ -127,6 +128,10 @@ export interface Input {
    * the owner of the input
    */
   'owner'?: (string);
+  /**
+   * associated files for the input
+   */
+  'fileSet'?: (_build_stack_inputstream_v1beta1_FileSet | null);
 }
 
 export interface Input__Output {
@@ -203,4 +208,8 @@ export interface Input__Output {
    * the owner of the input
    */
   'owner': (string);
+  /**
+   * associated files for the input
+   */
+  'fileSet': (_build_stack_inputstream_v1beta1_FileSet__Output | null);
 }

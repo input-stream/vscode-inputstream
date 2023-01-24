@@ -16,7 +16,7 @@ export interface Message {
     value?: string
 }
 
-export interface FormData { [key: string]: string; };
+export interface FormData { [key: string]: string; }
 
 export interface Button {
     type?: string
@@ -47,8 +47,8 @@ interface RenderingOptions {
     subheading?: string
     column?: vscode.ViewColumn
     form?: Form
-    callbacks?: { [key: string]: Function },
-};
+    callbacks?: { [key: string]: any }, // Function, which eslint does not like
+}
 
 export interface Input {
     label?: string
@@ -80,7 +80,7 @@ export class ImageSearchPanel implements vscode.Disposable {
 
     private disposables: vscode.Disposable[] = [];
     private panel: vscode.WebviewPanel | undefined;
-    private callbacks: Map<string, Function> = new Map();
+    private callbacks: Map<string, any> = new Map();
 
     public onDidChangeHTMLSummary: event.Emitter<string>;
     public onDidChangeHTMLResults: event.Emitter<string>;
@@ -426,14 +426,14 @@ export class ImageSearchPanel implements vscode.Disposable {
     }
 
     htmlSummary(opts: RenderingOptions): string {
-        let html = `
+        const html = `
         <div id="summary"></div>
         `;
         return html;
     }
 
     htmlResults(opts: RenderingOptions): string {
-        let html = `
+        const html = `
         <div id="results" style="margin-top: 1rem"></div>
         `;
         return html;
@@ -467,7 +467,7 @@ export class ImageSearchPanel implements vscode.Disposable {
         return `
         <button class="button" type="${button.type ? button.type : 'button'}"
             ${button.secondary ? ' style="background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground)" ' : ''}
-            ${button.onclick ? `onclick="postClick(\'button\', '${button.name}')"` : ''}
+            ${button.onclick ? `onclick="postClick('button', '${button.name}')"` : ''}
             name="${button.name}">
             ${button.label}
         </button>`;
@@ -537,7 +537,7 @@ export class ImageSearchPanel implements vscode.Disposable {
     }
 
     htmlInput(input: Input): string {
-        let html = `<label class="input-label" for="${input.name}">${input.label}</label>
+        const html = `<label class="input-label" for="${input.name}">${input.label}</label>
         <input type="${input.type}"
             id="${input.name}"
             name="${input.name}"
