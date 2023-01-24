@@ -7,7 +7,8 @@
       "es6"
     ],
     "sourceMap": true,
-    "rootDir": "src",
+    "esModuleInterop": true,
+    "rootDir": ".",
     "skipLibCheck": true,
     "strict": true /* enable all strict type-checking options */
   },

@@ -1,7 +1,7 @@
 
 import { describe, it } from "@jest/globals";
 import { expect } from "chai";
-import { ClientContext, DirectoryEntry, Entry, exportedForTesting, FileEntry, IFileUploader, sha256Bytes } from "./filesystem";
+import { ClientContext, exportedForTesting, FileEntry, IFileUploader, sha256Bytes } from "./filesystem";
 import { File } from "../../proto/build/stack/inputstream/v1beta1/File";
 import { Input, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from "../../proto/build/stack/inputstream/v1beta1/Input";
 import { TextDecoder } from "util";
@@ -495,12 +495,12 @@ describe('Filesystem', () => {
             expect(got).to.deep.equal(want);
         });
 
-        // it('setData writes to bytestream', async () => {
-        //     const resourceName = '/uploads/1/blobs/a7e5d18e9589d2575428a419626b56896c11bcf1e99e927c3296b1b9dd6dcb23/14';
-        //     await inputFileNode.setData(smallGif);
-        //     expect(Array.from(bytestream.service.writeData.keys())).to.deep.equal([resourceName]);
-        //     expect(Array.from(bytestream.service.writeData.values())).to.deep.equal([smallGif]);
-        // });
+        it('setData writes to bytestream', async () => {
+            const resourceName = '/uploads/1/blobs/a7e5d18e9589d2575428a419626b56896c11bcf1e99e927c3296b1b9dd6dcb23/14';
+            await inputFileNode.setData(smallGif);
+            expect(Array.from(bytestream.service.writeData.keys())).to.deep.equal([resourceName]);
+            expect(Array.from(bytestream.service.writeData.values())).to.deep.equal([smallGif]);
+        });
 
     });
 

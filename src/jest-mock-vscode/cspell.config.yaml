@@ -1,0 +1,20 @@
+version: '0.2'
+ignorePaths:
+  - .gitignore
+  - .prettierignore
+  - '*-lock.{yaml,json}'
+  - /dist
+  - .git/*/**
+  - node_modules
+dictionaryDefinitions: []
+dictionaries: []
+words:
+  - endregion
+  - Evaluatable
+  - linkcode
+  - pnpm
+  - quickfix
+  - rfdc
+  - VSIX
+ignoreWords: []
+import: []
