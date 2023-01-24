@@ -7,10 +7,10 @@ export * from "./MarkdownString";
 export * from "./fs";
 export { FileSystemError } from "./FileSystemError";
 export {
-    WorkspaceConfiguration,
-    createMockWorkspaceConfiguration,
-    MockWorkspaceConfiguration,
-    MockWorkspaceConfigurationData,
+  WorkspaceConfiguration,
+  createMockWorkspaceConfiguration,
+  MockWorkspaceConfiguration,
+  MockWorkspaceConfigurationData,
 } from "./WorkspaceConfiguration";
 export { Workspace, workspace, MockWorkspace } from "./workspace";
 

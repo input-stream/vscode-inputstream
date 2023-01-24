@@ -8,16 +8,16 @@
  */
 
 export const OverviewRulerLane = {
-    Left: null,
+  Left: null,
 };
 
 export const debug = {
-    onDidTerminateDebugSession: jest.fn(),
-    startDebugging: jest.fn(),
+  onDidTerminateDebugSession: jest.fn(),
+  startDebugging: jest.fn(),
 };
 
 export const commands = {
-    executeCommand: jest.fn(),
+  executeCommand: jest.fn(),
 };
 
 // cspell:word Evaluatable
