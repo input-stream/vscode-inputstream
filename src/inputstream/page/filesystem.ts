@@ -806,8 +806,8 @@ abstract class Node {
 
     constructor(
         public name: string,
-        ctime: number = 0,
-        mtime: number = 0,
+        ctime = 0,
+        mtime = 0,
     ) {
         this._ctime = ctime;
         this._mtime = mtime;
@@ -818,14 +818,14 @@ abstract class Node {
     public get mtime() { return this._mtime; }
 
     protected set mtimeTimestamp(ts: Timestamp | null | undefined) {
-        if (ts) {
-            this._mtime = Long.fromValue(ts?.seconds!).toNumber() * 1000;
+        if (ts && typeof ts.seconds !== 'undefined') {
+            this._mtime = Long.fromValue(ts.seconds).toNumber() * 1000;
         }
     }
 
     protected set ctimeTimestamp(ts: Timestamp | null | undefined) {
-        if (ts) {
-            this._ctime = Long.fromValue(ts?.seconds!).toNumber() * 1000;
+        if (ts && typeof ts.seconds !== 'undefined') {
+            this._ctime = Long.fromValue(ts.seconds).toNumber() * 1000;
         }
     }
 
@@ -837,8 +837,8 @@ abstract class FileNode extends Node implements FileEntry {
 
     constructor(
         name: string,
-        ctime: number = 0,
-        mtime: number = 0,
+        ctime = 0,
+        mtime = 0,
     ) {
         super(name, ctime, mtime);
     }
@@ -855,8 +855,8 @@ abstract class DirNode<T extends Entry> extends Node implements DirectoryEntry<T
 
     constructor(
         name: string,
-        ctime: number = 0,
-        mtime: number = 0,
+        ctime = 0,
+        mtime = 0,
     ) {
         super(name, ctime, mtime);
         this._children = new Map();

@@ -488,11 +488,13 @@ describe('Filesystem', () => {
         });
 
         it('getData reads from bytestream', async () => {
+            const mtimeStart = inputFileNode.mtime;
             const want = smallGif;
             const resourceName = '/blobs/a7e5d18e9589d2575428a419626b56896c11bcf1e99e927c3296b1b9dd6dcb23/14';
             bytestream.service.readData.set(resourceName, [want]);
             const got = await inputFileNode.getData();
             expect(got).to.deep.equal(want);
+            expect(inputFileNode.mtime).to.equal(mtimeStart);
         });
 
         it('setData writes to bytestream', async () => {
