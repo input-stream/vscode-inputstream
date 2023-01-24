@@ -496,6 +496,7 @@ describe('Filesystem', () => {
         });
 
         it('setData writes to bytestream', async () => {
+            const mtimeStart = inputFileNode.mtime;
             const resourceName = '/uploads/1/blobs/a7e5d18e9589d2575428a419626b56896c11bcf1e99e927c3296b1b9dd6dcb23/14';
             await inputFileNode.setData(smallGif);
             expect(Array.from(bytestream.service.writeData.keys())).to.deep.equal([resourceName]);
@@ -504,6 +505,7 @@ describe('Filesystem', () => {
             const got = chunks![0];
             const want = smallGif;
             expect(want).to.deep.equal(got);
+            expect(inputFileNode.mtime).to.be.greaterThan(mtimeStart);
         });
 
     });

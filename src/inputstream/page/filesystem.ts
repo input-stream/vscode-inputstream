@@ -29,6 +29,9 @@ import { UnaryCallOptions } from '../grpcclient';
 import { User } from '../../proto/build/stack/auth/v1beta1/User';
 import { WriteRequest } from '../../proto/google/bytestream/WriteRequest';
 import { WriteResponse } from '../../proto/google/bytestream/WriteResponse';
+import { realpath } from 'fs';
+import { Timestamp } from '../../proto/google/protobuf/Timestamp';
+import { time } from 'console';
 
 
 const MAX_CLIENT_BODY_SIZE = 10 * 1024 * 1024; // upload size limit
@@ -797,49 +800,83 @@ export interface FileEntry extends Entry {
     setData(data: Uint8Array): Promise<void>;
 }
 
-abstract class FileNode implements FileEntry {
+abstract class Node {
+    protected _ctime: number;
+    protected _mtime: number;
+
+    constructor(
+        public name: string,
+        ctime: number = 0,
+        mtime: number = 0,
+    ) {
+        this._ctime = ctime;
+        this._mtime = mtime;
+    }
+
+    public get ctime() { return this._ctime; }
+
+    public get mtime() { return this._mtime; }
+
+    protected set mtimeTimestamp(ts: Timestamp | null | undefined) {
+        if (ts) {
+            this._mtime = Long.fromValue(ts?.seconds!).toNumber() * 1000;
+        }
+    }
+
+    protected set ctimeTimestamp(ts: Timestamp | null | undefined) {
+        if (ts) {
+            this._ctime = Long.fromValue(ts?.seconds!).toNumber() * 1000;
+        }
+    }
+
+}
+
+abstract class FileNode extends Node implements FileEntry {
     public type = vscode.FileType.File;
     public get size() { return 0; }
 
     constructor(
-        public name: string,
-        public ctime: number = 0,
-        public mtime: number = 0
-    ) { }
+        name: string,
+        ctime: number = 0,
+        mtime: number = 0,
+    ) {
+        super(name, ctime, mtime);
+    }
 
     abstract getData(): Promise<Uint8Array>;
     abstract setData(data: Uint8Array): Promise<void>;
 }
 
-abstract class DirNode<T extends Entry> implements DirectoryEntry<T> {
-    private children: Map<string, T>;
+abstract class DirNode<T extends Entry> extends Node implements DirectoryEntry<T> {
+    private _children: Map<string, T>;
 
     public type = vscode.FileType.Directory;
-    public get size(): number { return this.children.size; }
+    public get size(): number { return this._children.size; }
 
     constructor(
-        public name: string,
-        public ctime: number = 0,
-        public mtime: number = 0
+        name: string,
+        ctime: number = 0,
+        mtime: number = 0,
     ) {
-        this.children = new Map();
+        super(name, ctime, mtime);
+        this._children = new Map();
     }
 
     public addChild<C extends T>(child: C): C {
-        this.children.set(child.name, child);
+        this._children.set(child.name, child);
         return child;
     }
 
     public removeChild(child: T): void {
-        this.children.delete(child.name);
+        this._children.delete(child.name);
     }
 
     async getChild(name: string): Promise<T | undefined> {
-        return this.children.get(name);
+        return this._children.get(name);
     }
 
     async getChildren(): Promise<T[]> {
-        return Array.from(this.children.values());
+        return Array.from(this._children.values());
     }
 
     abstract rename(src: string, dst: string): Promise<T>;
@@ -1079,7 +1116,7 @@ class UserNode extends DirNode<InputNode> {
         }
         await client.removeInput(child.input.id!);
         this.removeChild(child);
-        this.mtime = Date.now();
+        this._mtime = Date.now();
     }
 
     async getChild(name: string): Promise<InputNode | undefined> {
@@ -1449,12 +1486,9 @@ class ContentFileNode extends FileNode {
         private input: Input,
     ) {
         super(name);
-        if (input.createdAt) {
-            this.ctime = Long.fromValue(input.createdAt!.seconds!).toNumber() * 1000;
-        }
-        if (input.updatedAt) {
-            this.mtime = Long.fromValue(input.updatedAt!.seconds!).toNumber() * 1000;
-        }
+        this.ctimeTimestamp = input.createdAt;
+        this.mtimeTimestamp = input.updatedAt;
+
         if (input.content?.shortPost?.markdown) {
             this.data = new TextEncoder().encode(input.content?.shortPost?.markdown);
         }
@@ -1486,18 +1520,16 @@ class ContentFileNode extends FileNode {
         };
 
         const response = await client.updateInput(this.input, { paths: ['content'] });
+        this.mtimeTimestamp = response.input?.updatedAt;
+        this.data = data;
 
-        if (response.input && response.input.title && response.input.title !== this.input.title) {
+        if (response.input?.title && response.input.title !== this.input.title) {
             const current = this.input;
             const next = response.input;
             setTimeout(() => {
                 vscode.commands.executeCommand(CommandName.InputReplace, makeInputNodeUri(current), makeInputNodeUri(next), next);
             }, 50);
         }
-
-        // this.mtime = response.input?.modifiedAt; // NEED THIS
-        this.mtime = this.mtime + 1;
-        this.data = data;
     }
 
     private async loadData(): Promise<Uint8Array> {
@@ -1526,9 +1558,9 @@ class InputFileNode extends FileNode {
         public file: InputFile,
     ) {
         super(name);
-        if (file.modifiedAt) {
-            this.mtime = Long.fromValue(file.modifiedAt!.seconds!).toNumber() * 1000;
-        }
+        this.ctimeTimestamp = file.createdAt;
+        this.mtimeTimestamp = file.modifiedAt;
+
         if (file.data instanceof Buffer || file.data instanceof Uint8Array) {
             this.data = file.data;
         }
@@ -1545,9 +1577,10 @@ class InputFileNode extends FileNode {
         this.file.data = data;
         await this.uploader.uploadFile(this.file);
         this.data = data;
+        this._mtime = Date.now();
     }
 
-    private async loadData(): Promise<Uint8Array> {
+    private loadData(): Promise<Uint8Array> {
         if (!this.file.sha256) {
             throw vscode.FileSystemError.NoPermissions(`file sha256 is mandatory`);
         }
@@ -1561,8 +1594,8 @@ class InputFileNode extends FileNode {
         const call = client.read({
             resourceName: resourceName,
             readOffset: 0,
-            // readLimit: 65536,
         });
+
         return new Promise<Buffer>((resolve, reject) => {
             call.on('status', (status: grpc.StatusObject) => {
                 switch (status.code) {
