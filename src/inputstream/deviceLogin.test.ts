@@ -3,20 +3,30 @@ import * as vscode from 'vscode';
 import { describe, it } from "@jest/globals";
 import { expect } from "chai";
 import { loadAuthProtos } from "./configuration";
-import { DeviceLogin } from "./deviceLogin";
+import { DeviceLogin, VSCodeCommands, VSCodeEnv } from "./deviceLogin";
 import { AuthClientServer } from './authServiceServer';
+import { User } from '../proto/build/stack/auth/v1beta1/User';
+import { DeviceLoginResponse } from '../proto/build/stack/auth/v1beta1/DeviceLoginResponse';
 
 describe('DeviceLogin', () => {
     const proto = loadAuthProtos('proto/auth.proto');
     let globalState: vscode.Memento;
     let auths: AuthClientServer;
     let deviceLogin: DeviceLogin;
+    let vsc: VSCodeEnv & VSCodeCommands;
+    let openExternal: jest.Mock<Promise<boolean>, any>;
 
     beforeEach(async () => {
+        openExternal = jest.fn();
+        vsc = {
+            openExternal,
+            registerCommand: jest.fn(),
+            executeCommand: jest.fn(),
+        };
         globalState = new InMemoryMemento();
         auths = new AuthClientServer();
         const client = await auths.connect();
-        deviceLogin = new DeviceLogin(globalState, client);
+        deviceLogin = new DeviceLogin(globalState, vsc, vsc, client);
     });
 
     it('constructor', () => {
@@ -27,13 +37,37 @@ describe('DeviceLogin', () => {
         try {
             await deviceLogin.refreshAccessToken();
         } catch (e) {
-            expect((e as unknown as Error).message).to.equal('refresh token is not available, have you logged in?');
+            expect((e as unknown as Error).message).to.equal('refresh token is not available, please login');
         }
     });
 
-    xit('uses saved token from memento if exists', async () => {
-        await globalState.update('input.stream.api.DeviceLoginResponse', 'fake-jwt');
+    it('uses saved token from memento if exists', async () => {
+        let loginToken: string | undefined;
+        let loginUser: User | undefined;
+        auths.service.users.set('foo-jwt', { login: 'foo' });
+        const savedResponse: DeviceLoginResponse = {
+            apiToken: 'foo-jwt',
+        };
+        await globalState.update(
+            'input.stream.api.DeviceLoginResponse',
+            savedResponse,
+        );
+
+        deviceLogin.onDidLoginTokenChange.event((token: string) => {
+            loginToken = token;
+        });
+        deviceLogin.onDidAuthUserChange.event((user: User) => {
+            loginUser = user;
+        });
         await deviceLogin.refreshAccessToken();
+
+        expect(openExternal.mock.calls).to.have.length(1);
+        expect(openExternal.mock.calls[0]).to.have.length(1);
+        const urlToOpen = openExternal.mock.calls[0][0] as vscode.Uri;
+        expect(urlToOpen.toString()).to.equal('https://input.stream/github_login');
+
+        expect(loginToken).to.equal('<accessToken!>');
+        expect(loginUser).to.deep.equal({ login: 'foo' });
     });
 
 });

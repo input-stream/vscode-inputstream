@@ -55,7 +55,7 @@ export class InputStreamFeature implements IExtensionFeature, vscode.Disposable 
         const inputStreamProtos = loadInputStreamProtos(cfg.inputstream.protofile);
 
         this.authClient = createAuthServiceClient(authProtos, cfg.auth.address);
-        this.deviceLogin = this.add(new DeviceLogin(ctx.globalState, this.authClient));
+        this.deviceLogin = this.add(new DeviceLogin(ctx.globalState, vscode.env, vscode.commands, this.authClient));
         this.deviceLogin.onDidAuthUserChange.event(this.handleAuthUserChange, this, this.disposables);
         this.deviceLogin.onDidLoginTokenChange.event(token => {
             this.bytestreamClient?.setToken(token);

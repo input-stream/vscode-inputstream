@@ -4,7 +4,6 @@ import * as vscode from 'vscode';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
 import { BuiltInCommands, ExtensionID } from '../constants';
 import { CommandName, ContextName, MementoName } from './constants';
-import { Container } from '../container';
 import { DeviceLoginResponse } from '../proto/build/stack/auth/v1beta1/DeviceLoginResponse';
 import { isTimestampPast, setCommandContext } from '../common';
 import { LoginResponse } from '../proto/build/stack/auth/v1beta1/LoginResponse';
@@ -16,6 +15,15 @@ export interface AccessTokenRefresher {
     refreshAccessToken(): Promise<void>;
 }
 
+export interface VSCodeEnv {
+    openExternal(target: vscode.Uri): Thenable<boolean>;
+}
+
+export interface VSCodeCommands {
+    registerCommand(command: string, callback: (...args: any[]) => any, thisArg?: any): vscode.Disposable;
+    executeCommand<T = unknown>(command: string, ...rest: any[]): Thenable<T>;
+}
+
 export class DeviceLogin implements vscode.Disposable, AccessTokenRefresher {
     private disposables: vscode.Disposable[] = [];
 
@@ -24,19 +32,21 @@ export class DeviceLogin implements vscode.Disposable, AccessTokenRefresher {
 
     constructor(
         private globalState: vscode.Memento,
+        private env: VSCodeEnv,
+        private commands: VSCodeCommands,
         private authClient: AuthServiceClient,
     ) {
         this.disposables.push(this.onDidLoginTokenChange);
         this.disposables.push(this.onDidAuthUserChange);
 
-        this.disposables.push(vscode.commands.registerCommand(
+        this.disposables.push(commands.registerCommand(
             CommandName.Login, this.handleCommandDeviceLogin, this));
-        this.disposables.push(vscode.commands.registerCommand(
+        this.disposables.push(commands.registerCommand(
             CommandName.LoginToken, this.handleCommandLoginToken, this));
     }
 
     private handleCommandDeviceLogin() {
-        vscode.commands.executeCommand(BuiltInCommands.Open, loginUri);
+        this.commands.executeCommand(BuiltInCommands.Open, loginUri);
         // this.deviceLogin();
     }
 
@@ -56,7 +66,8 @@ export class DeviceLogin implements vscode.Disposable, AccessTokenRefresher {
     public async refreshAccessToken(): Promise<void> {
         const response = this.getSavedDeviceLoginResponse();
         if (!response) {
-            throw new Error('refresh token is not available, have you logged in?');
+            // TODO: execute login command here?
+            throw new Error('refresh token is not available, please login');
         }
         return this.deviceLogin(response.apiToken);
     }
@@ -79,7 +90,7 @@ export class DeviceLogin implements vscode.Disposable, AccessTokenRefresher {
                 let didOpenOauthURL = false;
                 if (!response.completed && response.oauthUrl && !didOpenOauthURL) {
                     const uri = vscode.Uri.parse(response.oauthUrl);
-                    vscode.env.openExternal(uri);
+                    this.env.openExternal(uri);
                     didOpenOauthURL = true;
                     return;
                 }
@@ -155,11 +166,11 @@ export class DeviceLogin implements vscode.Disposable, AccessTokenRefresher {
     }
 
     private async saveDeviceLoginResponse(response: DeviceLoginResponse | undefined): Promise<void> {
-        return Container.context.globalState.update(MementoName.DeviceLoginResponse, response);
+        return this.globalState.update(MementoName.DeviceLoginResponse, response);
     }
 
     private async saveLoginResponse(response: LoginResponse | undefined): Promise<void> {
-        return Container.context.globalState.update(MementoName.LoginResponse, response);
+        return this.globalState.update(MementoName.LoginResponse, response);
     }
 
     /**
