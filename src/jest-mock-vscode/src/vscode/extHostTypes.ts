@@ -1005,7 +1005,7 @@ export class CodeActionKind {
   public static SourceOrganizeImports: CodeActionKind;
   public static SourceFixAll: CodeActionKind;
 
-  constructor(public readonly value: string) { }
+  constructor(public readonly value: string) {}
 
   public append(parts: string): CodeActionKind {
     return new CodeActionKind(
@@ -1528,7 +1528,8 @@ export enum ConfigurationTarget {
 }
 
 export class DebugAdapterInlineImplementation
-  implements vscode.DebugAdapterInlineImplementation {
+  implements vscode.DebugAdapterInlineImplementation
+{
   readonly implementation: vscode.DebugAdapter;
 
   constructor(impl: vscode.DebugAdapter) {
@@ -1709,7 +1710,7 @@ export class Decoration {
 //#region Theming
 
 export class ColorTheme implements vscode.ColorTheme {
-  constructor(public readonly kind: ColorThemeKind) { }
+  constructor(public readonly kind: ColorThemeKind) {}
 }
 
 export enum ColorThemeKind {
@@ -1922,7 +1923,6 @@ export enum FileType {
   SymbolicLink = 64,
 }
 
-
 /**
  * A memento represents a storage utility. It can store and retrieve
  * values.
@@ -1962,5 +1962,5 @@ export interface Memento {
    * @param key A string.
    * @param value A value. MUST not contain cyclic references.
    */
-  update(key: string, value: any): Thenable<void>;
+  update(key: string, value: any): Thenable<void>; // eslint-disable-line @typescript-eslint/no-explicit-any
 }

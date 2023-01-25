@@ -1465,10 +1465,8 @@ function didCaptureImageInfo(file: InputFile, chunk: Buffer): boolean {
             width: result.width,
             orientation: result.orientation,
         };
-        console.log('imageSize captured!', imageSize);
         return true;
     } catch (e) {
-        console.log('imageSize error:', e);
         return false;
     }
 }

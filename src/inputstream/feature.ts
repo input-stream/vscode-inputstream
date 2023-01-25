@@ -23,7 +23,6 @@ import {
     loadInputStreamProtos,
     loadByteStreamProtos,
 } from './configuration';
-import { Container } from '../container';
 
 export class InputStreamFeature implements IExtensionFeature, vscode.Disposable {
     public readonly name = FeatureName;

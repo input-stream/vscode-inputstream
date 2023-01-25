@@ -18,5 +18,5 @@ export const debug = {
 
 export const commands = {
   executeCommand: jest.fn(),
-  registerCommand: jest.fn()
+  registerCommand: jest.fn(),
 };
