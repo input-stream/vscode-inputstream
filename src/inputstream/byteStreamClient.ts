@@ -1,6 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 
-import { AccessTokenRefresher } from './device_login';
+import { AccessTokenRefresher } from './deviceLogin';
 import { ByteStreamClient } from '../proto/google/bytestream/ByteStream';
 import { GRPCClient } from './grpcclient';
 import { QueryWriteStatusRequest } from '../proto/google/bytestream/QueryWriteStatusRequest';

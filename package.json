@@ -285,7 +285,7 @@
             ]
         }
     },
-    "main": "./out/extension.js",
+    "main": "./out/src/extension.js",
     "scripts": {
         "vscode:prepublish:webpack": "npm run clean && webpack --mode production",
         "vscode:prepublish": "npm run clean && npm run compile",

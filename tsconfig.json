@@ -7,8 +7,11 @@
       "es6"
     ],
     "sourceMap": true,
+    "rootDirs": [
+      "src",
+      "__mocks__"
+    ],
     "esModuleInterop": true,
-    "rootDir": ".",
     "skipLibCheck": true,
     "strict": true /* enable all strict type-checking options */
   },

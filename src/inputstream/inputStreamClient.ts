@@ -1,6 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 
-import { AccessTokenRefresher } from './device_login';
+import { AccessTokenRefresher } from './deviceLogin';
 import { FieldMask } from '../proto/google/protobuf/FieldMask';
 import { GRPCClient, UnaryCallOptions } from './grpcclient';
 import { Input } from '../proto/build/stack/inputstream/v1beta1/Input';

@@ -4,7 +4,7 @@ import { AccountTreeDataProvider } from './login/treeview';
 import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
 import { ByteStreamGRPCClient as BytestreamGRPCClient } from './byteStreamClient';
 import { Closeable, makeChannelCredentials } from './grpcclient';
-import { DeviceLogin } from './device_login';
+import { DeviceLogin } from './deviceLogin';
 import { EmptyView } from './emptyview';
 import { FeatureName, ViewName } from './constants';
 import { IExtensionFeature } from '../common';

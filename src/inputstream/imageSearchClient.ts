@@ -1,6 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 
-import { AccessTokenRefresher } from './device_login';
+import { AccessTokenRefresher } from './deviceLogin';
 import { GRPCClient } from './grpcclient';
 import { ImagesClient } from '../proto/build/stack/inputstream/v1beta1/Images';
 import { SearchImagesRequest } from '../proto/build/stack/inputstream/v1beta1/SearchImagesRequest';
