@@ -10,6 +10,8 @@ import { isTimestampPast, setCommandContext } from '../common';
 import { LoginResponse } from '../proto/build/stack/auth/v1beta1/LoginResponse';
 import { User } from '../proto/build/stack/auth/v1beta1/User';
 
+const loginUri = vscode.Uri.parse('https://input.stream/settings/extensions/stackbuild.vscode-inputstream/login');
+
 export interface AccessTokenRefresher {
     refreshAccessToken(): Promise<void>;
 }
@@ -21,6 +23,7 @@ export class DeviceLogin implements vscode.Disposable, AccessTokenRefresher {
     public onDidAuthUserChange = new vscode.EventEmitter<User>();
 
     constructor(
+        private globalState: vscode.Memento,
         private authClient: AuthServiceClient,
     ) {
         this.disposables.push(this.onDidLoginTokenChange);
@@ -33,7 +36,6 @@ export class DeviceLogin implements vscode.Disposable, AccessTokenRefresher {
     }
 
     private handleCommandDeviceLogin() {
-        const loginUri = vscode.Uri.parse('https://input.stream/settings/extensions/stackbuild.vscode-inputstream/login');
         vscode.commands.executeCommand(BuiltInCommands.Open, loginUri);
         // this.deviceLogin();
     }
@@ -115,11 +117,11 @@ export class DeviceLogin implements vscode.Disposable, AccessTokenRefresher {
     }
 
     private getSavedDeviceLoginResponse(): DeviceLoginResponse | undefined {
-        return Container.context.globalState.get<DeviceLoginResponse>(MementoName.DeviceLoginResponse);
+        return this.globalState.get<DeviceLoginResponse>(MementoName.DeviceLoginResponse);
     }
 
     private getSavedLoginResponse(): LoginResponse | undefined {
-        return Container.context.globalState.get<LoginResponse>(MementoName.LoginResponse);
+        return this.globalState.get<LoginResponse>(MementoName.LoginResponse);
     }
 
     public restoreSaved(): boolean {
