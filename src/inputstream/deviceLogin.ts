@@ -56,23 +56,26 @@ export class DeviceLogin implements vscode.Disposable, AccessTokenRefresher {
     public async refreshAccessToken(): Promise<void> {
         const response = this.getSavedDeviceLoginResponse();
         if (!response) {
-            throw new Error('refresh token is not available');
+            throw new Error('refresh token is not available, have you logged in?');
         }
         return this.deviceLogin(response.apiToken);
     }
 
     public async deviceLogin(apiToken?: string): Promise<void> {
-        const stream = this.authClient.DeviceLogin({
+        const call = this.authClient.DeviceLogin({
             deviceName: ExtensionID,
             apiToken: apiToken,
         }, new grpc.Metadata());
-        if (!stream) {
-            vscode.window.showWarningMessage('login error: device login stream undefined');
-            throw new Error('login error: device login stream undefined');
-        }
 
         return new Promise((resolve, reject) => {
-            stream.on('data', (response: DeviceLoginResponse) => {
+            call.on('status', (status: grpc.StatusObject) => {
+                if (status.code === grpc.status.OK) {
+                    resolve();
+                } else {
+                    reject(status);
+                }
+            });
+            call.on('data', (response: DeviceLoginResponse) => {
                 let didOpenOauthURL = false;
                 if (!response.completed && response.oauthUrl && !didOpenOauthURL) {
                     const uri = vscode.Uri.parse(response.oauthUrl);
@@ -89,15 +92,12 @@ export class DeviceLogin implements vscode.Disposable, AccessTokenRefresher {
                 }
             });
 
-            stream.on('error', (err: Error) => {
+            call.on('error', (err: Error) => {
                 setCommandContext(ContextName.LoggedIn, false);
-                const errMsg = (err as grpc.ServiceError).message;
-                // vscode.window.showErrorMessage('login error: ' + errMsg);
                 reject(err);
             });
 
-            stream.on('end', () => {
-                console.log('device login end.');
+            call.on('end', () => {
             });
         });
 
@@ -144,25 +144,6 @@ export class DeviceLogin implements vscode.Disposable, AccessTokenRefresher {
         }
 
         this.fireLogin(response.user!, response.token!);
-
-        return true;
-    }
-
-    private restoreSavedDeviceLoginResponse(): boolean {
-        const response = this.getSavedDeviceLoginResponse();
-        if (!response) {
-            return false;
-        }
-        if (!response.expiresAt) {
-            return false;
-        }
-
-        if (isTimestampPast(response.expiresAt)) {
-            this.saveDeviceLoginResponse(undefined);
-            return false;
-        }
-
-        this.fireLogin(response.user!, response.accessToken!);
 
         return true;
     }

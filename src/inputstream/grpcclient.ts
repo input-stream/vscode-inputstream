@@ -1,8 +1,8 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
 
-import { AccessTokenRefresher } from './deviceLogin';
 import { ButtonName } from './constants';
+import { AccessTokenRefresher } from './deviceLogin';
 
 export interface Closeable {
     close(): void;

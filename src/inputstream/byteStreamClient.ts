@@ -1,6 +1,5 @@
 import * as grpc from '@grpc/grpc-js';
 
-import { AccessTokenRefresher } from './deviceLogin';
 import { ByteStreamClient } from '../proto/google/bytestream/ByteStream';
 import { GRPCClient } from './grpcclient';
 import { QueryWriteStatusRequest } from '../proto/google/bytestream/QueryWriteStatusRequest';
@@ -9,6 +8,7 @@ import { ReadRequest } from '../proto/google/bytestream/ReadRequest';
 import { ReadResponse } from '../proto/google/bytestream/ReadResponse';
 import { WriteRequest } from '../proto/google/bytestream/WriteRequest';
 import { WriteResponse } from '../proto/google/bytestream/WriteResponse';
+import { AccessTokenRefresher } from './deviceLogin';
 
 export interface IByteStreamClient {
     read(request: ReadRequest, extraMd?: grpc.Metadata): grpc.ClientReadableStream<ReadResponse>;

@@ -3,24 +3,39 @@ import * as vscode from 'vscode';
 import { describe, it } from "@jest/globals";
 import { expect } from "chai";
 import { loadAuthProtos } from "./configuration";
-import { AuthServiceClient } from '../proto/build/stack/auth/v1beta1/AuthService';
 import { DeviceLogin } from "./deviceLogin";
-import { createAuthServiceClient } from "../inputstream/configuration";
+import { AuthClientServer } from './authServiceServer';
 
 describe('DeviceLogin', () => {
     const proto = loadAuthProtos('proto/auth.proto');
-    let client: AuthServiceClient;
     let globalState: vscode.Memento;
+    let auths: AuthClientServer;
+    let deviceLogin: DeviceLogin;
 
-    beforeEach(() => {
-        client = createAuthServiceClient(proto, '0.0.0.0:0');
+    beforeEach(async () => {
         globalState = new InMemoryMemento();
+        auths = new AuthClientServer();
+        const client = await auths.connect();
+        deviceLogin = new DeviceLogin(globalState, client);
     });
 
     it('constructor', () => {
-        const dl = new DeviceLogin(globalState, client);
-        expect(dl).to.exist;
+        expect(deviceLogin).to.exist;
     });
+
+    it('throws error if no saved token exists', async () => {
+        try {
+            await deviceLogin.refreshAccessToken();
+        } catch (e) {
+            expect((e as unknown as Error).message).to.equal('refresh token is not available, have you logged in?');
+        }
+    });
+
+    xit('uses saved token from memento if exists', async () => {
+        await globalState.update('input.stream.api.DeviceLoginResponse', 'fake-jwt');
+        await deviceLogin.refreshAccessToken();
+    });
+
 });
 
 
