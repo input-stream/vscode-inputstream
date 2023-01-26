@@ -1,19 +1,20 @@
 import * as vscode from 'vscode';
 
+import { ProtoGrpcType as AuthProtoType } from './proto/auth';
 import { AuthServer } from './authServer';
 import { Context } from './context';
 import { describe, it } from "@jest/globals";
 import { DeviceLoginResponse } from './proto/build/stack/auth/v1beta1/DeviceLoginResponse';
 import { expect } from "chai";
-import { loadAuthProtos } from './clients';
 import { LoginController } from './loginController';
 import { newTimestamp } from './dates';
 import { User } from './proto/build/stack/auth/v1beta1/User';
 import { VSCodeEnv, VSCodeCommands, VSCodeWindow } from './context';
+import { loadProtoPackage } from './grpc';
 
 
 describe('LoginController', () => {
-    const proto = loadAuthProtos('proto/auth.proto');
+    const proto = loadProtoPackage<AuthProtoType>('proto/auth.proto');
     let globalState: vscode.Memento;
     let auths: AuthServer;
     let loginController: LoginController;

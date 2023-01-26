@@ -1,7 +1,7 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
+import { createDeadline } from './grpc';
 
-import { createDeadline } from './clients';
 import { ImagesClient } from './proto/build/stack/inputstream/v1beta1/Images';
 import { SearchImagesRequest } from './proto/build/stack/inputstream/v1beta1/SearchImagesRequest';
 import { SearchImagesResponse } from './proto/build/stack/inputstream/v1beta1/SearchImagesResponse';

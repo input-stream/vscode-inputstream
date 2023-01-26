@@ -2,20 +2,24 @@ import * as vscode from 'vscode';
 
 import { AccountExplorer } from './accountExplorer';
 import { API } from './api';
-import { loadAuthProtos, loadByteStreamProtos, loadInputStreamProtos, createAuthServiceClient, createInputsClient, ClientContext, createBytestreamClient, createImagesClient } from './clients';
+import { AuthGrpcClient } from './authClient';
+import { ByteStreamGrpcClient } from './byteStreamClient';
 import { CommandName, openExtensionSetting } from './commands';
 import { ConfigName, createInputStreamConfiguration } from './configurations';
 import { Context } from './context';
+import { createAuthServiceClient, createInputsClient, createBytestreamClient, createImagesClient } from './clients';
 import { ImageSearch } from './imagesearch/imagesearch';
+import { ImagesGrpcClient } from './imagesClient';
 import { InputsExplorer } from './inputsExplorer';
+import { InputsGrpcClient } from './inputsClient';
+import { ClientContext, loadProtoPackage } from './grpc';
 import { LoginController } from './loginController';
-import { User } from './proto/build/stack/auth/v1beta1/User';
+import { ProtoGrpcType as AuthProtoType } from './proto/auth';
+import { ProtoGrpcType as ByteStreamProtoType } from './proto/bytestream';
+import { ProtoGrpcType as InputStreamProtoType } from './proto/inputstream';
 import { StreamFsController } from './streamfs/streamFscontroller';
 import { UriHandler } from './uriHandler';
-import { ByteStreamGrpcClient } from './byteStreamClient';
-import { ImagesGrpcClient } from './imagesClient';
-import { InputsGrpcClient } from './inputsClient';
-import { AuthGrpcClient } from './authClient';
+import { User } from './proto/build/stack/auth/v1beta1/User';
 
 const api = new API();
 
@@ -33,11 +37,12 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 	ctx.add(vscode.commands.registerCommand(CommandName.OpenSetting, openExtensionSetting));
 
 	const cfg = createInputStreamConfiguration(extensionCtx.asAbsolutePath.bind(extensionCtx), config);
-	const authProtos = loadAuthProtos(cfg.auth.protofile);
-	const byteStreamProtos = loadByteStreamProtos(cfg.bytestream.protofile);
-	const inputStreamProtos = loadInputStreamProtos(cfg.inputstream.protofile);
 
-	const auth = ctx.add(new AuthGrpcClient(createAuthServiceClient(authProtos, cfg.auth.address)));
+	const authProtos = loadProtoPackage<AuthProtoType>(cfg.auth.protofile);
+	const byteStreamProtos = loadProtoPackage<ByteStreamProtoType>(cfg.bytestream.protofile);
+	const inputStreamProtos = loadProtoPackage<InputStreamProtoType>(cfg.inputstream.protofile);
+
+	const authGrpcClient = ctx.add(new AuthGrpcClient(createAuthServiceClient(authProtos, cfg.auth.address)));
 
 	const loginController = new LoginController(
 		ctx,
@@ -45,7 +50,7 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 		vscode.env,
 		vscode.window,
 		extensionCtx.globalState,
-		auth.client,
+		authGrpcClient.client,
 	);
 
 	const clientCtx: ClientContext = {
@@ -66,7 +71,6 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 
 	const accountsExplorer = new AccountExplorer(ctx, vscode.window, vscode.commands);
 	const inputsExplorer = new InputsExplorer(ctx, vscode.window, vscode.commands, inputsGrpcClient);
-
 	const filesystem = new StreamFsController(
 		ctx,
 		vscode.commands,
@@ -77,7 +81,7 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 	);
 
 	ctx.add(loginController.onDidAuthUserChange.event((user: User) => {
-		accountsExplorer.handleAuthUserChange(user);
+		accountsExplorer.handleUserLogin(user);
 		inputsExplorer.handleUserLogin(user);
 		filesystem.handleUserLogin(user);
 	}));

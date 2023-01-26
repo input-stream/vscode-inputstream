@@ -2,8 +2,7 @@ import * as grpc from '@grpc/grpc-js';
 
 import { InMemoryInputsService } from './inputsService';
 import { InputsClient } from './proto/build/stack/inputstream/v1beta1/Inputs';
-import { loadInputStreamProtos } from './clients';
-
+import { loadProtoPackage } from './grpc';
 import { ProtoGrpcType as InputStreamProtoType } from './proto/inputstream';
 
 export class InputsServer {
@@ -13,7 +12,7 @@ export class InputsServer {
     _client: InputsClient | undefined;
 
     constructor(private host = '0.0.0.0', private port = '0') {
-        this.proto = loadInputStreamProtos('./proto/inputstream.proto');
+        this.proto = loadProtoPackage<InputStreamProtoType>('./proto/inputstream.proto');
         this.service = new InMemoryInputsService();
         this.server = new grpc.Server();
         this.service.addTo(this.proto, this.server);

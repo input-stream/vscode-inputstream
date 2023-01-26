@@ -1,7 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
 
-import { createDeadline } from './clients';
 import { FieldMask } from './proto/google/protobuf/FieldMask';
 import { Input } from './proto/build/stack/inputstream/v1beta1/Input';
 import { InputFilterOptions } from './proto/build/stack/inputstream/v1beta1/InputFilterOptions';
@@ -9,6 +8,7 @@ import { InputsClient } from './proto/build/stack/inputstream/v1beta1/Inputs';
 import { ListInputsResponse } from './proto/build/stack/inputstream/v1beta1/ListInputsResponse';
 import { RemoveInputResponse } from './proto/build/stack/inputstream/v1beta1/RemoveInputResponse';
 import { UpdateInputResponse } from './proto/build/stack/inputstream/v1beta1/UpdateInputResponse';
+import { createDeadline } from './grpc';
 
 
 export interface IInputsClient {

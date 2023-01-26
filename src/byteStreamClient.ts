@@ -1,8 +1,8 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
+import { createDeadline } from './grpc';
 
 import { ByteStreamClient } from './proto/google/bytestream/ByteStream';
-import { createDeadline } from './clients';
 import { QueryWriteStatusRequest } from './proto/google/bytestream/QueryWriteStatusRequest';
 import { QueryWriteStatusResponse } from './proto/google/bytestream/QueryWriteStatusResponse';
 import { ReadRequest } from './proto/google/bytestream/ReadRequest';

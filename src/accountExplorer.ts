@@ -44,7 +44,7 @@ export class AccountExplorer extends TreeController<vscode.TreeItem> {
         return [item];
     }
 
-    public handleAuthUserChange(user: User) {
+    public handleUserLogin(user: User) {
         this.user = user;
         this._onDidChangeTreeData.fire(undefined);
     }

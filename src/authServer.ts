@@ -2,8 +2,8 @@ import * as grpc from '@grpc/grpc-js';
 
 import { ProtoGrpcType as AuthProtoType } from './proto/auth';
 import { InMemoryAuthService } from './authService';
-import { loadAuthProtos } from './clients';
 import { AuthServiceClient } from './proto/build/stack/auth/v1beta1/AuthService';
+import { loadProtoPackage } from './grpc';
 
 
 export class AuthServer {
@@ -13,7 +13,7 @@ export class AuthServer {
     _client: AuthServiceClient | undefined;
 
     constructor(private host = '0.0.0.0', private port = '0') {
-        this.proto = loadAuthProtos('./proto/auth.proto');
+        this.proto = loadProtoPackage<AuthProtoType>('./proto/auth.proto');
         this.service = new InMemoryAuthService();
         this.server = new grpc.Server();
         this.service.addTo(this.proto, this.server);

@@ -1,7 +1,7 @@
 import * as grpc from '@grpc/grpc-js';
 
 import { InMemoryBytestreamService } from './byteStreamService';
-import { loadByteStreamProtos } from './clients';
+import { loadProtoPackage } from './grpc';
 import { ProtoGrpcType as ByteStreamProtoType } from './proto/bytestream';
 import { ByteStreamClient } from './proto/google/bytestream/ByteStream';
 
@@ -16,7 +16,7 @@ export class BytestreamServer {
     service: InMemoryBytestreamService;
 
     constructor(private host = '0.0.0.0', private port = '0') {
-        this.proto = loadByteStreamProtos('./proto/bytestream.proto');
+        this.proto = loadProtoPackage<ByteStreamProtoType>('./proto/bytestream.proto');
         this.service = new InMemoryBytestreamService();
         this.server = new grpc.Server();
         this.service.addTo(this.proto, this.server);
