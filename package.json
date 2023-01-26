@@ -311,6 +311,7 @@
         "luxon": "1.24.1",
         "protobufjs": "6.10.1",
         "vscode-common": "1.50.0",
+        "vscode-uri": "3.0.7",
         "vscode-extension-telemetry": "^0.1.6"
     },
     "devDependencies": {
