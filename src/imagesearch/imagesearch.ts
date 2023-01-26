@@ -16,7 +16,7 @@ import { Context, VSCodeCommands, VSCodeWindow } from '../context';
  * Controller component for image search.
  */
 export class ImageSearch {
-    protected webview: Promise<ImageSearchWebview>;
+    protected webview: ImageSearchWebview | undefined;
     protected renderer = new ImageSearchRenderer();
     protected onDidSearchImageClick = new vscode.EventEmitter<SearchImage>();
 
@@ -27,7 +27,7 @@ export class ImageSearch {
     private imagesById = new Map<string, SearchImage>();
 
     constructor(
-        ctx: Context,
+        private ctx: Context,
         commands: VSCodeCommands,
         private window: VSCodeWindow,
         private client: ImagesGrpcClient,
@@ -35,16 +35,19 @@ export class ImageSearch {
         ctx.add(this.onDidSearchImageClick);
         ctx.add(this.onDidSearchImageClick.event(this.handleCommandSearchImageClick, this));
         ctx.add(commands.registerCommand(CommandName.ImageSearch, this.handleCommandImageSearch, this));
+    }
 
-        this.webview = new Promise<ImageSearchWebview>(() => {
-            return new ImageSearchWebview(
-                ctx,
-                window,
+    private getOrCreateWebview(): ImageSearchWebview {
+        if (!this.webview) {
+            this.webview = new ImageSearchWebview(
+                this.ctx,
+                this.window,
                 'Seach photos on using unsplash API',
                 'Image Search',
                 vscode.ViewColumn.Two,
             );
-        });
+        }
+        return this.webview;
     }
 
     async handleCommandSearchImageClick(image: SearchImage) {
@@ -91,12 +94,12 @@ export class ImageSearch {
         d.dispose();
     }
 
-    async handleCommandImageSearch() {
-        this.searchImages();
+    handleCommandImageSearch(): Promise<void> {
+        return this.searchImages();
     }
 
-    async searchImages(): Promise<void> {
-        const webview = await this.webview;
+    searchImages(): Promise<void> {
+        const webview = this.getOrCreateWebview();
         const requestChangeEmitter = new event.Emitter<SearchImagesRequest>();
 
         const requestDidChange = event.Event.debounce(
@@ -107,8 +110,6 @@ export class ImageSearch {
         );
 
         requestDidChange(async (request) => {
-            const webview = await this.webview;
-
             if (!this.client) {
                 return;
             }
@@ -162,7 +163,7 @@ export class ImageSearch {
             }
         });
 
-        await this.renderWebview({}, webview, requestChangeEmitter);
+        return this.renderWebview({}, webview, requestChangeEmitter);
     }
 
     async renderWebview(request: SearchImagesRequest, panel: ImageSearchRenderProvider, requestChangeEmitter: vscode.EventEmitter<SearchImagesRequest>): Promise<void> {

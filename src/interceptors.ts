@@ -1,3 +1,7 @@
+/**
+ * @see{https://github.com/gitpod-io/gitpod/blob/961a3c33ede85089fa85e7a7e7427cd0a5fc08c3/components/gitpod-protocol/src/util/grpc.ts#L70}
+ * for an example of a metrics-collecting interceptor.
+ */
 import * as grpc from '@grpc/grpc-js';
 
 import { NextCall } from '@grpc/grpc-js/build/src/client-interceptors';
