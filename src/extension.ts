@@ -2,11 +2,10 @@ import * as vscode from 'vscode';
 
 import { AccountExplorer } from './accountExplorer';
 import { API } from './api';
-import { loadAuthProtos, loadByteStreamProtos, loadInputStreamProtos, createAuthServiceClient } from './clients';
+import { loadAuthProtos, loadByteStreamProtos, loadInputStreamProtos, createAuthServiceClient, createInputsClient, ClientContext, createBytestreamClient, createImagesClient } from './clients';
 import { CommandName, openExtensionSetting } from './commands';
 import { ConfigName, createInputStreamConfiguration } from './configurations';
-import { Context, VSCodeWorkspace } from './context';
-import { makeChannelCredentials } from './authenticatingGrpcClient';
+import { Context } from './context';
 import { ImageSearch } from './imagesearch/imagesearch';
 import { InputsExplorer } from './inputsExplorer';
 import { LoginController } from './loginController';
@@ -16,7 +15,6 @@ import { UriHandler } from './uriHandler';
 import { ByteStreamGrpcClient } from './byteStreamClient';
 import { ImagesGrpcClient } from './imagesClient';
 import { InputsGrpcClient } from './inputsClient';
-import { AuthClient } from 'google-auth-library/build/src/auth/authclient';
 import { AuthGrpcClient } from './authClient';
 
 const api = new API();
@@ -50,61 +48,38 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 		auth.client,
 	);
 
-	const bytestreamClient = ctx.add(
-		new ByteStreamGrpcClient(
-			new byteStreamProtos.google.bytestream.ByteStream(
-				cfg.bytestream.address,
-				makeChannelCredentials(cfg.bytestream.address)
-			),
-			loginController,
-		)
-	);
+	const clientCtx: ClientContext = {
+		token: () => loginController.getAccessToken(),
+		refreshToken: () => loginController.refreshAccessToken(),
+	};
 
-	const inputsClient = ctx.add(
-		new InputsGrpcClient(
-			new inputStreamProtos.build.stack.inputstream.v1beta1.Inputs(
-				cfg.inputstream.address,
-				makeChannelCredentials(cfg.inputstream.address)
-			),
-			loginController,
-		)
-	);
+	const byteStreamClient = createBytestreamClient(byteStreamProtos, cfg.bytestream.address, clientCtx);
+	const inputsClient = createInputsClient(inputStreamProtos, cfg.inputstream.address, clientCtx);
+	const imagesClient = createImagesClient(inputStreamProtos, cfg.inputstream.address, clientCtx);
 
-	const imageSearchClient = ctx.add(
-		new ImagesGrpcClient(
-			new inputStreamProtos.build.stack.inputstream.v1beta1.Images(
-				cfg.inputstream.address,
-				makeChannelCredentials(cfg.inputstream.address)
-			),
-			loginController,
-		)
-	);
+	const bytestreamGrpcClient = ctx.add(new ByteStreamGrpcClient(byteStreamClient));
+	const inputsGrpcClient = ctx.add(new InputsGrpcClient(inputsClient));
+	const imagesGrpcClient = ctx.add(new ImagesGrpcClient(imagesClient));
 
-	new ImageSearch(ctx, vscode.commands, vscode.window, imageSearchClient);
+	new ImageSearch(ctx, vscode.commands, vscode.window, imagesGrpcClient);
 	new UriHandler(ctx, vscode.window, vscode.commands);
 
 	const accountsExplorer = new AccountExplorer(ctx, vscode.window, vscode.commands);
-	const inputsExplorer = new InputsExplorer(ctx, vscode.window, vscode.commands, inputsClient);
+	const inputsExplorer = new InputsExplorer(ctx, vscode.window, vscode.commands, inputsGrpcClient);
 
 	const filesystem = new StreamFsController(
 		ctx,
 		vscode.commands,
 		vscode.workspace,
 		vscode.window,
-		inputsClient,
-		bytestreamClient,
+		inputsGrpcClient,
+		bytestreamGrpcClient,
 	);
 
 	ctx.add(loginController.onDidAuthUserChange.event((user: User) => {
 		accountsExplorer.handleAuthUserChange(user);
 		inputsExplorer.handleUserLogin(user);
 		filesystem.handleUserLogin(user);
-	}));
-
-	ctx.add(loginController.onDidLoginTokenChange.event(token => {
-		bytestreamClient.setToken(token);
-		imageSearchClient.setToken(token);
-		inputsClient.setToken(token);
 	}));
 
 	loginController.restore();

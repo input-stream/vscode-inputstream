@@ -3,17 +3,12 @@ import * as vscode from 'vscode';
 import { BuiltInCommandName } from '../commands';
 import { DirNode } from './directoryNode';
 import { FieldMask } from '../proto/google/protobuf/FieldMask';
+import { Input, _build_stack_inputstream_v1beta1_Input_Type as InputType } from '../proto/build/stack/inputstream/v1beta1/Input';
 import { InputFilterOptions } from '../proto/build/stack/inputstream/v1beta1/InputFilterOptions';
 import { InputNode } from './inputNode';
-import { makeInputContentFileNodeUri, makeInputNodeUri, makeUserNodeUri } from '../filesystems';
+import { makeInputContentFileNodeUri, makeUserNodeUri } from '../filesystems';
 import { NodeContext } from './node';
-import { UnaryCallOptions } from '../clients';
 import { User } from '../proto/build/stack/auth/v1beta1/User';
-import {
-    Input,
-    _build_stack_inputstream_v1beta1_Input_Type as InputType,
-    _build_stack_inputstream_v1beta1_Input_Status as InputStatus,
-} from '../proto/build/stack/inputstream/v1beta1/Input';
 
 
 export class UserNode extends DirNode<InputNode> {
@@ -139,8 +134,7 @@ export class UserNode extends DirNode<InputNode> {
         try {
             const filter: InputFilterOptions = { login, title };
             const mask: FieldMask = { paths: ['content'] };
-            const options: UnaryCallOptions = { limit: 1, silent: true };
-            const input = await client.getInput(filter, mask, options);
+            const input = await client.getInput(filter, mask);
             return input;
         } catch (e) {
             console.log(`could not fetch input: ${login}/${title}`, e);

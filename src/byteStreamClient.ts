@@ -1,13 +1,12 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
 
-import { AccessTokenRefresher } from './loginController';
 import { ByteStreamClient } from './proto/google/bytestream/ByteStream';
+import { createDeadline } from './clients';
 import { QueryWriteStatusRequest } from './proto/google/bytestream/QueryWriteStatusRequest';
 import { QueryWriteStatusResponse } from './proto/google/bytestream/QueryWriteStatusResponse';
 import { ReadRequest } from './proto/google/bytestream/ReadRequest';
 import { ReadResponse } from './proto/google/bytestream/ReadResponse';
-import { ReauthenticatingGrpcClient } from './authenticatingGrpcClient';
 import { WriteRequest } from './proto/google/bytestream/WriteRequest';
 import { WriteResponse } from './proto/google/bytestream/WriteResponse';
 
@@ -17,48 +16,39 @@ export interface IByteStreamClient {
     write(onResponse: (error?: grpc.ServiceError | null, out?: WriteResponse | undefined) => void, extraMd?: grpc.Metadata): grpc.ClientWritableStream<WriteRequest>;
 }
 
-export class ByteStreamGrpcClient extends ReauthenticatingGrpcClient<ByteStreamClient> implements IByteStreamClient, vscode.Disposable {
+export class ByteStreamGrpcClient implements IByteStreamClient, vscode.Disposable {
 
     constructor(
-        client: ByteStreamClient,
-        refresher: AccessTokenRefresher,
-        timeout = 300, /* five minute default timeout */
+        private client: ByteStreamClient,
+        private timeoutSecs = 300, /* five minutes */
     ) {
-        super(client, refresher, timeout);
     }
 
-    queryWriteStatus(req: QueryWriteStatusRequest): Promise<QueryWriteStatusResponse> {
-        return this.unaryCall<QueryWriteStatusResponse>('QueryWriteStatus', (): Promise<QueryWriteStatusResponse> => {
-            return new Promise<QueryWriteStatusResponse>((resolve, reject) => {
-                this.client.queryWriteStatus(
-                    req,
-                    this.getGrpcMetadata(),
-                    { deadline: this.getDeadline() },
-                    (err: grpc.ServiceError | null, resp?: QueryWriteStatusResponse) => {
-                        if (err) {
-                            reject(this.handleError(err));
-                        } else {
-                            resolve(resp!);
-                        }
-                    });
-            });
-        });
+    read(request: ReadRequest): grpc.ClientReadableStream<ReadResponse> {
+        return this.client.read(request, { deadline: createDeadline(this.timeoutSecs) });
     }
 
     write(onResponse: (error?: grpc.ServiceError | null, out?: WriteResponse | undefined) => void, extraMd?: grpc.Metadata): grpc.ClientWritableStream<WriteRequest> {
-        const md = this.getGrpcMetadata();
         if (extraMd) {
-            md.merge(extraMd);
+            return this.client.write(extraMd, { deadline: createDeadline() }, onResponse);
+        } else {
+            return this.client.write({ deadline: createDeadline(this.timeoutSecs) }, onResponse);
         }
-        return this.client.write(md, { deadline: this.getDeadline() }, onResponse);
     }
 
-    read(request: ReadRequest, extraMd?: grpc.Metadata): grpc.ClientReadableStream<ReadResponse> {
-        const md = this.getGrpcMetadata();
-        if (extraMd) {
-            md.merge(extraMd);
-        }
-        return this.client.read(request, md, { deadline: this.getDeadline() });
+    queryWriteStatus(req: QueryWriteStatusRequest): Promise<QueryWriteStatusResponse> {
+        return new Promise<QueryWriteStatusResponse>((resolve, reject) => {
+            this.client.QueryWriteStatus(
+                req,
+                { deadline: createDeadline() }, // should not need extra time
+                (err: grpc.ServiceError | null, resp?: QueryWriteStatusResponse) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(resp!);
+                    }
+                });
+        });
     }
 
     public dispose(): void {

@@ -327,7 +327,7 @@ export class StreamFsController {
                 message?: string | undefined,
                 increment?: number | undefined,
             }>, token: vscode.CancellationToken): Promise<void> => {
-                return new Promise<void>(async (resolve, reject) => {
+                return new Promise<void>((resolve, reject) => {
                     const query = parseQuery(target);
                     const fileContentType = query['fileContentType'];
                     if (!fileContentType) {
@@ -384,38 +384,40 @@ export class StreamFsController {
 
                     const chunkSize = 65536;
                     const increment = (chunkSize / size) * 100;
-                    const data = await this.workspace.fs.readFile(source); // TODO: streamable API?
-                    const stream = Readable.from(data, {
-                        highWaterMark: chunkSize,
-                    });
 
-                    let offset = 0;
-                    stream.on('data', (chunk: Buffer) => {
-                        if (token.isCancellationRequested) {
-                            reject('Cancellation Requested');
-                            return;
-                        }
+                    this.workspace.fs.readFile(source).then(data => {
+                        const stream = Readable.from(data, {
+                            highWaterMark: chunkSize,
+                        });
 
-                        const nextOffset = offset + chunk.length;
-                        const req: WriteRequest = {
-                            resourceName: resourceName,
-                            writeOffset: offset,
-                            data: chunk,
-                            finishWrite: nextOffset === size,
-                        };
-                        offset = nextOffset;
+                        let offset = 0;
+                        stream.on('data', (chunk: Buffer) => {
+                            if (token.isCancellationRequested) {
+                                reject('Cancellation Requested');
+                                return;
+                            }
 
-                        call?.write(req);
+                            const nextOffset = offset + chunk.length;
+                            const req: WriteRequest = {
+                                resourceName: resourceName,
+                                writeOffset: offset,
+                                data: chunk,
+                                finishWrite: nextOffset === size,
+                            };
+                            offset = nextOffset;
 
-                        progress.report({ increment });
-                    });
+                            call?.write(req);
 
-                    stream.on('error', (err: any) => {
-                        reject(err);
-                    });
+                            progress.report({ increment });
+                        });
 
-                    stream.on('end', () => {
-                        call?.end();
+                        stream.on('error', (err: any) => {
+                            reject(err);
+                        });
+
+                        stream.on('end', () => {
+                            call?.end();
+                        });
                     });
                 });
             },

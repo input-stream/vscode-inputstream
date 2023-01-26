@@ -1,15 +1,15 @@
 import * as vscode from 'vscode';
 
+import { AuthServer } from './authServer';
+import { Context } from './context';
 import { describe, it } from "@jest/globals";
+import { DeviceLoginResponse } from './proto/build/stack/auth/v1beta1/DeviceLoginResponse';
 import { expect } from "chai";
 import { loadAuthProtos } from './clients';
-import { AuthServer } from './authServer';
 import { LoginController } from './loginController';
-import { VSCodeEnv, VSCodeCommands, VSCodeWindow } from './context';
 import { newTimestamp } from './dates';
-import { DeviceLoginResponse } from './proto/build/stack/auth/v1beta1/DeviceLoginResponse';
 import { User } from './proto/build/stack/auth/v1beta1/User';
-import { Context } from './context';
+import { VSCodeEnv, VSCodeCommands, VSCodeWindow } from './context';
 
 
 describe('LoginController', () => {
@@ -76,9 +76,9 @@ describe('LoginController', () => {
         // Given
         // 
         let loginToken: string | undefined;
-        loginController.onDidLoginTokenChange.event((token: string) => {
-            loginToken = token;
-        });
+        // loginController.onDidLoginTokenChange.event((token: string) => {
+        //     loginToken = token;
+        // });
         let loginUser: User | undefined;
         loginController.onDidAuthUserChange.event((user: User) => {
             loginUser = user;

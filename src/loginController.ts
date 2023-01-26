@@ -1,28 +1,20 @@
 import * as grpc from '@grpc/grpc-js';
-import { Metadata } from '@grpc/grpc-js/build/src/metadata';
-import { InterceptingListener, Listener } from '@grpc/grpc-js/src/call-interface';
-import { NextCall, InterceptorOptions, InterceptingCall, InterceptingCallInterface, MetadataRequester, FullRequester } from '@grpc/grpc-js/src/client-interceptors';
-
 import * as vscode from 'vscode';
 
-import { CommandName, setCommandContext, ContextName, BuiltInCommandName } from './commands';
-import { ExtensionID, MementoName } from './configurations';
-import { Context, VSCodeCommands, VSCodeEnv, VSCodeWindow } from './context';
-import { isTimestampPast } from './dates';
 import { AuthServiceClient } from './proto/build/stack/auth/v1beta1/AuthService';
+import { CommandName, setCommandContext, ContextName, BuiltInCommandName } from './commands';
+import { Context, VSCodeCommands, VSCodeEnv, VSCodeWindow } from './context';
 import { DeviceLoginResponse } from './proto/build/stack/auth/v1beta1/DeviceLoginResponse';
+import { ExtensionID, MementoName } from './configurations';
+import { isTimestampPast } from './dates';
 import { LoginRequest } from './proto/build/stack/auth/v1beta1/LoginRequest';
 import { LoginResponse } from './proto/build/stack/auth/v1beta1/LoginResponse';
-import { User } from './proto/build/stack/auth/v1beta1/User';
 import { loginUri } from './uris';
+import { User } from './proto/build/stack/auth/v1beta1/User';
 
-export interface AccessTokenRefresher {
-    refreshAccessToken(): Promise<void>;
-}
+export class LoginController {
+    private accessToken: string | undefined;
 
-export class LoginController implements AccessTokenRefresher {
-
-    public onDidLoginTokenChange = new vscode.EventEmitter<string>();
     public onDidAuthUserChange = new vscode.EventEmitter<User>();
 
     constructor(
@@ -33,7 +25,6 @@ export class LoginController implements AccessTokenRefresher {
         private globalState: vscode.Memento,
         private authClient: AuthServiceClient,
     ) {
-        ctx.add(this.onDidLoginTokenChange);
         ctx.add(this.onDidAuthUserChange);
 
         ctx.add(commands.registerCommand(
@@ -44,27 +35,15 @@ export class LoginController implements AccessTokenRefresher {
 
     // ===================== PUBLIC =====================
 
-    handleCallStart(metadata: Metadata, listener: InterceptingListener, next: (metadata: Metadata, listener: InterceptingListener | Listener) => void): void {
-
-    }
-
-    // (metadata: Metadata, listener: InterceptingListener, next: (metadata: Metadata, listener: InterceptingListener | Listener) => void) => {
-
-    // }
-
-    public interceptCall(options: InterceptorOptions, next: InterceptingCallInterface): InterceptingCall {
-        const metadataRequester = this.handleCallStart.bind(this) as unknown as MetadataRequester;
-        const requester = new grpc.RequesterBuilder()
-            // .withStart(metadataRequester)
-            .build();
-        return new InterceptingCall(next, requester);
+    public getAccessToken(): string | undefined {
+        return this.accessToken;
     }
 
     public async login(token: string): Promise<void> {
         try {
             const response = await this.callLogin({ token });
             this.onDidAuthUserChange.fire(response!.user!);
-            this.onDidLoginTokenChange.fire(response!.token!);
+
             this.saveLoginResponse(response);
         } catch (e) {
             const error = e as unknown as Error;
@@ -88,12 +67,13 @@ export class LoginController implements AccessTokenRefresher {
             return false;
         }
 
-        this.fireLogin(response.user!, response.token!);
+        this.accessToken = response.token!;
+        this.fireLogin(response.user!);
 
         return true;
     }
 
-    public async refreshAccessToken(): Promise<void> {
+    public refreshAccessToken(): Promise<string> {
         const response = this.getSavedDeviceLoginResponse();
         if (!response) {
             // TODO: execute login command here?
@@ -102,16 +82,22 @@ export class LoginController implements AccessTokenRefresher {
         return this.deviceLogin(response.apiToken);
     }
 
-    public async deviceLogin(apiToken?: string): Promise<void> {
+    public async deviceLogin(apiToken?: string): Promise<string> {
         const call = this.authClient.DeviceLogin({
             deviceName: ExtensionID,
             apiToken: apiToken,
         }, new grpc.Metadata());
 
+        this.accessToken = undefined;
+
         return new Promise((resolve, reject) => {
             call.on('status', (status: grpc.StatusObject) => {
                 if (status.code === grpc.status.OK) {
-                    resolve();
+                    if (this.accessToken) {
+                        resolve(this.accessToken);
+                    } else {
+                        reject(new grpc.StatusBuilder().withCode(status.code).withDetails('accessToken was not acquired, please try login again'));
+                    }
                 } else {
                     reject(status);
                 }
@@ -126,10 +112,9 @@ export class LoginController implements AccessTokenRefresher {
                 }
                 if (response.completed) {
                     this.onDidAuthUserChange.fire(response.user!);
-                    this.onDidLoginTokenChange.fire(response.accessToken!);
                     setCommandContext(ContextName.LoggedIn, true);
                     this.saveDeviceLoginResponse(response);
-                    resolve();
+                    this.accessToken = response.accessToken;
                 }
             });
 
@@ -184,9 +169,8 @@ export class LoginController implements AccessTokenRefresher {
         return this.globalState.get<LoginResponse>(MementoName.LoginResponse);
     }
 
-    private fireLogin(user: User, token: string) {
+    private fireLogin(user: User) {
         this.onDidAuthUserChange.fire(user);
-        this.onDidLoginTokenChange.fire(token);
         setCommandContext(ContextName.LoggedIn, true);
     }
 
