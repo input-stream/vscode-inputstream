@@ -5,7 +5,7 @@ import { API } from './api';
 import { loadAuthProtos, loadByteStreamProtos, loadInputStreamProtos, createAuthServiceClient } from './clients';
 import { CommandName, openExtensionSetting } from './commands';
 import { ConfigName, createInputStreamConfiguration } from './configurations';
-import { Context } from './context';
+import { Context, VSCodeWorkspace } from './context';
 import { makeChannelCredentials } from './authenticatingGrpcClient';
 import { ImageSearch } from './imagesearch/imagesearch';
 import { InputsExplorer } from './inputsExplorer';
@@ -86,9 +86,19 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 	const accountsExplorer = new AccountExplorer(ctx, vscode.window, vscode.commands);
 	const inputsExplorer = new InputsExplorer(ctx, vscode.window, vscode.commands, inputsClient);
 
+	const filesystem = new StreamFsController(
+		ctx,
+		vscode.commands,
+		vscode.workspace,
+		vscode.window,
+		inputsClient,
+		bytestreamClient,
+	);
+
 	ctx.add(loginController.onDidAuthUserChange.event((user: User) => {
 		accountsExplorer.handleAuthUserChange(user);
 		inputsExplorer.handleUserLogin(user);
+		filesystem.handleUserLogin(user);
 	}));
 
 	ctx.add(loginController.onDidLoginTokenChange.event(token => {
@@ -96,8 +106,6 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 		imageSearchClient.setToken(token);
 		inputsClient.setToken(token);
 	}));
-
-	new StreamFsController(ctx, vscode.commands, vscode.workspace, inputsClient, bytestreamClient);
 
 	loginController.restore();
 

@@ -16,7 +16,7 @@ import { Context, VSCodeCommands, VSCodeWindow } from '../context';
  * Controller component for image search.
  */
 export class ImageSearch {
-    protected webview: ImageSearchWebview;
+    protected webview: Promise<ImageSearchWebview>;
     protected renderer = new ImageSearchRenderer();
     protected onDidSearchImageClick = new vscode.EventEmitter<SearchImage>();
 
@@ -36,13 +36,15 @@ export class ImageSearch {
         ctx.add(this.onDidSearchImageClick.event(this.handleCommandSearchImageClick, this));
         ctx.add(commands.registerCommand(CommandName.ImageSearch, this.handleCommandImageSearch, this));
 
-        this.webview = new ImageSearchWebview(
-            ctx,
-            window,
-            'Seach photos on using unsplash API',
-            'Image Search',
-            vscode.ViewColumn.Two,
-        );
+        this.webview = new Promise<ImageSearchWebview>(() => {
+            return new ImageSearchWebview(
+                ctx,
+                window,
+                'Seach photos on using unsplash API',
+                'Image Search',
+                vscode.ViewColumn.Two,
+            );
+        });
     }
 
     async handleCommandSearchImageClick(image: SearchImage) {
@@ -94,7 +96,7 @@ export class ImageSearch {
     }
 
     async searchImages(): Promise<void> {
-        const webview = this.webview;
+        const webview = await this.webview;
         const requestChangeEmitter = new event.Emitter<SearchImagesRequest>();
 
         const requestDidChange = event.Event.debounce(
@@ -105,6 +107,8 @@ export class ImageSearch {
         );
 
         requestDidChange(async (request) => {
+            const webview = await this.webview;
+
             if (!this.client) {
                 return;
             }

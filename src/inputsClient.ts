@@ -30,17 +30,20 @@ export class InputsGrpcClient extends ReauthenticatingGrpcClient<InputsClient> i
         super(client, tokenRefresher);
     }
 
-    async listInputs(filter: InputFilterOptions, options?: UnaryCallOptions): Promise<Input[] | undefined> {
+    listInputs(filter: InputFilterOptions, options?: UnaryCallOptions): Promise<Input[] | undefined> {
         return this.unaryCall<Input[] | undefined>('List Inputs', (): Promise<Input[] | undefined> => {
             return new Promise<Input[]>((resolve, reject) => {
+                const md = this.getGrpcMetadata();
+                const deadline = this.getDeadline();
+
                 this.client.listInputs(
                     {
                         filter: filter,
                         wantPrivate: true,
                     },
-                    this.getGrpcMetadata(),
-                    { deadline: this.getDeadline() },
-                    async (err: grpc.ServiceError | null, resp?: ListInputsResponse) => {
+                    md,
+                    { deadline },
+                    (err: grpc.ServiceError | null, resp?: ListInputsResponse) => {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
@@ -55,14 +58,16 @@ export class InputsGrpcClient extends ReauthenticatingGrpcClient<InputsClient> i
         }, options?.limit, options?.silent);
     }
 
-    async createInput(input: Input, options?: UnaryCallOptions): Promise<Input | undefined> {
+    createInput(input: Input, options?: UnaryCallOptions): Promise<Input | undefined> {
         return this.unaryCall<Input>('Create Input', (): Promise<Input> => {
             return new Promise<Input>((resolve, reject) => {
+                const md = this.getGrpcMetadata();
+                const deadline = this.getDeadline();
                 this.client.createInput(
                     { input },
-                    this.getGrpcMetadata(),
-                    { deadline: this.getDeadline() },
-                    async (err: grpc.ServiceError | null, resp?: Input) => {
+                    md,
+                    { deadline },
+                    (err: grpc.ServiceError | null, resp?: Input) => {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
@@ -73,14 +78,14 @@ export class InputsGrpcClient extends ReauthenticatingGrpcClient<InputsClient> i
         }, options?.limit, options?.silent);
     }
 
-    async getInput(filter: InputFilterOptions, mask?: FieldMask, options?: UnaryCallOptions): Promise<Input | undefined> {
+    getInput(filter: InputFilterOptions, mask?: FieldMask, options?: UnaryCallOptions): Promise<Input | undefined> {
         return this.unaryCall<Input>('Get Input', (): Promise<Input> => {
             return new Promise<Input>((resolve, reject) => {
                 this.client.getInput(
                     { filter, mask },
                     this.getGrpcMetadata(),
                     { deadline: this.getDeadline() },
-                    async (err: grpc.ServiceError | null, resp?: Input) => {
+                    (err: grpc.ServiceError | null, resp?: Input) => {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
@@ -91,14 +96,30 @@ export class InputsGrpcClient extends ReauthenticatingGrpcClient<InputsClient> i
         }, options?.limit, options?.silent);
     }
 
-    async updateInput(input: Input, mask: FieldMask, options?: UnaryCallOptions): Promise<UpdateInputResponse> {
+    updateInput(input: Input, mask: FieldMask, options?: UnaryCallOptions): Promise<UpdateInputResponse> {
+        return new Promise((resolve, reject) => {
+            const md = this.getGrpcMetadata();
+            const deadline = this.getDeadline();
+            this.client.UpdateInput({ input, mask }, md, { deadline }, (err: grpc.ServiceError | null, resp?: UpdateInputResponse) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(resp!);
+                }
+            });
+        });
+    }
+
+    updateInputAuth(input: Input, mask: FieldMask, options?: UnaryCallOptions): Promise<UpdateInputResponse> {
         return this.unaryCall<UpdateInputResponse>('Update Input', (): Promise<UpdateInputResponse> => {
             return new Promise<UpdateInputResponse>((resolve, reject) => {
+                const md = this.getGrpcMetadata();
+                const deadline = this.getDeadline();
                 this.client.updateInput(
                     { input, mask },
-                    this.getGrpcMetadata(),
-                    { deadline: this.getDeadline() },
-                    async (err: grpc.ServiceError | null, resp?: UpdateInputResponse) => {
+                    md,
+                    { deadline },
+                    (err: grpc.ServiceError | null, resp?: UpdateInputResponse) => {
                         if (err) {
                             reject(this.handleError(err));
                         } else {
@@ -109,14 +130,16 @@ export class InputsGrpcClient extends ReauthenticatingGrpcClient<InputsClient> i
         }, options?.limit, options?.silent);
     }
 
-    async removeInput(id: string, options?: UnaryCallOptions): Promise<RemoveInputResponse> {
+    removeInput(id: string, options?: UnaryCallOptions): Promise<RemoveInputResponse> {
         return this.unaryCall<RemoveInputResponse>('Remove Input', (): Promise<RemoveInputResponse> => {
             return new Promise<RemoveInputResponse>((resolve, reject) => {
+                const md = this.getGrpcMetadata();
+                const deadline = this.getDeadline();
                 this.client.removeInput(
                     { id },
-                    this.getGrpcMetadata(),
-                    { deadline: this.getDeadline() },
-                    async (err: grpc.ServiceError | null, resp?: RemoveInputResponse) => {
+                    md,
+                    { deadline },
+                    (err: grpc.ServiceError | null, resp?: RemoveInputResponse) => {
                         if (err) {
                             reject(this.handleError(err));
                         } else {

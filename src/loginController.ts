@@ -1,4 +1,8 @@
 import * as grpc from '@grpc/grpc-js';
+import { Metadata } from '@grpc/grpc-js/build/src/metadata';
+import { InterceptingListener, Listener } from '@grpc/grpc-js/src/call-interface';
+import { NextCall, InterceptorOptions, InterceptingCall, InterceptingCallInterface, MetadataRequester, FullRequester } from '@grpc/grpc-js/src/client-interceptors';
+
 import * as vscode from 'vscode';
 
 import { CommandName, setCommandContext, ContextName, BuiltInCommandName } from './commands';
@@ -39,6 +43,22 @@ export class LoginController implements AccessTokenRefresher {
     }
 
     // ===================== PUBLIC =====================
+
+    handleCallStart(metadata: Metadata, listener: InterceptingListener, next: (metadata: Metadata, listener: InterceptingListener | Listener) => void): void {
+
+    }
+
+    // (metadata: Metadata, listener: InterceptingListener, next: (metadata: Metadata, listener: InterceptingListener | Listener) => void) => {
+
+    // }
+
+    public interceptCall(options: InterceptorOptions, next: InterceptingCallInterface): InterceptingCall {
+        const metadataRequester = this.handleCallStart.bind(this) as unknown as MetadataRequester;
+        const requester = new grpc.RequesterBuilder()
+            // .withStart(metadataRequester)
+            .build();
+        return new InterceptingCall(next, requester);
+    }
 
     public async login(token: string): Promise<void> {
         try {

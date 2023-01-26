@@ -20,13 +20,16 @@ export class ImagesGrpcClient extends ReauthenticatingGrpcClient<ImagesClient> i
         super(client, refresher);
     }
 
-    async searchImages(request: SearchImagesRequest): Promise<SearchImagesResponse> {
+    searchImages(request: SearchImagesRequest): Promise<SearchImagesResponse> {
         return new Promise<SearchImagesResponse>((resolve, reject) => {
+            const md = this.getGrpcMetadata();
+            const deadline = this.getDeadline();
+
             this.client.searchImages(
                 request,
-                this.getGrpcMetadata(),
-                { deadline: this.getDeadline() },
-                async (err: grpc.ServiceError | null, resp?: SearchImagesResponse) => {
+                md,
+                { deadline },
+                (err: grpc.ServiceError | null, resp?: SearchImagesResponse) => {
                     if (err) {
                         reject(this.handleError(err));
                     } else {

@@ -52,7 +52,8 @@ export class ReauthenticatingGrpcClient<T extends grpc.Client> {
      * response type or fail to a grpc.ServiceError.
      * @param limit Max number of retries.
      */
-    protected async unaryCall<S>(desc: string, fn: () => Promise<S>, limit = 2, silent = false): Promise<S> {
+    protected async unaryCall<S>(desc: string, callback: grpc.requestCallback<S>, limit = 2, silent = false): Promise<S> {
+
         try {
             return await fn();
         } catch (e) {
