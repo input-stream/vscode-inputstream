@@ -11,12 +11,12 @@ export function makeChannelCredentials(address: string): grpc.ChannelCredentials
     return grpc.credentials.createInsecure();
 }
 
-export class GRPCClient<T extends grpc.Client> {
+export class ReauthenticatingGrpcClient<T extends grpc.Client> {
     private _token: string | undefined;
 
     constructor(
         protected readonly client: T,
-        private readonly refresher?: AccessTokenRefresher,
+        private readonly tokenRefresher?: AccessTokenRefresher,
         private defaultDeadlineSeconds = 30,
     ) {
     }
@@ -68,9 +68,9 @@ export class GRPCClient<T extends grpc.Client> {
 
             // Attempt to refresh the token if we are unauthenticated
             if (err.code === grpc.status.UNAUTHENTICATED) {
-                if (this.refresher) {
+                if (this.tokenRefresher) {
                     try {
-                        await this.refresher.refreshAccessToken();
+                        await this.tokenRefresher.refreshAccessToken();
                         return this.unaryCall(desc, fn, Math.max(0, limit - 1));
                     } catch (e2) {
                         if (!silent) {

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { Input, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from './proto/build/stack/inputstream/v1beta1/Input';
 import { Context, VSCodeCommands, VSCodeWindow } from './context';
-import { IInputsClient } from './inputStreamClient';
+import { IInputsClient } from './inputsClient';
 import { User } from './proto/build/stack/auth/v1beta1/User';
 import { TreeController } from './treeController';
 import { BuiltInCommandName } from './commands';

@@ -2,32 +2,27 @@ import * as vscode from 'vscode';
 
 import { AccountExplorer } from './accountExplorer';
 import { API } from './api';
-import { ByteStreamGRPCClient } from './byteStreamClient';
 import { loadAuthProtos, loadByteStreamProtos, loadInputStreamProtos, createAuthServiceClient } from './clients';
 import { CommandName, openExtensionSetting } from './commands';
 import { ConfigName, createInputStreamConfiguration } from './configurations';
 import { Context } from './context';
-import { makeChannelCredentials } from './grpcclient';
+import { makeChannelCredentials } from './authenticatingGrpcClient';
 import { ImageSearch } from './imagesearch/imagesearch';
-import { ImageSearchClient } from './imageSearchClient';
 import { InputsExplorer } from './inputsExplorer';
-import { InputsGRPCClient } from './inputStreamClient';
 import { LoginController } from './loginController';
 import { User } from './proto/build/stack/auth/v1beta1/User';
 import { StreamFsController } from './streamfs/streamFscontroller';
 import { UriHandler } from './uriHandler';
+import { ByteStreamGrpcClient } from './byteStreamClient';
+import { ImagesGrpcClient } from './imagesClient';
+import { InputsGrpcClient } from './inputsClient';
+import { AuthClient } from 'google-auth-library/build/src/auth/authclient';
+import { AuthGrpcClient } from './authClient';
 
 const api = new API();
 
 export function activate(extensionCtx: vscode.ExtensionContext) {
 	const config = vscode.workspace.getConfiguration(ConfigName);
-
-	const cfg = createInputStreamConfiguration(extensionCtx.asAbsolutePath.bind(extensionCtx), config);
-	const authProtos = loadAuthProtos(cfg.auth.protofile);
-	const byteStreamProtos = loadByteStreamProtos(cfg.bytestream.protofile);
-	const inputStreamProtos = loadInputStreamProtos(cfg.inputstream.protofile);
-
-	const authClient = createAuthServiceClient(authProtos, cfg.auth.address);
 
 	const ctx: Context = {
 		add<T extends vscode.Disposable>(d: T): T {
@@ -35,9 +30,16 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 			return d;
 		},
 		extensionUri: extensionCtx.extensionUri,
-	}
+	};
 
 	ctx.add(vscode.commands.registerCommand(CommandName.OpenSetting, openExtensionSetting));
+
+	const cfg = createInputStreamConfiguration(extensionCtx.asAbsolutePath.bind(extensionCtx), config);
+	const authProtos = loadAuthProtos(cfg.auth.protofile);
+	const byteStreamProtos = loadByteStreamProtos(cfg.bytestream.protofile);
+	const inputStreamProtos = loadInputStreamProtos(cfg.inputstream.protofile);
+
+	const auth = ctx.add(new AuthGrpcClient(createAuthServiceClient(authProtos, cfg.auth.address)));
 
 	const loginController = new LoginController(
 		ctx,
@@ -45,11 +47,11 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 		vscode.env,
 		vscode.window,
 		extensionCtx.globalState,
-		authClient,
+		auth.client,
 	);
 
 	const bytestreamClient = ctx.add(
-		new ByteStreamGRPCClient(
+		new ByteStreamGrpcClient(
 			new byteStreamProtos.google.bytestream.ByteStream(
 				cfg.bytestream.address,
 				makeChannelCredentials(cfg.bytestream.address)
@@ -59,7 +61,7 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 	);
 
 	const inputsClient = ctx.add(
-		new InputsGRPCClient(
+		new InputsGrpcClient(
 			new inputStreamProtos.build.stack.inputstream.v1beta1.Inputs(
 				cfg.inputstream.address,
 				makeChannelCredentials(cfg.inputstream.address)
@@ -69,7 +71,7 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 	);
 
 	const imageSearchClient = ctx.add(
-		new ImageSearchClient(
+		new ImagesGrpcClient(
 			new inputStreamProtos.build.stack.inputstream.v1beta1.Images(
 				cfg.inputstream.address,
 				makeChannelCredentials(cfg.inputstream.address)

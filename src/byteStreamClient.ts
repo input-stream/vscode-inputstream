@@ -1,13 +1,13 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
 
-import { GRPCClient } from './grpcclient';
 import { AccessTokenRefresher } from './loginController';
 import { ByteStreamClient } from './proto/google/bytestream/ByteStream';
 import { QueryWriteStatusRequest } from './proto/google/bytestream/QueryWriteStatusRequest';
 import { QueryWriteStatusResponse } from './proto/google/bytestream/QueryWriteStatusResponse';
 import { ReadRequest } from './proto/google/bytestream/ReadRequest';
 import { ReadResponse } from './proto/google/bytestream/ReadResponse';
+import { ReauthenticatingGrpcClient } from './authenticatingGrpcClient';
 import { WriteRequest } from './proto/google/bytestream/WriteRequest';
 import { WriteResponse } from './proto/google/bytestream/WriteResponse';
 
@@ -17,7 +17,7 @@ export interface IByteStreamClient {
     write(onResponse: (error?: grpc.ServiceError | null, out?: WriteResponse | undefined) => void, extraMd?: grpc.Metadata): grpc.ClientWritableStream<WriteRequest>;
 }
 
-export class ByteStreamGRPCClient extends GRPCClient<ByteStreamClient> implements IByteStreamClient, vscode.Disposable {
+export class ByteStreamGrpcClient extends ReauthenticatingGrpcClient<ByteStreamClient> implements IByteStreamClient, vscode.Disposable {
 
     constructor(
         client: ByteStreamClient,

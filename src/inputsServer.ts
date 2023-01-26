@@ -1,32 +1,30 @@
 import * as grpc from '@grpc/grpc-js';
 
-import { ProtoGrpcType as AuthProtoType } from './proto/auth';
-import { InMemoryAuthService } from './authServiceServer';
-import { loadAuthProtos } from './clients';
-import { AuthServiceClient } from './proto/build/stack/auth/v1beta1/AuthService';
+import { InMemoryInputsService } from './inputsService';
+import { InputsClient } from './proto/build/stack/inputstream/v1beta1/Inputs';
+import { loadInputStreamProtos } from './clients';
 
+import { ProtoGrpcType as InputStreamProtoType } from './proto/inputstream';
 
-export class AuthClientServer {
-    proto: AuthProtoType;
+export class InputsServer {
+    proto: InputStreamProtoType;
     server: grpc.Server;
-    service: InMemoryAuthService;
-    _client: AuthServiceClient | undefined;
+    service: InMemoryInputsService;
+    _client: InputsClient | undefined;
 
     constructor(private host = '0.0.0.0', private port = '0') {
-        this.proto = loadAuthProtos('./proto/auth.proto');
-        this.service = new InMemoryAuthService();
+        this.proto = loadInputStreamProtos('./proto/inputstream.proto');
+        this.service = new InMemoryInputsService();
         this.server = new grpc.Server();
         this.service.addTo(this.proto, this.server);
     }
 
-    // ===================== PUBLIC =====================
-
-    public get client(): AuthServiceClient {
+    get client(): InputsClient {
         return this._client!;
     }
 
-    public async connect(): Promise<AuthServiceClient> {
-        return new Promise<AuthServiceClient>((resolve, reject) => {
+    async connect(): Promise<InputsClient> {
+        return new Promise<InputsClient>((resolve, reject) => {
             this.server.bindAsync(`${this.host}:${this.port}`, grpc.ServerCredentials.createInsecure(), (err: Error | null, port: number) => {
                 if (err) {
                     reject(err);
@@ -34,12 +32,12 @@ export class AuthClientServer {
                 }
                 this.server.start();
 
-                this._client = new this.proto.build.stack.auth.v1beta1.AuthService(
+                this._client = new this.proto.build.stack.inputstream.v1beta1.Inputs(
                     `${this.host}:${port}`,
                     grpc.credentials.createInsecure());
                 const deadline = new Date();
                 deadline.setSeconds(deadline.getSeconds() + 2);
-                this._client!.waitForReady(deadline, (err: Error | undefined) => {
+                this._client.waitForReady(deadline, (err: Error | undefined) => {
                     if (err) {
                         reject(err);
                         return;

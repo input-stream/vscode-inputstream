@@ -2,9 +2,10 @@ import * as vscode from 'vscode';
 import Long from "long";
 
 import { IByteStreamClient } from "../byteStreamClient";
-import { IInputsClient } from "../inputStreamClient";
+import { IInputsClient } from "../inputsClient";
 import { Timestamp } from "../proto/google/protobuf/Timestamp";
 import { Utils } from 'vscode-uri';
+
 
 export type NodeContext = {
     inputsClient: IInputsClient;

@@ -2,13 +2,10 @@ import * as vscode from 'vscode';
 
 import { CommandName } from '../commands';
 import { FileNode } from './fileNode';
+import { Input, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from '../proto/build/stack/inputstream/v1beta1/Input';
 import { makeInputContentFileNodeUri, makeInputNodeUri } from '../filesystems';
 import { NodeContext } from './node';
 import { TextEncoder, TextDecoder } from 'util';
-import {
-    Input,
-    _build_stack_inputstream_v1beta1_Input_Status as InputStatus,
-} from '../proto/build/stack/inputstream/v1beta1/Input';
 
 
 export class ContentFileNode extends FileNode {

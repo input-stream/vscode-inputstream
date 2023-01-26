@@ -3,10 +3,8 @@ import * as grpc from '@grpc/grpc-js';
 import { CreateInputRequest } from './proto/build/stack/inputstream/v1beta1/CreateInputRequest';
 import { GetInputRequest } from './proto/build/stack/inputstream/v1beta1/GetInputRequest';
 import { Input } from './proto/build/stack/inputstream/v1beta1/Input';
-import { InputsClient } from './proto/build/stack/inputstream/v1beta1/Inputs';
 import { ListInputsRequest } from './proto/build/stack/inputstream/v1beta1/ListInputsRequest';
 import { ListInputsResponse } from './proto/build/stack/inputstream/v1beta1/ListInputsResponse';
-import { loadInputStreamProtos } from './clients';
 import { ProtoGrpcType as InputStreamProtoType } from './proto/inputstream';
 import { RemoveInputRequest } from './proto/build/stack/inputstream/v1beta1/RemoveInputRequest';
 import { RemoveInputResponse } from './proto/build/stack/inputstream/v1beta1/RemoveInputResponse';
@@ -126,45 +124,3 @@ export class InMemoryInputsService {
     }
 }
 
-export class InputsClientServer {
-    proto: InputStreamProtoType;
-    server: grpc.Server;
-    service: InMemoryInputsService;
-    _client: InputsClient | undefined;
-
-    constructor(private host = '0.0.0.0', private port = '0') {
-        this.proto = loadInputStreamProtos('./proto/inputstream.proto');
-        this.service = new InMemoryInputsService();
-        this.server = new grpc.Server();
-        this.service.addTo(this.proto, this.server);
-    }
-
-    get client(): InputsClient {
-        return this._client!;
-    }
-
-    async connect(): Promise<InputsClient> {
-        return new Promise<InputsClient>((resolve, reject) => {
-            this.server.bindAsync(`${this.host}:${this.port}`, grpc.ServerCredentials.createInsecure(), (err: Error | null, port: number) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                this.server.start();
-
-                this._client = new this.proto.build.stack.inputstream.v1beta1.Inputs(
-                    `${this.host}:${port}`,
-                    grpc.credentials.createInsecure());
-                const deadline = new Date();
-                deadline.setSeconds(deadline.getSeconds() + 2);
-                this._client.waitForReady(deadline, (err: Error | undefined) => {
-                    if (err) {
-                        reject(err);
-                        return;
-                    }
-                    resolve(this._client!);
-                });
-            });
-        });
-    }
-}

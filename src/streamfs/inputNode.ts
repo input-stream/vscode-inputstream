@@ -3,23 +3,20 @@ import * as vscode from 'vscode';
 import imageSize from 'image-size';
 import { Readable } from 'node:stream';
 
-import { getContentTypeForExtension, makeBytestreamUploadResourceName, makeInputContentName, makeInputNodeUri, MAX_CLIENT_BODY_SIZE, sha256Bytes } from '../filesystems';
-import { User } from '../proto/build/stack/auth/v1beta1/User';
-import { File } from '../proto/build/stack/inputstream/v1beta1/File';
-import { FileSet } from '../proto/build/stack/inputstream/v1beta1/FileSet';
+import { childUri } from '../uris';
 import { ContentFileNode } from './contentFileNode';
 import { DirNode } from './directoryNode';
+import { File } from '../proto/build/stack/inputstream/v1beta1/File';
 import { FileNode } from './fileNode';
+import { FileSet } from '../proto/build/stack/inputstream/v1beta1/FileSet';
+import { getContentTypeForExtension, makeBytestreamUploadResourceName, makeInputContentName, makeInputNodeUri, MAX_CLIENT_BODY_SIZE, sha256Bytes } from '../filesystems';
+import { Input, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from '../proto/build/stack/inputstream/v1beta1/Input';
 import { InputFileNode } from './inputFileNode';
 import { NodeContext } from './node';
-import {
-    Input,
-    _build_stack_inputstream_v1beta1_Input_Status as InputStatus,
-} from '../proto/build/stack/inputstream/v1beta1/Input';
-import { WriteResponse } from '../proto/google/bytestream/WriteResponse';
-import { WriteRequest } from '../proto/google/bytestream/WriteRequest';
+import { User } from '../proto/build/stack/auth/v1beta1/User';
 import { Utils } from 'vscode-uri';
-import { childUri } from '../uris';
+import { WriteRequest } from '../proto/google/bytestream/WriteRequest';
+import { WriteResponse } from '../proto/google/bytestream/WriteResponse';
 
 
 export interface IFileUploader {

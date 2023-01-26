@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+
 export class Filesystem implements vscode.FileSystem {
     constructor(private provider: vscode.FileSystemProvider) { }
 

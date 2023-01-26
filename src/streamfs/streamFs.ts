@@ -1,16 +1,16 @@
 import * as vscode from 'vscode';
-import path = require('path');
 
 import { Context, VSCodeWorkspace } from '../context';
 import { DirNode } from './directoryNode';
 import { Entry } from './entry';
 import { FileNode } from './fileNode';
+import { IByteStreamClient } from '../byteStreamClient';
+import { IInputsClient } from '../inputsClient';
 import { InputNode } from './inputNode';
 import { RootNode } from './rootNode';
 import { Scheme, streamRootUri } from '../filesystems';
 import { UserNode } from './userNode';
-import { IInputsClient } from '../inputStreamClient';
-import { IByteStreamClient } from '../byteStreamClient';
+import { Utils } from 'vscode-uri';
 
 
 export type selectPredicate = (child: Entry) => boolean;
@@ -104,8 +104,7 @@ export class StreamFs implements vscode.FileSystemProvider {
     }
 
     lookupParentDirectory(uri: vscode.Uri): Promise<DirNode<Entry>> {
-        const dirname = uri.with({ path: path.posix.dirname(uri.path) });
-        return this.lookupAsDirectory(dirname, false);
+        return this.lookupAsDirectory(Utils.dirname(uri), false);
     }
 
     /**
@@ -149,7 +148,7 @@ export class StreamFs implements vscode.FileSystemProvider {
     public async writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): Promise<void> {
         console.log(`writeFile:`, uri);
 
-        const basename = path.posix.basename(uri.path);
+        const basename = Utils.basename(uri);
         const parent = await this.lookupParentDirectory(uri);
 
         const entry = await parent.getChild(basename);
@@ -190,8 +189,8 @@ export class StreamFs implements vscode.FileSystemProvider {
     public async createDirectory(uri: vscode.Uri): Promise<void> {
         console.log(`createDirectory:`, uri);
 
-        const basename = path.posix.basename(uri.path);
-        const dirname = uri.with({ path: path.posix.dirname(uri.path) });
+        const basename = Utils.basename(uri);
+        const dirname = Utils.dirname(uri);
         const parent = await this.lookupAsDirectory(dirname, false);
 
         await parent.createDirectory(basename);
@@ -214,7 +213,7 @@ export class StreamFs implements vscode.FileSystemProvider {
         const entry = await this.lookup(oldUri, false);
         const oldParent = await this.lookupParentDirectory(oldUri);
         const newParent = await this.lookupParentDirectory(newUri);
-        const newName = path.posix.basename(newUri.path);
+        const newName = Utils.basename(newUri);
 
         if (oldParent && oldParent === newParent) {
             await oldParent.rename(entry.name, newName);
@@ -234,9 +233,9 @@ export class StreamFs implements vscode.FileSystemProvider {
     public async delete(uri: vscode.Uri): Promise<void> {
         console.log(`delete:`, uri);
 
-        const dirname = uri.with({ path: path.posix.dirname(uri.path) });
+        const dirname = Utils.dirname(uri);
         const parent = await this.lookupAsDirectory(dirname, false);
-        const basename = path.posix.basename(uri.path);
+        const basename = Utils.basename(uri);
 
         await parent.deleteChild(basename);
 

@@ -1,25 +1,27 @@
 import * as grpc from '@grpc/grpc-js';
-
-import Long = require('long');
-
-import { BytestreamClientServer, InMemoryBytestreamService } from "./byteStreamServer";
 import { describe, it } from "@jest/globals";
 import { expect } from "chai";
-import { ReadResponse } from '../proto/google/bytestream/ReadResponse';
-import { WriteResponse } from '../proto/google/bytestream/WriteResponse';
+import Long from 'long';
+
+import { BytestreamServer } from './byteStreamServer';
+import { InMemoryBytestreamService } from "./byteStreamService";
+import { ReadResponse } from './proto/google/bytestream/ReadResponse';
+import { WriteResponse } from './proto/google/bytestream/WriteResponse';
 
 describe('InMemoryBytestreamService', () => {
+
     it('constructor', () => {
         const service = new InMemoryBytestreamService();
         expect(service).to.exist;
         expect(service.readData).to.exist;
         expect(service.writeData).to.exist;
     });
+
     describe('server', () => {
-        let bytestream: BytestreamClientServer;
+        let bytestream: BytestreamServer;
 
         beforeEach(async () => {
-            bytestream = new BytestreamClientServer();
+            bytestream = new BytestreamServer();
             return bytestream.connect();
         });
 

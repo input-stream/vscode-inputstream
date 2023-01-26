@@ -1,10 +1,11 @@
 import * as grpc from '@grpc/grpc-js';
 
-import { AuthClientServer, InMemoryAuthService } from "./authServiceServer";
+import { InMemoryAuthService } from "./authService";
 import { describe, it } from "@jest/globals";
 import { expect } from "chai";
 import { User } from './proto/build/stack/auth/v1beta1/User';
 import { DeviceLoginResponse } from './proto/build/stack/auth/v1beta1/DeviceLoginResponse';
+import { AuthServer } from './authServer';
 
 describe('InMemoryAuthService', () => {
     it('constructor', () => {
@@ -14,10 +15,10 @@ describe('InMemoryAuthService', () => {
     });
 
     describe('server', () => {
-        let auths: AuthClientServer;
+        let auths: AuthServer;
 
         beforeEach(async () => {
-            auths = new AuthClientServer();
+            auths = new AuthServer();
             return auths.connect();
         });
 

@@ -5,9 +5,9 @@ import { childUri, parseQuery } from '../uris';
 import { CommandName, BuiltInCommandName } from '../commands';
 import { Context, VSCodeCommands, VSCodeWorkspace } from '../context';
 import { File } from '../proto/build/stack/inputstream/v1beta1/File';
-import { FolderName, makeInputContentFileNodeUri, getContentTypeForExtension, makeInputExternalViewUrl, makeInputExternalWatchUrl, makeInputNodeUri, MAX_CLIENT_BODY_SIZE, streamRootUri, makeUserNodeUri, imageExtensionNames } from '../filesystems';
+import { makeInputContentFileNodeUri, getContentTypeForExtension, makeInputExternalViewUrl, makeInputExternalWatchUrl, makeInputNodeUri, MAX_CLIENT_BODY_SIZE, makeUserNodeUri, imageExtensionNames } from '../filesystems';
 import { IByteStreamClient } from '../byteStreamClient';
-import { IInputsClient } from '../inputStreamClient';
+import { IInputsClient } from '../inputsClient';
 import { Input, _build_stack_inputstream_v1beta1_Input_Type as InputType, _build_stack_inputstream_v1beta1_Input_Status as InputStatus, } from '../proto/build/stack/inputstream/v1beta1/Input';
 import { InputNode } from './inputNode';
 import { inputNodePredicate, StreamFs, userNodePredicate } from './streamFs';
@@ -51,7 +51,7 @@ export class StreamFsController {
         ctx.add(commands.registerCommand(CommandName.InputDelete, this.handleCommandInputDelete, this));
         ctx.add(commands.registerCommand(CommandName.ImageUpload, this.handleCommandImageUpload, this));
 
-        this.installWorkspaceFolder(workspace, commands);
+        // this.installWorkspaceFolder(workspace, commands);
     }
 
     public handleUserLogin(user: User): void {
@@ -71,40 +71,40 @@ export class StreamFsController {
             new UserNode(this.fs.root.ctx, user));
     }
 
-    private installWorkspaceFolder(workspace: VSCodeWorkspace, commands: VSCodeCommands): void {
-        const name = FolderName.Stream;
+    // private installWorkspaceFolder(workspace: VSCodeWorkspace, commands: VSCodeCommands): void {
+    //     const name = FolderName.Stream;
 
-        const folders = workspace.workspaceFolders || [];
-        const found = folders.find((f: vscode.WorkspaceFolder) => f.name === name);
-        const start = found ? found.index : folders.length;
-        const deleteCount = found ? 1 : 0;
-        const numOthers = folders.length - deleteCount;
+    //     const folders = workspace.workspaceFolders || [];
+    //     const found = folders.find((f: vscode.WorkspaceFolder) => f.name === name);
+    //     const start = found ? found.index : folders.length;
+    //     const deleteCount = found ? 1 : 0;
+    //     const numOthers = folders.length - deleteCount;
 
-        // if we're the only folder in the instance or it's already a multiroot
-        // workspace, don't do anything fancy.
-        if (numOthers === 0 || numOthers > 2) {
-            workspace.updateWorkspaceFolders(start, deleteCount, { name, uri: streamRootUri });
-            return;
-        }
+    //     // if we're the only folder in the instance or it's already a multiroot
+    //     // workspace, don't do anything fancy.
+    //     if (numOthers === 0 || numOthers > 2) {
+    //         workspace.updateWorkspaceFolders(start, deleteCount, { name, uri: streamRootUri });
+    //         return;
+    //     }
 
-        // otherwise, avoid the dreaded 'Untitled' workspace by writing a
-        // pseudo-temporary file for this and opening it.
-        const folderData: { name: string, uri: string }[] = folders.map(f => {
-            return {
-                name: f.name,
-                uri: f.uri.toString(),
-            };
-        });
-        folderData.push({ name, uri: streamRootUri.toString() });
+    //     // otherwise, avoid the dreaded 'Untitled' workspace by writing a
+    //     // pseudo-temporary file for this and opening it.
+    //     const folderData: { name: string, uri: string }[] = folders.map(f => {
+    //         return {
+    //             name: f.name,
+    //             uri: f.uri.toString(),
+    //         };
+    //     });
+    //     folderData.push({ name, uri: streamRootUri.toString() });
 
-        const uri = folders[0].uri;
-        const dirUri = Utils.dirname(uri);
-        const fileUri = Utils.joinPath(dirUri, Utils.basename(uri) + ".code-workspace");
-        const content = Buffer.from(JSON.stringify({ folders: folderData }, null, 4));
-        vscode.workspace.fs.writeFile(fileUri, content);
+    //     const uri = folders[0].uri;
+    //     const dirUri = Utils.dirname(uri);
+    //     const fileUri = Utils.joinPath(dirUri, Utils.basename(uri) + ".code-workspace");
+    //     const content = Buffer.from(JSON.stringify({ folders: folderData }, null, 4));
+    //     vscode.workspace.fs.writeFile(fileUri, content);
 
-        commands.executeCommand(BuiltInCommandName.Open, fileUri);
-    }
+    //     commands.executeCommand(BuiltInCommandName.Open, fileUri);
+    // }
 
     private async handleCommandInputCreate() {
         const user = this.user;

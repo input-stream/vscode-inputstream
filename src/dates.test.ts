@@ -1,6 +1,6 @@
 import { expect } from "chai";
-import { Timestamp } from "../proto/google/protobuf/Timestamp";
-import { newTimestamp } from "./timestamp";
+import { newTimestamp } from "./dates";
+import { Timestamp } from "./proto/google/protobuf/Timestamp";
 
 const nowMillis = new Date('2023-01-01').getTime();
 const nowSeconds = Math.round(nowMillis / 1000);

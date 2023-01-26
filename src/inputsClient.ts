@@ -1,16 +1,16 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
 
-import { UnaryCallOptions } from './clients';
-import { GRPCClient } from './grpcclient';
 import { AccessTokenRefresher } from './loginController';
+import { FieldMask } from './proto/google/protobuf/FieldMask';
 import { Input } from './proto/build/stack/inputstream/v1beta1/Input';
 import { InputFilterOptions } from './proto/build/stack/inputstream/v1beta1/InputFilterOptions';
 import { InputsClient } from './proto/build/stack/inputstream/v1beta1/Inputs';
 import { ListInputsResponse } from './proto/build/stack/inputstream/v1beta1/ListInputsResponse';
+import { ReauthenticatingGrpcClient } from './authenticatingGrpcClient';
 import { RemoveInputResponse } from './proto/build/stack/inputstream/v1beta1/RemoveInputResponse';
+import { UnaryCallOptions } from './clients';
 import { UpdateInputResponse } from './proto/build/stack/inputstream/v1beta1/UpdateInputResponse';
-import { FieldMask } from './proto/google/protobuf/FieldMask';
 
 
 export interface IInputsClient {
@@ -21,13 +21,13 @@ export interface IInputsClient {
     removeInput(id: string, options?: UnaryCallOptions): Promise<RemoveInputResponse>;
 }
 
-export class InputsGRPCClient extends GRPCClient<InputsClient> implements IInputsClient, vscode.Disposable {
+export class InputsGrpcClient extends ReauthenticatingGrpcClient<InputsClient> implements IInputsClient, vscode.Disposable {
 
     constructor(
         client: InputsClient,
-        refresher?: AccessTokenRefresher,
+        tokenRefresher?: AccessTokenRefresher,
     ) {
-        super(client, refresher);
+        super(client, tokenRefresher);
     }
 
     async listInputs(filter: InputFilterOptions, options?: UnaryCallOptions): Promise<Input[] | undefined> {

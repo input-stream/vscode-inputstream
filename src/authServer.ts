@@ -1,35 +1,32 @@
 import * as grpc from '@grpc/grpc-js';
 
-import { InMemoryBytestreamService } from './byteStreamServer';
-import { loadByteStreamProtos } from './clients';
-import { ProtoGrpcType as ByteStreamProtoType } from './proto/bytestream';
-import { ByteStreamClient } from './proto/google/bytestream/ByteStream';
+import { ProtoGrpcType as AuthProtoType } from './proto/auth';
+import { InMemoryAuthService } from './authService';
+import { loadAuthProtos } from './clients';
+import { AuthServiceClient } from './proto/build/stack/auth/v1beta1/AuthService';
 
-/**
- * BytestreamClientServer is a client/server pair used for testing.
- */
-export class BytestreamClientServer {
-    private _client: ByteStreamClient | undefined;
 
-    proto: ByteStreamProtoType;
+export class AuthServer {
+    proto: AuthProtoType;
     server: grpc.Server;
-    service: InMemoryBytestreamService;
+    service: InMemoryAuthService;
+    _client: AuthServiceClient | undefined;
 
     constructor(private host = '0.0.0.0', private port = '0') {
-        this.proto = loadByteStreamProtos('./proto/bytestream.proto');
-        this.service = new InMemoryBytestreamService();
+        this.proto = loadAuthProtos('./proto/auth.proto');
+        this.service = new InMemoryAuthService();
         this.server = new grpc.Server();
         this.service.addTo(this.proto, this.server);
     }
 
     // ===================== PUBLIC =====================
 
-    public get client(): ByteStreamClient {
+    public get client(): AuthServiceClient {
         return this._client!;
     }
 
-    public async connect(): Promise<ByteStreamClient> {
-        return new Promise<ByteStreamClient>((resolve, reject) => {
+    public async connect(): Promise<AuthServiceClient> {
+        return new Promise<AuthServiceClient>((resolve, reject) => {
             this.server.bindAsync(`${this.host}:${this.port}`, grpc.ServerCredentials.createInsecure(), (err: Error | null, port: number) => {
                 if (err) {
                     reject(err);
@@ -37,12 +34,12 @@ export class BytestreamClientServer {
                 }
                 this.server.start();
 
-                this._client = new this.proto.google.bytestream.ByteStream(
+                this._client = new this.proto.build.stack.auth.v1beta1.AuthService(
                     `${this.host}:${port}`,
                     grpc.credentials.createInsecure());
                 const deadline = new Date();
                 deadline.setSeconds(deadline.getSeconds() + 2);
-                this._client.waitForReady(deadline, (err: Error | undefined) => {
+                this._client!.waitForReady(deadline, (err: Error | undefined) => {
                     if (err) {
                         reject(err);
                         return;

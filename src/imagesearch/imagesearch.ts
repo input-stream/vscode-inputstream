@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { Duration } from 'luxon';
 import { event } from 'vscode-common';
 
-import { ImageSearchClient } from '../imageSearchClient';
+import { ImagesGrpcClient } from '../imagesClient';
 import { ImageSearchPanel as ImageSearchWebview, ImageSearchRenderProvider, Message } from './webview';
 import { ImageSearchRenderer } from './renderer';
 import { SearchImage } from '../proto/build/stack/inputstream/v1beta1/SearchImage';
@@ -30,7 +30,7 @@ export class ImageSearch {
         ctx: Context,
         commands: VSCodeCommands,
         private window: VSCodeWindow,
-        private client: ImageSearchClient,
+        private client: ImagesGrpcClient,
     ) {
         ctx.add(this.onDidSearchImageClick);
         ctx.add(this.onDidSearchImageClick.event(this.handleCommandSearchImageClick, this));

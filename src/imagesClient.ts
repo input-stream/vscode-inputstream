@@ -1,7 +1,7 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
 
-import { GRPCClient } from './grpcclient';
+import { ReauthenticatingGrpcClient } from './authenticatingGrpcClient';
 import { AccessTokenRefresher } from './loginController';
 import { ImagesClient } from './proto/build/stack/inputstream/v1beta1/Images';
 import { SearchImagesRequest } from './proto/build/stack/inputstream/v1beta1/SearchImagesRequest';
@@ -11,7 +11,7 @@ export interface IImagesClient {
     searchImages(request: SearchImagesRequest): Promise<SearchImagesResponse>;
 }
 
-export class ImageSearchClient extends GRPCClient<ImagesClient> implements IImagesClient, vscode.Disposable {
+export class ImagesGrpcClient extends ReauthenticatingGrpcClient<ImagesClient> implements IImagesClient, vscode.Disposable {
 
     constructor(
         client: ImagesClient,

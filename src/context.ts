@@ -30,7 +30,7 @@ export interface VSCodeWindow {
 
 export interface VSCodeWorkspace {
     readonly fs: vscode.FileSystem;
-    workspaceFolders: vscode.WorkspaceFolder[] | undefined;
-    updateWorkspaceFolders(start: number, deleteCount: number | undefined | null, ...workspaceFoldersToAdd: { readonly uri: vscode.Uri; readonly name?: string }[]): boolean;
+    // workspaceFolders: vscode.WorkspaceFolder[] | undefined;
+    // updateWorkspaceFolders(start: number, deleteCount: number | undefined | null, ...workspaceFoldersToAdd: { readonly uri: vscode.Uri; readonly name?: string }[]): boolean;
     registerFileSystemProvider(scheme: string, provider: vscode.FileSystemProvider, options?: { readonly isCaseSensitive?: boolean; readonly isReadonly?: boolean }): vscode.Disposable;
 }

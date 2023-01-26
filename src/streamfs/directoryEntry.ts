@@ -1,5 +1,6 @@
 import { Entry } from "./entry";
 
+
 export interface DirectoryEntry<T extends Entry> extends Entry {
     getChild(name: string): Promise<T | undefined>;
     getChildren(): Promise<T[]>;

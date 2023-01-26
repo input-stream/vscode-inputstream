@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { TextEncoder } from 'node:util';
 import { FileNode } from './fileNode';
 
+
 export class StaticFileNode extends FileNode {
     constructor(uri: vscode.Uri, private data: Uint8Array) {
         super(uri);
