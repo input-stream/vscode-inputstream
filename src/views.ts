@@ -4,6 +4,7 @@ import { ThemeIcon } from "vscode";
  * Values used as button names in vscode.window.showInformationMessage API.
  */
 export enum ButtonName {
+    OK = 'Ok',
     Cancel = 'Cancel',
     Confirm = 'Confirm',
     Retry = 'Retry',
@@ -12,7 +13,15 @@ export enum ButtonName {
 
 export enum ViewName {
     InputExplorer = 'input.stream.inputExplorer',
-    AccountExplorer = 'input.stream.accountExplorer',
+    ProfileExplorer = 'input.stream.profileExplorer',
+}
+
+export enum TreeItemLabels {
+    Login = 'Login',
+}
+
+export enum CommandDescriptions {
+    ClickToLogin = 'Click to login',
 }
 
 /**

@@ -21,6 +21,7 @@ export interface VSCodeCommands {
 export interface VSCodeWindow {
     activeTextEditor: vscode.TextEditor | undefined;
     setStatusBarMessage(text: string, hideAfterTimeout: number): vscode.Disposable;
+    showInformationMessage<T extends string>(message: string, ...items: T[]): Thenable<T | undefined>;
     showWarningMessage<T extends string>(message: string, ...items: T[]): Thenable<T | undefined>;
     showErrorMessage<T extends string>(message: string, ...items: T[]): Thenable<T | undefined>;
     registerUriHandler(handler: vscode.UriHandler): vscode.Disposable;

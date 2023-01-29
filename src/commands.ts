@@ -21,8 +21,9 @@ export enum CommandName {
     InputUnpublish = 'input.stream.input.unpublish',
     InputView = 'input.stream.input.view',
     InputWatch = 'input.stream.input.watch',
-    LoginToken = 'input.stream.loginToken',
-    Login = 'input.stream.login',
+    JwtLogin = 'input.stream.jwtLogin',
+    BrowserLogin = 'input.stream.browserLogin',
+    Logout = 'input.stream.logout',
     ViewInputstreamExplorer = 'workbench.view.extension.inputstream-explorer',
     OpenSetting = 'input.stream.openExtensionSetting',
 }
@@ -39,15 +40,9 @@ export function openExtensionSetting(options: OpenSettingCommandOptions): Thenab
     return commands.executeCommand(BuiltInCommandName.OpenSettings, options?.q);
 }
 
-export function setCommandContext<T>(key: string, value: T) {
-    return commands.executeCommand(BuiltInCommandName.SetContext, key, value);
-}
-
-
 /**
  * Values used in the setContext function.
  */
 export enum ContextName {
-    LoggedIn = 'input.stream.logged-in',
+    LoggedIn = 'input.stream.loggedIn',
 }
-

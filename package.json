@@ -26,11 +26,11 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:input.stream.login",
-        "onCommand:input.stream.loginToken",
+        "onCommand:input.stream.browserLogin",
+        "onCommand:input.stream.jwtLogin",
         "onFileSystem:stream",
         "onUri",
-        "onView:input.stream.accountExplorer",
+        "onView:input.stream.profileExplorer",
         "onView:input.stream.inputExplorer"
     ],
     "engines": {
@@ -133,14 +133,20 @@
             },
             {
                 "category": "Stream",
-                "command": "input.stream.loginToken",
-                "title": "Login with Token"
+                "command": "input.stream.jwtLogin",
+                "title": "Login With JWT"
             },
             {
                 "category": "Stream",
-                "command": "input.stream.login",
-                "title": "Login",
+                "command": "input.stream.browserLogin",
+                "title": "Open Login URL",
                 "icon": "$(log-in)"
+            },
+            {
+                "category": "Stream",
+                "command": "input.stream.logout",
+                "title": "Logout",
+                "icon": "$(log-out)"
             }
         ],
         "keybindings": [
@@ -165,12 +171,24 @@
                     "when": "false"
                 },
                 {
-                    "command": "input.stream.loginToken",
+                    "command": "input.stream.jwtLogin",
                     "when": "false"
                 },
                 {
-                    "command": "input.stream.login",
-                    "when": "true"
+                    "command": "input.stream.browserLogin",
+                    "when": "!input.stream.loggedIn"
+                },
+                {
+                    "command": "input.stream.browserLogin",
+                    "when": "input.stream.loggedIn"
+                },
+                {
+                    "command": "input.stream.logout",
+                    "when": "input.stream.loggedIn"
+                },
+                {
+                    "command": "input.stream.logout",
+                    "when": "!input.stream.loggedIn"
                 },
                 {
                     "command": "input.stream.input.create",
@@ -212,8 +230,13 @@
                     "group": "navigation@0"
                 },
                 {
-                    "command": "input.stream.login",
-                    "when": "view == input.stream.accountExplorer",
+                    "command": "input.stream.browserLogin",
+                    "when": "view == input.stream.profileExplorer && !input.stream.loggedIn",
+                    "group": "navigation@0"
+                },
+                {
+                    "command": "input.stream.logout",
+                    "when": "view == input.stream.profileExplorer && input.stream.loggedIn",
                     "group": "navigation@0"
                 }
             ],
@@ -277,10 +300,10 @@
                     "contextualTitle": "Input List"
                 },
                 {
-                    "id": "input.stream.accountExplorer",
-                    "name": "Account",
+                    "id": "input.stream.profileExplorer",
+                    "name": "Profile",
                     "icon": "media/astronaut.svg",
-                    "contextualTitle": "Account Details"
+                    "contextualTitle": "Profile Details"
                 }
             ]
         }
@@ -306,6 +329,7 @@
         "@grpc/grpc-js": "1.8.1",
         "@grpc/proto-loader": "0.7.4",
         "fs-extra": "9.0.1",
+        "node-fetch": "2.6.1",
         "google-auth-library": "6.1.0",
         "image-size": "1.0.2",
         "luxon": "1.24.1",

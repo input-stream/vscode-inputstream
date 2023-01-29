@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
-import { BuiltInCommandName } from './commands';
-import { VSCodeWindow, VSCodeCommands, Context } from './context';
-import { User } from './proto/build/stack/auth/v1beta1/User';
-import { TreeController } from './treeController';
-import { loginUri } from './uris';
-import { ViewName, ContextValue } from './views';
 
-export class AccountExplorer extends TreeController<vscode.TreeItem> {
+import { CommandName } from './commands';
+import { TreeController } from './treeController';
+import { User } from './proto/build/stack/auth/v1beta1/User';
+import { ViewName, ContextValue, TreeItemLabels, CommandDescriptions } from './views';
+import { VSCodeWindow, VSCodeCommands, Context } from './context';
+
+export class ProfileExplorer extends TreeController<vscode.TreeItem> {
     private user: User | undefined;
 
     constructor(
@@ -14,7 +14,7 @@ export class AccountExplorer extends TreeController<vscode.TreeItem> {
         window: VSCodeWindow,
         commands: VSCodeCommands,
     ) {
-        super(ctx, window, commands, ViewName.AccountExplorer);
+        super(ctx, window, commands, ViewName.ProfileExplorer);
     }
 
     getRootItems(): Promise<vscode.TreeItem[]> {
@@ -32,14 +32,12 @@ export class AccountExplorer extends TreeController<vscode.TreeItem> {
     }
 
     private async getLoginItems(): Promise<vscode.TreeItem[]> {
-        const item = new vscode.TreeItem('Login');
+        const item = new vscode.TreeItem(TreeItemLabels.Login);
         item.contextValue = ContextValue.Login;
-        item.label = 'Login';
-        item.description = 'Click to login';
+        item.description = CommandDescriptions.ClickToLogin;
         item.command = {
-            title: 'Login',
-            command: BuiltInCommandName.Open,
-            arguments: [loginUri],
+            title: TreeItemLabels.Login,
+            command: CommandName.BrowserLogin,
         };
         return [item];
     }

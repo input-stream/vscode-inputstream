@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
 import { Utils } from 'vscode-uri';
+import { ExtensionID } from './configurations';
 import { Scheme } from './filesystems';
 import { Input } from './proto/build/stack/inputstream/v1beta1/Input';
 import { MediaIconName } from './views';
 
-export const loginUri = vscode.Uri.parse('https://input.stream/settings/extensions/stackbuild.vscode-inputstream/login');
+export const githubLoginUri = vscode.Uri.parse(`https://input.stream/github_login?redirect_uri=${encodeURI(`vscode://${ExtensionID}/login`)}`);
 
 export function childUri(uri: vscode.Uri, ...names: string[]): vscode.Uri {
     return Utils.joinPath(uri, ...names);

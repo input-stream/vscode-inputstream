@@ -18,29 +18,28 @@ export class UriHandler implements vscode.UriHandler {
 
     public async handleUri(uri: vscode.Uri) {
         await this.commands.executeCommand(CommandName.ViewInputstreamExplorer);
-
         switch (uri.path) {
             case '/login':
-                return this.login(uri);
+                return this.handleLoginUri(uri);
             case '/edit':
-                return this.edit(uri);
+                return this.handleEditUri(uri);
             case '/create':
-                return this.create(uri);
+                return this.handleCreateUri(uri);
         }
     }
 
     // ===================== PRIVATE =====================
 
-    private async login(uri: vscode.Uri): Promise<void> {
+    private async handleLoginUri(uri: vscode.Uri): Promise<void> {
         const query = parseQuery(uri);
-        const token = query['token'];
+        const token = query['token'] || query['jwt'];
         if (!token) {
             return;
         }
-        return this.commands.executeCommand(CommandName.LoginToken, token);
+        return this.commands.executeCommand(CommandName.JwtLogin, token);
     }
 
-    private async edit(uri: vscode.Uri): Promise<void> {
+    private async handleEditUri(uri: vscode.Uri): Promise<void> {
         const query = parseQuery(uri);
         const login = query['login'];
         if (!login) {
@@ -53,7 +52,7 @@ export class UriHandler implements vscode.UriHandler {
         return this.commands.executeCommand(BuiltInCommandName.Open, makeInputNodeUri({ login, title }));
     }
 
-    private async create(uri: vscode.Uri): Promise<void> {
+    private async handleCreateUri(uri: vscode.Uri): Promise<void> {
         await this.commands.executeCommand(CommandName.InputCreate);
     }
 

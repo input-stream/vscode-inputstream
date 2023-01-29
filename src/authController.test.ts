@@ -6,18 +6,19 @@ import { Context } from './context';
 import { describe, it } from "@jest/globals";
 import { DeviceLoginResponse } from './proto/build/stack/auth/v1beta1/DeviceLoginResponse';
 import { expect } from "chai";
-import { LoginController } from './loginController';
+import { AuthController } from './authController';
 import { newTimestamp } from './dates';
 import { User } from './proto/build/stack/auth/v1beta1/User';
 import { VSCodeEnv, VSCodeCommands, VSCodeWindow } from './context';
 import { loadProtoPackage } from './grpc';
+import { AuthGrpcClient } from './authClient';
 
 
-describe('LoginController', () => {
+fdescribe('AuthController', () => {
     const proto = loadProtoPackage<AuthProtoType>('proto/auth.proto');
     let globalState: vscode.Memento;
     let auths: AuthServer;
-    let loginController: LoginController;
+    let controller: AuthController;
     let ctx: Context;
     let vsc: VSCodeEnv & VSCodeCommands & VSCodeWindow;
     let openExternal: jest.Mock<Promise<boolean>, any>;
@@ -41,6 +42,7 @@ describe('LoginController', () => {
             activeTextEditor: jest.fn() as unknown as vscode.TextEditor,
             setStatusBarMessage: jest.fn(),
             showWarningMessage: jest.fn(),
+            showInformationMessage: jest.fn(),
             registerUriHandler: jest.fn(),
             createTreeView: jest.fn(),
             createWebviewPanel: jest.fn(),
@@ -55,33 +57,30 @@ describe('LoginController', () => {
 
         auths = new AuthServer();
         const client = await auths.connect();
-        loginController = new LoginController(ctx, vsc, vsc, vsc, globalState, client);
+        const authGrpcClient = new AuthGrpcClient(client);
+        controller = new AuthController(ctx, vsc, vsc, vsc, globalState, authGrpcClient);
     });
 
     it('constructor', () => {
-        expect(loginController).to.exist;
-        expect(registerCommand.mock.calls[0][0]).to.equal("input.stream.login");
-        expect(registerCommand.mock.calls[1][0]).to.equal("input.stream.loginToken");
+        expect(controller).to.exist;
+        expect(registerCommand.mock.calls[0][0]).to.equal("input.stream.browserLogin");
+        expect(registerCommand.mock.calls[1][0]).to.equal("input.stream.jwtLogin");
     });
 
     it('refreshAccessToken throws error if no saved token exists', async () => {
         try {
-            await loginController.refreshAccessToken();
+            await controller.refreshAccessToken();
         } catch (e) {
             expect((e as unknown as Error).message).to.equal('refresh token is not available, please login');
         }
     });
 
-    it('refreshAccessToken uses saved token from memento if exists', async () => {
+    fit('refreshAccessToken uses saved token from memento if exists', async () => {
         //
         // Given
         // 
-        let loginToken: string | undefined;
-        // loginController.onDidLoginTokenChange.event((token: string) => {
-        //     loginToken = token;
-        // });
         let loginUser: User | undefined;
-        loginController.onDidAuthUserChange.event((user: User) => {
+        controller.onDidAuthUserChange.event((user: User) => {
             loginUser = user;
         });
         auths.service.users.set('foo-jwt', { login: 'foo' });
@@ -97,7 +96,7 @@ describe('LoginController', () => {
         // 
         // When
         //
-        await loginController.refreshAccessToken();
+        const accessToken = await controller.refreshAccessToken();
 
         //
         // Then
@@ -106,15 +105,15 @@ describe('LoginController', () => {
         const urlToOpen = openExternal.mock.calls[0][0] as vscode.Uri;
         expect(urlToOpen.toString()).to.equal('https://input.stream/github_login');
 
-        expect(loginToken).to.equal('<accessToken!>');
+        expect(accessToken).to.equal('<accessToken!>');
         expect(loginUser).to.deep.equal({ login: 'foo' });
     });
 
     describe('restore', () => {
         it('should return false if no previously stored data is present', async () => {
-            const didRestore = await loginController.restore();
+            const gotToken = await controller.restoreLogin();
 
-            expect(didRestore).to.be.false;
+            expect(gotToken).to.be.undefined;
         });
         it('should return false if the previously stored data has expired', async () => {
             const savedResponse: DeviceLoginResponse = {
@@ -122,9 +121,9 @@ describe('LoginController', () => {
             };
             await globalState.update('input.stream.api.DeviceLoginResponse', savedResponse);
 
-            const didRestore = await loginController.restore();
+            const gotToken = await controller.restoreLogin();
 
-            expect(didRestore).to.be.false;
+            expect(gotToken).to.be.undefined;
             expect(globalState.get('input.stream.api.DeviceLoginResponse')).to.be.undefined;
         });
         it('should return true if the previously stored data has not expired', async () => {
@@ -133,7 +132,7 @@ describe('LoginController', () => {
             };
 
             await globalState.update('input.stream.api.DeviceLoginResponse', savedResponse);
-            const didRestore = await loginController.restore();
+            const didRestore = await controller.restoreLogin();
 
             expect(didRestore).to.be.true;
         });

@@ -14,19 +14,19 @@ export function createAuthServiceClient(proto: AuthProtoType, address: string): 
 }
 
 export function createBytestreamClient(proto: ByteStreamProtoType, address: string, ctx: ClientContext): ByteStreamClient {
-    const creds = createCredentials(address, ctx.token);
-    const options = createClientOptions(ctx.refreshToken, ctx.options);
+    const creds = createCredentials(address, ctx.accessToken);
+    const options = createClientOptions(ctx.refreshAccessToken, ctx.options);
     return new proto.google.bytestream.ByteStream(address, creds, options);
 }
 
 export function createImagesClient(proto: InputStreamProtoType, address: string, ctx: ClientContext): ImagesClient {
-    const creds = createCredentials(address, ctx.token);
-    const options = createClientOptions(ctx.refreshToken, ctx.options);
+    const creds = createCredentials(address, ctx.accessToken);
+    const options = createClientOptions(ctx.refreshAccessToken, ctx.options);
     return new proto.build.stack.inputstream.v1beta1.Images(address, creds, options);
 }
 
 export function createInputsClient(proto: InputStreamProtoType, address: string, ctx: ClientContext): InputsClient {
-    const creds = createCredentials(address, ctx.token);
-    const options = createClientOptions(ctx.refreshToken, ctx.options);
+    const creds = createCredentials(address, ctx.accessToken);
+    const options = createClientOptions(ctx.refreshAccessToken, ctx.options);
     return new proto.build.stack.inputstream.v1beta1.Inputs(address, creds, options);
 }

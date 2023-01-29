@@ -63,8 +63,9 @@ export type ByteStreamServerConfiguration = {
  * Values used as keys in vscode memento API.
  */
 export enum MementoName {
-    DeviceLoginResponse = 'input.stream.api.DeviceLoginResponse',
-    LoginResponse = 'input.stream.api.LoginResponse',
+    ApiToken = 'input.stream.apiToken',
+    AccessToken = 'input.stream.accessToken',
+    User = 'input.stream.user',
 }
 
 export function createInputStreamConfiguration(

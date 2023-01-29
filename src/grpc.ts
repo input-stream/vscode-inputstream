@@ -27,8 +27,8 @@ export type TokenRefresher = () => Promise<string | undefined>;
  * ClientContext is a convenience struct to build clients.
  */
 export interface ClientContext {
-    token: TokenSupplier,
-    refreshToken: TokenRefresher,
+    accessToken: TokenSupplier,
+    refreshAccessToken: TokenRefresher,
     options?: grpc.ClientOptions,
 }
 
