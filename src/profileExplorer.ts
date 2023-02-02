@@ -37,7 +37,7 @@ export class ProfileExplorer extends TreeController<vscode.TreeItem> {
         item.description = CommandDescriptions.ClickToLogin;
         item.command = {
             title: TreeItemLabels.Login,
-            command: CommandName.BrowserLogin,
+            command: CommandName.Login,
         };
         return [item];
     }
@@ -46,5 +46,11 @@ export class ProfileExplorer extends TreeController<vscode.TreeItem> {
         this.user = user;
         this._onDidChangeTreeData.fire(undefined);
     }
+
+    public handleUserLogout() {
+        this.user = undefined;
+        this._onDidChangeTreeData.fire(undefined);
+    }
+
 }
 

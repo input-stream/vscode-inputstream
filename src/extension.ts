@@ -51,7 +51,6 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 	const authController = new AuthController(
 		ctx,
 		vscode.commands,
-		vscode.env,
 		vscode.window,
 		extensionCtx.globalState,
 		authGrpcClient,
@@ -84,10 +83,16 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 		bytestreamGrpcClient,
 	);
 
-	ctx.add(authController.onDidAuthUserChange.event((user: User) => {
-		profileExplorer.handleUserLogin(user);
-		inputsExplorer.handleUserLogin(user);
-		filesystem.handleUserLogin(user);
+	ctx.add(authController.onDidAuthUserChange.event((user: User | undefined) => {
+		if (user) {
+			profileExplorer.handleUserLogin(user);
+			inputsExplorer.handleUserLogin(user);
+			filesystem.handleUserLogin(user);
+		} else {
+			profileExplorer.handleUserLogout();
+			inputsExplorer.handleUserLogout();
+			filesystem.handleUserLogout();
+		}
 	}));
 
 	authController.restoreLogin();

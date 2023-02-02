@@ -26,7 +26,8 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:input.stream.browserLogin",
+        "onCommand:input.stream.login",
+        "onCommand:input.stream.logout",
         "onCommand:input.stream.jwtLogin",
         "onFileSystem:stream",
         "onUri",
@@ -138,7 +139,7 @@
             },
             {
                 "category": "Stream",
-                "command": "input.stream.browserLogin",
+                "command": "input.stream.login",
                 "title": "Open Login URL",
                 "icon": "$(log-in)"
             },
@@ -175,20 +176,12 @@
                     "when": "false"
                 },
                 {
-                    "command": "input.stream.browserLogin",
+                    "command": "input.stream.login",
                     "when": "!input.stream.loggedIn"
-                },
-                {
-                    "command": "input.stream.browserLogin",
-                    "when": "input.stream.loggedIn"
                 },
                 {
                     "command": "input.stream.logout",
                     "when": "input.stream.loggedIn"
-                },
-                {
-                    "command": "input.stream.logout",
-                    "when": "!input.stream.loggedIn"
                 },
                 {
                     "command": "input.stream.input.create",
@@ -230,7 +223,7 @@
                     "group": "navigation@0"
                 },
                 {
-                    "command": "input.stream.browserLogin",
+                    "command": "input.stream.login",
                     "when": "view == input.stream.profileExplorer && !input.stream.loggedIn",
                     "group": "navigation@0"
                 },
@@ -313,8 +306,8 @@
         "vscode:prepublish:webpack": "npm run clean && webpack --mode production",
         "vscode:prepublish": "npm run clean && npm run compile",
         "vscode-package": "vsce package --out out/extension.vsix",
-        "install-extension": "npm run vscode-package && code --install-extension out/extension.vsix",
-        "uninstall-extension": "code --uninstall-extension stackbuild.vscode-inputstream",
+        "install": "npm run vscode-package && code --install-extension out/extension.vsix",
+        "uninstall": "code --uninstall-extension stackbuild.vscode-inputstream",
         "webpack": "npm run clean && webpack --mode development",
         "watch": "tsc -watch -p ./",
         "compile": "tsc -p ./",

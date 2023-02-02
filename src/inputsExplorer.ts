@@ -32,6 +32,11 @@ export class InputsExplorer extends TreeController<Input> {
         this.refresh();
     }
 
+    public handleUserLogout(): void {
+        this.user = undefined;
+        this.refresh();
+    }
+
     handleVisibilityChange(event: vscode.TreeViewVisibilityChangeEvent) {
         if (event.visible) {
             this.refresh();

@@ -22,7 +22,7 @@ export enum CommandName {
     InputView = 'input.stream.input.view',
     InputWatch = 'input.stream.input.watch',
     JwtLogin = 'input.stream.jwtLogin',
-    BrowserLogin = 'input.stream.browserLogin',
+    Login = 'input.stream.login',
     Logout = 'input.stream.logout',
     ViewInputstreamExplorer = 'workbench.view.extension.inputstream-explorer',
     OpenSetting = 'input.stream.openExtensionSetting',

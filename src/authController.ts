@@ -5,7 +5,6 @@ import { Context, VSCodeCommands, VSCodeEnv, VSCodeWindow } from './context';
 import { MementoName } from './configurations';
 import { User } from './proto/build/stack/auth/v1beta1/User';
 import { IAuthClient } from './authClient';
-import { githubLoginUri } from './uris';
 
 
 /**
@@ -13,12 +12,11 @@ import { githubLoginUri } from './uris';
  */
 export class AuthController {
 
-    public onDidAuthUserChange = new vscode.EventEmitter<User>();
+    public onDidAuthUserChange = new vscode.EventEmitter<User | undefined>();
 
     constructor(
         ctx: Context,
         private commands: VSCodeCommands,
-        private env: VSCodeEnv,
         private window: VSCodeWindow,
         private globalState: vscode.Memento,
         private client: IAuthClient,
@@ -26,7 +24,7 @@ export class AuthController {
         ctx.add(this.onDidAuthUserChange);
 
         ctx.add(commands.registerCommand(
-            CommandName.BrowserLogin, this.handleCommandDeviceLogin, this));
+            CommandName.Login, this.handleCommandLogin, this));
         ctx.add(commands.registerCommand(
             CommandName.Logout, this.handleCommandLogout, this));
         ctx.add(commands.registerCommand(
@@ -74,10 +72,11 @@ export class AuthController {
     }
 
     private async logout(): Promise<void> {
-        await this.clearApiToken();
+        // await this.clearApiToken();
         await this.clearAccessToken();
         await this.clearUser();
         await this.setContext(ContextName.LoggedIn, false);
+        this.onDidAuthUserChange.fire(undefined);
     }
 
     // ===================== command handlers =====================
@@ -103,11 +102,7 @@ export class AuthController {
         }
     }
 
-    private async handleCommandBrowserLogin(): Promise<void> {
-        this.env.openExternal(githubLoginUri);
-    }
-
-    private async handleCommandDeviceLogin(): Promise<string> {
+    private async handleCommandLogin(): Promise<string> {
         await this.clearAccessToken();
         await this.clearUser();
         return this.refreshAccessToken();

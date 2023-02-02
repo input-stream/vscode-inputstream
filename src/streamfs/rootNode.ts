@@ -1,11 +1,8 @@
 import * as vscode from 'vscode';
 
-import { User } from '../proto/build/stack/auth/v1beta1/User';
-import { childUri } from '../uris';
 import { DirNode } from './directoryNode';
 import { Entry } from './entry';
 import { NodeContext } from './node';
-import { StaticDirectoryNode } from './staticDirectoryNode';
 import { StaticFileNode } from './staticFileNode';
 import { UserNode } from './userNode';
 

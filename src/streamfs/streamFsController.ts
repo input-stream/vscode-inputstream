@@ -62,6 +62,13 @@ export class StreamFsController {
         });
     }
 
+    public async handleUserLogout(): Promise<void> {
+        const children = await this.fs.root.getChildren();
+        for (const child of children) {
+            this.fs.root.removeChild(child);
+        }
+    }
+
     public handleUserLogin(user: User): void {
         this.user = user;
         const profile = this.fs.root.addChild(
@@ -77,6 +84,8 @@ export class StreamFsController {
             new VscodeDirectoryNode(this.fs.root.ctx, childUri(this.fs.root.uri, '.vscode')));
         this.fs.root.addChild(
             new UserNode(this.fs.root.ctx, user));
+
+        this.fs.setReady();
     }
 
     private async installWorkspaceFolder(workspace: VSCodeWorkspace, commands: VSCodeCommands): Promise<void> {

@@ -11,6 +11,7 @@ import { RootNode } from './rootNode';
 import { Scheme, streamRootUri } from '../filesystems';
 import { UserNode } from './userNode';
 import { Utils } from 'vscode-uri';
+import { Barrier } from 'vscode-common/out/async';
 
 
 export type selectPredicate = (child: Entry) => boolean;
@@ -33,6 +34,7 @@ export class StreamFs implements vscode.FileSystemProvider {
     private _emitter = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
     private _bufferedEvents: vscode.FileChangeEvent[] = [];
     private _fireSoonHandle?: NodeJS.Timer;
+    private _ready: Barrier;
 
     public root: RootNode;
 
@@ -57,11 +59,20 @@ export class StreamFs implements vscode.FileSystemProvider {
         };
 
         this.root = new RootNode(streamRootUri, nodeContext);
+        this._ready = new Barrier();
+    }
+
+    public setReady(): void {
+        this._ready.open();
     }
 
     public async lookup<T extends Entry>(uri: vscode.Uri, silent: false, select?: selectPredicate): Promise<T>;
     public async lookup<T extends Entry>(uri: vscode.Uri, silent: boolean, select?: selectPredicate): Promise<T | undefined>;
     public async lookup<T extends Entry>(uri: vscode.Uri, silent: boolean, select: selectPredicate = defaultSelectPredicate): Promise<T | undefined> {
+        const isReady = await this._ready.wait();
+        if (!isReady) {
+            throw vscode.FileSystemError.Unavailable('filesystem not ready');
+        }
         const parts = uri.path.split('/');
         let entry: Entry = this.root;
         for (const part of parts) {
@@ -69,6 +80,7 @@ export class StreamFs implements vscode.FileSystemProvider {
                 continue;
             }
             let child: Entry | undefined;
+            console.log(`lookup '${part}' in ${uri.path}`, entry);
             if (entry instanceof DirNode) {
                 child = await entry.getChild(part);
             }
