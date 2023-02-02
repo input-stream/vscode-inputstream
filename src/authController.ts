@@ -26,7 +26,7 @@ export class AuthController {
         ctx.add(this.onDidAuthUserChange);
 
         ctx.add(commands.registerCommand(
-            CommandName.BrowserLogin, this.handleCommandBrowserLogin, this));
+            CommandName.BrowserLogin, this.handleCommandDeviceLogin, this));
         ctx.add(commands.registerCommand(
             CommandName.Logout, this.handleCommandLogout, this));
         ctx.add(commands.registerCommand(
@@ -42,8 +42,12 @@ export class AuthController {
     public async refreshAccessToken(): Promise<string> {
         const apiToken = this.restoreApiToken();
         const response = await this.client.deviceLogin(apiToken);
-        await this.login(response.accessToken!, response.user!);
-        return response.accessToken!
+        if (response.accessToken && response.user) {
+            await this.login(response.accessToken!, response.user!);
+            return response.accessToken!;
+        } else {
+            throw new Error(`device login failed (accessToken or user was not included in response)`);
+        }
     }
 
     public async restoreLogin(): Promise<boolean> {
