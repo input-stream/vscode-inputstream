@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { Context, VSCodeWorkspace } from '../context';
+import { Context, VSCodeWindow, VSCodeWorkspace } from '../context';
 import { DirNode } from './directoryNode';
 import { Entry } from './entry';
 import { FileNode } from './fileNode';
@@ -43,6 +43,7 @@ export class StreamFs implements vscode.FileSystemProvider {
     constructor(
         ctx: Context,
         workspace: VSCodeWorkspace,
+        window: VSCodeWindow,
         inputsClient: IInputsClient,
         byteStreamClient: IByteStreamClient,
         private uploader: FileUploader,
@@ -51,6 +52,7 @@ export class StreamFs implements vscode.FileSystemProvider {
             isCaseSensitive: true,
             isReadonly: false
         }));
+        ctx.add(window.registerFileDecorationProvider(this));
 
         const nodeContext = {
             inputsClient,
@@ -64,6 +66,14 @@ export class StreamFs implements vscode.FileSystemProvider {
 
     public setReady(): void {
         this._ready.open();
+    }
+
+    public async provideFileDecoration(uri: vscode.Uri, token: vscode.CancellationToken): Promise<vscode.FileDecoration | null | undefined> {
+        const node = await this.lookup(uri, true);
+        if (!node) {
+            return undefined;
+        }
+        return node.decorate(token);
     }
 
     public async lookup<T extends Entry>(uri: vscode.Uri, silent: false, select?: selectPredicate): Promise<T>;
@@ -80,7 +90,7 @@ export class StreamFs implements vscode.FileSystemProvider {
                 continue;
             }
             let child: Entry | undefined;
-            console.log(`lookup '${part}' in ${uri.path}`, entry);
+            // console.log(`lookup '${part}' in ${uri.path}`, entry);
             if (entry instanceof DirNode) {
                 child = await entry.getChild(part);
             }

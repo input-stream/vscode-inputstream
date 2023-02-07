@@ -47,23 +47,29 @@ export class InputFileNode extends FileNode {
         this._mtime = Date.now();
     }
 
-    private loadData(): Promise<Uint8Array> {
+    private async loadData(): Promise<Uint8Array> {
         if (!this.file.sha256) {
             throw vscode.FileSystemError.NoPermissions(`file sha256 is mandatory`);
         }
-        if (!this.file.size) {
+        if (typeof this.file.size === 'undefined') {
             throw vscode.FileSystemError.NoPermissions(`file size is mandatory`);
         }
 
+        const size = this.file.size;
         const client = this.ctx.byteStreamClient;
-        const resourceName = makeBytestreamDownloadResourceName(this.file.sha256, Long.fromValue(this.file.size).toNumber());
-        const buffer = Buffer.alloc(Long.fromValue(this.file.size).toNumber());
-        const call = client.read({
-            resourceName: resourceName,
-            readOffset: 0,
-        });
 
-        return new Promise<Buffer>((resolve, reject) => {
+        const resourceName = makeBytestreamDownloadResourceName(this.file.sha256, Long.fromValue(this.file.size).toNumber());
+        const data = await new Promise<Buffer>((resolve, reject) => {
+            const buffer = Buffer.alloc(Long.fromValue(size).toNumber());
+            const call = client.read({
+                resourceName: resourceName,
+                readOffset: 0,
+            });
+            let offset = 0;
+
+            call.on('metadata', (md: grpc.Metadata) => {
+                // console.log(`loadData metadata:`, md);
+            });
             call.on('status', (status: grpc.StatusObject) => {
                 switch (status.code) {
                     case grpc.status.OK:
@@ -77,17 +83,19 @@ export class InputFileNode extends FileNode {
                         return;
                 }
             });
-            let offset = 0;
             call.on('data', (response: ReadResponse) => {
                 if (response.data instanceof Buffer) {
                     response.data.copy(buffer, offset);
                     offset += response.data.byteLength;
                 }
             });
-            call.on('error', reject);
+            call.on('error', (err) => {
+                reject(err);
+            });
             call.on('end', () => {
                 resolve(buffer);
             });
         });
+        return data;
     }
 }

@@ -57,13 +57,13 @@ fdescribe('AuthController', () => {
 
         auths = new AuthServer();
         const client = await auths.connect();
-        const authGrpcClient = new AuthGrpcClient(client);
+        const authGrpcClient = new AuthGrpcClient(vsc, client);
         controller = new AuthController(ctx, vsc, vsc, vsc, globalState, authGrpcClient);
     });
 
     it('constructor', () => {
         expect(controller).to.exist;
-        expect(registerCommand.mock.calls[0][0]).to.equal("input.stream.browserLogin");
+        expect(registerCommand.mock.calls[0][0]).to.equal("input.stream.login");
         expect(registerCommand.mock.calls[1][0]).to.equal("input.stream.jwtLogin");
     });
 

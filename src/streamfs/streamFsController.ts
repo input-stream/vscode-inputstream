@@ -38,6 +38,7 @@ export class StreamFsController {
         this.fs = new StreamFs(
             ctx,
             workspace,
+            window,
             inputsClient,
             byteStreamClient,
             this,

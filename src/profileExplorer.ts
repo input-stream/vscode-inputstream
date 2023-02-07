@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { CommandName } from './commands';
+import { BuiltInCommandName, CommandName } from './commands';
 import { TreeController } from './treeController';
 import { User } from './proto/build/stack/auth/v1beta1/User';
 import { ViewName, ContextValue, TreeItemLabels, CommandDescriptions } from './views';
@@ -28,6 +28,11 @@ export class ProfileExplorer extends TreeController<vscode.TreeItem> {
     private async getUserItems(user: User): Promise<vscode.TreeItem[]> {
         const item = new vscode.TreeItem(`@${user.login}`);
         item.description = `${user.name}`;
+        item.command = {
+            title: 'Open Profile',
+            command: BuiltInCommandName.Open,
+            arguments: [vscode.Uri.parse(`https://input.stream/@${user.login}`)],
+        };
         return [item];
     }
 

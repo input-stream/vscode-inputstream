@@ -27,6 +27,7 @@ export interface VSCodeWindow {
     registerUriHandler(handler: vscode.UriHandler): vscode.Disposable;
     createTreeView<T>(viewId: string, options: vscode.TreeViewOptions<T>): vscode.TreeView<T>;
     createWebviewPanel(viewType: string, title: string, showOptions: vscode.ViewColumn | { readonly viewColumn: vscode.ViewColumn; readonly preserveFocus?: boolean }, options?: vscode.WebviewPanelOptions & vscode.WebviewOptions): vscode.WebviewPanel;
+    registerFileDecorationProvider(provider: vscode.FileDecorationProvider): vscode.Disposable;
 }
 
 export interface VSCodeWorkspace {

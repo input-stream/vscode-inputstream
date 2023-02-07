@@ -17,6 +17,7 @@ export enum CommandName {
     InputCreate = 'input.stream.input.create',
     InputDelete = 'input.stream.input.delete',
     InputReplace = 'input.stream.input.replace',
+    InputEdit = 'input.stream.input.edit',
     InputPublish = 'input.stream.input.publish',
     InputUnpublish = 'input.stream.input.unpublish',
     InputView = 'input.stream.input.view',

@@ -1,6 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
-import { createDeadline } from './grpc';
+import { ClientContext, createDeadline } from './grpc';
 
 import { ImagesClient } from './proto/build/stack/inputstream/v1beta1/Images';
 import { SearchImagesRequest } from './proto/build/stack/inputstream/v1beta1/SearchImagesRequest';
@@ -15,6 +15,7 @@ export class ImagesGrpcClient implements IImagesClient, vscode.Disposable {
 
     constructor(
         private client: ImagesClient,
+        private ctx: ClientContext,
     ) {
     }
 
@@ -22,6 +23,7 @@ export class ImagesGrpcClient implements IImagesClient, vscode.Disposable {
         return new Promise<SearchImagesResponse>((resolve, reject) => {
             this.client.searchImages(
                 request,
+                this.createCallMetadata(),
                 { deadline: createDeadline() },
                 (err: grpc.ServiceError | null, resp?: SearchImagesResponse) => {
                     if (err) {
@@ -37,4 +39,12 @@ export class ImagesGrpcClient implements IImagesClient, vscode.Disposable {
         this.client.close();
     }
 
+    private createCallMetadata(): grpc.Metadata {
+        const md = new grpc.Metadata();
+        const token = this.ctx.accessToken();
+        if (token) {
+            md.add('Authorization', `Bearer ${this.ctx.accessToken()}`);
+        }
+        return md;
+    }
 }

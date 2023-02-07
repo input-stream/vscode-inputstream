@@ -8,7 +8,7 @@ import { InputsClient } from './proto/build/stack/inputstream/v1beta1/Inputs';
 import { ListInputsResponse } from './proto/build/stack/inputstream/v1beta1/ListInputsResponse';
 import { RemoveInputResponse } from './proto/build/stack/inputstream/v1beta1/RemoveInputResponse';
 import { UpdateInputResponse } from './proto/build/stack/inputstream/v1beta1/UpdateInputResponse';
-import { createDeadline } from './grpc';
+import { ClientContext, createDeadline } from './grpc';
 
 
 export interface IInputsClient {
@@ -23,6 +23,7 @@ export class InputsGrpcClient implements IInputsClient, vscode.Disposable {
 
     constructor(
         private client: InputsClient,
+        private ctx: ClientContext,
     ) {
     }
 
@@ -33,6 +34,7 @@ export class InputsGrpcClient implements IInputsClient, vscode.Disposable {
                     filter: filter,
                     wantPrivate: true,
                 },
+                this.createCallMetadata(),
                 { deadline: createDeadline() },
                 (err: grpc.ServiceError | null, resp?: ListInputsResponse) => {
                     if (err) {
@@ -48,6 +50,7 @@ export class InputsGrpcClient implements IInputsClient, vscode.Disposable {
         return new Promise<Input>((resolve, reject) => {
             this.client.createInput(
                 { input },
+                this.createCallMetadata(),
                 { deadline: createDeadline() },
                 (err: grpc.ServiceError | null, resp?: Input) => {
                     if (err) {
@@ -63,6 +66,7 @@ export class InputsGrpcClient implements IInputsClient, vscode.Disposable {
         return new Promise<Input>((resolve, reject) => {
             this.client.getInput(
                 { filter, mask },
+                this.createCallMetadata(),
                 { deadline: createDeadline() },
                 (err: grpc.ServiceError | null, resp?: Input) => {
                     if (err) {
@@ -76,13 +80,17 @@ export class InputsGrpcClient implements IInputsClient, vscode.Disposable {
 
     updateInput(input: Input, mask: FieldMask): Promise<UpdateInputResponse> {
         return new Promise((resolve, reject) => {
-            this.client.UpdateInput({ input, mask }, { deadline: createDeadline() }, (err: grpc.ServiceError | null, resp?: UpdateInputResponse) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(resp!);
-                }
-            });
+            this.client.UpdateInput(
+                { input, mask },
+                this.createCallMetadata(),
+                { deadline: createDeadline() },
+                (err: grpc.ServiceError | null, resp?: UpdateInputResponse) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(resp!);
+                    }
+                });
         });
     }
 
@@ -90,6 +98,7 @@ export class InputsGrpcClient implements IInputsClient, vscode.Disposable {
         return new Promise<RemoveInputResponse>((resolve, reject) => {
             this.client.removeInput(
                 { id },
+                this.createCallMetadata(),
                 { deadline: createDeadline() },
                 (err: grpc.ServiceError | null, resp?: RemoveInputResponse) => {
                     if (err) {
@@ -105,4 +114,12 @@ export class InputsGrpcClient implements IInputsClient, vscode.Disposable {
         this.client.close();
     }
 
+    private createCallMetadata(): grpc.Metadata {
+        const md = new grpc.Metadata();
+        const token = this.ctx.accessToken();
+        if (token) {
+            md.add('Authorization', `Bearer ${this.ctx.accessToken()}`);
+        }
+        return md;
+    }
 }

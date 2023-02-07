@@ -147,5 +147,4 @@ export class UserNode extends DirNode<InputNode> {
         const input = await client.createInput(request);
         return this.addInputNode(input!);
     }
-
 }

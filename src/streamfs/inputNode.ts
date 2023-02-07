@@ -322,6 +322,16 @@ export class InputNode extends DirNode<FileNode> {
         });
 
     }
+
+    async decorate(token: vscode.CancellationToken): Promise<vscode.FileDecoration | null | undefined> {
+        switch (this.input.status) {
+            case InputStatus.STATUS_DRAFT:
+                return new vscode.FileDecoration('D', 'Draft', new vscode.ThemeColor('testing.iconQueued'));
+            default:
+                return undefined;
+        }
+    }
+
 }
 
 

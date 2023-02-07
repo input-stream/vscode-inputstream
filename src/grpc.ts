@@ -45,13 +45,16 @@ export function createChannelCredentials(address: string): grpc.ChannelCredentia
     return grpc.credentials.createInsecure();
 }
 
-export function createCredentials(address: string, token: TokenSupplier): grpc.ChannelCredentials {
+export function createCredentials(address: string, supplyToken: TokenSupplier): grpc.ChannelCredentials {
     const channelCreds = createChannelCredentials(address);
+    if (!channelCreds._isSecure()) {
+        return channelCreds;
+    }
     const callCreds = grpc.credentials.createFromMetadataGenerator((_params, callback) => {
         const md = new grpc.Metadata({
             waitForReady: true,
         });
-        const bearer = token();
+        const bearer = supplyToken();
         if (bearer) {
             md.add('Authorization', `Bearer ${bearer}`);
         }
@@ -63,6 +66,7 @@ export function createCredentials(address: string, token: TokenSupplier): grpc.C
 
 export function createClientOptions(token: TokenRefresher, options?: grpc.ClientOptions): grpc.ClientOptions {
     const opts: grpc.ClientOptions = options ? options : {};
-    opts.interceptors = [createClientCallRetryInterceptor(token)];
+    // TOOD: pcj: re-enable client interceptor once you fix the server streaming
+    // opts.interceptors = [createClientCallRetryInterceptor(token)];
     return opts;
 }

@@ -54,8 +54,8 @@
                 },
                 "input.stream.api.address": {
                     "type": "string",
-                    "default": "api.input.stream:443",
-                    "description": "Address of the API server"
+                    "default": "0.0.0.0:1081",
+                    "description": "Address of the API server (api.input.stream:443)"
                 },
                 "input.stream.baseDir": {
                     "type": "string",
@@ -117,6 +117,12 @@
             },
             {
                 "category": "Stream",
+                "command": "input.stream.input.edit",
+                "title": "Edit Page...",
+                "icon": "$(edit)"
+            },
+            {
+                "category": "Stream",
                 "command": "input.stream.input.watch",
                 "title": "Watch Page Changes...",
                 "icon": "$(eye-watch)"
@@ -169,6 +175,10 @@
                 },
                 {
                     "command": "input.stream.input.replace",
+                    "when": "false"
+                },
+                {
+                    "command": "input.stream.input.edit",
                     "when": "false"
                 },
                 {
@@ -231,6 +241,13 @@
                     "command": "input.stream.logout",
                     "when": "view == input.stream.profileExplorer && input.stream.loggedIn",
                     "group": "navigation@0"
+                }
+            ],
+            "": [
+                {
+                    "command": "input.stream.input.edit",
+                    "when": "view == input.stream.inputExplorer && viewItem == input",
+                    "group": "inline@0"
                 }
             ],
             "explorer/context": [

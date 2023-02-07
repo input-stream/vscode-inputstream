@@ -45,4 +45,8 @@ export abstract class Node {
         }
     }
 
+    async decorate(token: vscode.CancellationToken): Promise<vscode.FileDecoration | null | undefined> {
+        return undefined;
+    }
+
 }

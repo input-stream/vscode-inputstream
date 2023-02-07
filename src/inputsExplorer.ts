@@ -5,9 +5,9 @@ import { Context, VSCodeCommands, VSCodeWindow } from './context';
 import { IInputsClient } from './inputsClient';
 import { User } from './proto/build/stack/auth/v1beta1/User';
 import { TreeController } from './treeController';
-import { BuiltInCommandName } from './commands';
+import { BuiltInCommandName, CommandName } from './commands';
 import { formatTimestampISODate } from './dates';
-import { makeInputContentFileNodeUri } from './filesystems';
+import { makeInputContentFileNodeUri, makeInputExternalViewUrl } from './filesystems';
 import { ViewName, ContextValue, ThemeIconTestingPassed } from './views';
 
 /**
@@ -19,12 +19,20 @@ export class InputsExplorer extends TreeController<Input> {
     constructor(
         ctx: Context,
         window: VSCodeWindow,
-        commands: VSCodeCommands,
+        private commands: VSCodeCommands,
         private client: IInputsClient,
     ) {
         super(ctx, window, commands, ViewName.InputExplorer);
 
         ctx.add(this.view.onDidChangeVisibility(this.handleVisibilityChange, this));
+
+        ctx.add(commands.registerCommand(CommandName.InputEdit, this.handleCommandInputEdit, this));
+    }
+
+    private handleCommandInputEdit(item: vscode.TreeItem) {
+        if (item.resourceUri) {
+            this.commands.executeCommand(BuiltInCommandName.Open, item.resourceUri);
+        }
     }
 
     public handleUserLogin(user: User): void {
@@ -91,12 +99,13 @@ export class InputItem extends vscode.TreeItem {
         this.label = `${when}`;
         this.tooltip = `${when}: "${input.title}" (${input.id})`;
         this.contextValue = ContextValue.Input;
+        this.resourceUri = makeInputContentFileNodeUri(input);
         this.iconPath = input.status === InputStatus.STATUS_PUBLISHED ? ThemeIconTestingPassed : undefined;
         this.description = `${input.title}`;
         this.command = {
-            title: 'Open File',
+            title: 'Open Page',
             command: BuiltInCommandName.Open,
-            arguments: [makeInputContentFileNodeUri(input)],
+            arguments: [makeInputExternalViewUrl(input)],
         };
     }
 
