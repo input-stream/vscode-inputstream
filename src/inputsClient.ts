@@ -8,7 +8,7 @@ import { InputsClient } from './proto/build/stack/inputstream/v1beta1/Inputs';
 import { ListInputsResponse } from './proto/build/stack/inputstream/v1beta1/ListInputsResponse';
 import { RemoveInputResponse } from './proto/build/stack/inputstream/v1beta1/RemoveInputResponse';
 import { UpdateInputResponse } from './proto/build/stack/inputstream/v1beta1/UpdateInputResponse';
-import { ClientContext, createDeadline } from './grpc';
+import { AuthenticatingGrpcClient, ClientContext, createDeadline } from './grpc';
 
 
 export interface IInputsClient {
@@ -19,12 +19,12 @@ export interface IInputsClient {
     removeInput(id: string): Promise<RemoveInputResponse>;
 }
 
-export class InputsGrpcClient implements IInputsClient, vscode.Disposable {
-
+export class InputsGrpcClient extends AuthenticatingGrpcClient<InputsClient> implements IInputsClient {
     constructor(
-        private client: InputsClient,
-        private ctx: ClientContext,
+        client: InputsClient,
+        ctx: ClientContext,
     ) {
+        super(client, ctx)
     }
 
     listInputs(filter: InputFilterOptions): Promise<Input[] | undefined> {
@@ -110,16 +110,4 @@ export class InputsGrpcClient implements IInputsClient, vscode.Disposable {
         });
     }
 
-    public dispose(): void {
-        this.client.close();
-    }
-
-    private createCallMetadata(): grpc.Metadata {
-        const md = new grpc.Metadata();
-        const token = this.ctx.accessToken();
-        if (token) {
-            md.add('Authorization', `Bearer ${this.ctx.accessToken()}`);
-        }
-        return md;
-    }
 }

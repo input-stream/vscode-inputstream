@@ -1,7 +1,11 @@
 import * as grpc from '@grpc/grpc-js';
 import * as loader from '@grpc/proto-loader';
+import * as vscode from 'vscode';
 
 import { createClientCallRetryInterceptor } from './interceptors';
+
+// TOOD: pcj: re-enable client interceptor once you fix the server streaming
+const ENABLE_CLIENT_INTERCEPTORS = false;
 
 export function loadProtoPackage<T>(protofile: string): T {
     const protoPackage = loader.loadSync(protofile, {
@@ -66,7 +70,30 @@ export function createCredentials(address: string, supplyToken: TokenSupplier): 
 
 export function createClientOptions(token: TokenRefresher, options?: grpc.ClientOptions): grpc.ClientOptions {
     const opts: grpc.ClientOptions = options ? options : {};
-    // TOOD: pcj: re-enable client interceptor once you fix the server streaming
-    // opts.interceptors = [createClientCallRetryInterceptor(token)];
+    if (ENABLE_CLIENT_INTERCEPTORS) {
+        opts.interceptors = [createClientCallRetryInterceptor(token)];
+    }
     return opts;
+}
+
+export class AuthenticatingGrpcClient<T extends grpc.Client> implements vscode.Disposable {
+
+    constructor(
+        protected client: T,
+        private ctx: ClientContext,
+    ) {
+    }
+
+    public dispose(): void {
+        this.client.close();
+    }
+
+    protected createCallMetadata(): grpc.Metadata {
+        const md = new grpc.Metadata();
+        const token = this.ctx.accessToken();
+        if (token) {
+            md.add('Authorization', `Bearer ${this.ctx.accessToken()}`);
+        }
+        return md;
+    }
 }

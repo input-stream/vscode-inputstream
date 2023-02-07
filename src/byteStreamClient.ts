@@ -1,6 +1,5 @@
 import * as grpc from '@grpc/grpc-js';
-import * as vscode from 'vscode';
-import { ClientContext, createDeadline } from './grpc';
+import { AuthenticatingGrpcClient, ClientContext, createDeadline } from './grpc';
 
 import { ByteStreamClient } from './proto/google/bytestream/ByteStream';
 import { QueryWriteStatusRequest } from './proto/google/bytestream/QueryWriteStatusRequest';
@@ -16,13 +15,14 @@ export interface IByteStreamClient {
     write(onResponse: (error?: grpc.ServiceError | null, out?: WriteResponse | undefined) => void, extraMd?: grpc.Metadata): grpc.ClientWritableStream<WriteRequest>;
 }
 
-export class ByteStreamGrpcClient implements IByteStreamClient, vscode.Disposable {
+export class ByteStreamGrpcClient extends AuthenticatingGrpcClient<ByteStreamClient> implements IByteStreamClient {
 
     constructor(
-        private client: ByteStreamClient,
-        private ctx: ClientContext,
+        client: ByteStreamClient,
+        ctx: ClientContext,
         private timeoutSecs = 300, /* five minutes */
     ) {
+        super(client, ctx);
     }
 
     read(request: ReadRequest): grpc.ClientReadableStream<ReadResponse> {
@@ -48,18 +48,5 @@ export class ByteStreamGrpcClient implements IByteStreamClient, vscode.Disposabl
                     }
                 });
         });
-    }
-
-    public dispose(): void {
-        this.client.close();
-    }
-
-    private createCallMetadata(): grpc.Metadata {
-        const md = new grpc.Metadata();
-        const token = this.ctx.accessToken();
-        if (token) {
-            md.add('Authorization', `Bearer ${this.ctx.accessToken()}`);
-        }
-        return md;
     }
 }
