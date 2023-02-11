@@ -26,13 +26,8 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:input.stream.login",
-        "onCommand:input.stream.logout",
-        "onCommand:input.stream.jwtLogin",
         "onFileSystem:stream",
-        "onUri",
-        "onView:input.stream.profileExplorer",
-        "onView:input.stream.inputExplorer"
+        "onUri"
     ],
     "engines": {
         "vscode": "^1.74.0"
@@ -54,8 +49,8 @@
                 },
                 "input.stream.api.address": {
                     "type": "string",
-                    "default": "0.0.0.0:1081",
-                    "description": "Address of the API server (api.input.stream:443)"
+                    "default": "api.input.stream:443",
+                    "description": "Address of the API server (api.input.stream:443, 0.0.0.0:1081)"
                 },
                 "input.stream.baseDir": {
                     "type": "string",
@@ -146,7 +141,7 @@
             {
                 "category": "Stream",
                 "command": "input.stream.login",
-                "title": "Open Login URL",
+                "title": "Login",
                 "icon": "$(log-in)"
             },
             {
@@ -186,8 +181,7 @@
                     "when": "false"
                 },
                 {
-                    "command": "input.stream.login",
-                    "when": "!input.stream.loggedIn"
+                    "command": "input.stream.login"
                 },
                 {
                     "command": "input.stream.logout",
@@ -234,13 +228,13 @@
                 },
                 {
                     "command": "input.stream.login",
-                    "when": "view == input.stream.profileExplorer && !input.stream.loggedIn",
+                    "when": "view == input.stream.profileExplorer",
                     "group": "navigation@0"
                 },
                 {
                     "command": "input.stream.logout",
                     "when": "view == input.stream.profileExplorer && input.stream.loggedIn",
-                    "group": "navigation@0"
+                    "group": "navigation@1"
                 }
             ],
             "": [

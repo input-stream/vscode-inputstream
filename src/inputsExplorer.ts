@@ -18,7 +18,7 @@ export class InputsExplorer extends TreeController<Input> {
 
     constructor(
         ctx: Context,
-        window: VSCodeWindow,
+        private window: VSCodeWindow,
         private commands: VSCodeCommands,
         private client: IInputsClient,
     ) {
@@ -76,7 +76,8 @@ export class InputsExplorer extends TreeController<Input> {
             return inputs;
         } catch (err) {
             if (err instanceof Error) {
-                console.log(`Could not list Inputs: ${err.message}`);
+                this.window.showErrorMessage(`list failed: ${err.message}`);
+                // console.log(`Could not list Inputs: ${err.message}`);
             }
             return undefined;
         }

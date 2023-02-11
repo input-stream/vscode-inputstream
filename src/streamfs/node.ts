@@ -5,9 +5,11 @@ import { IByteStreamClient } from "../byteStreamClient";
 import { IInputsClient } from "../inputsClient";
 import { Timestamp } from "../proto/google/protobuf/Timestamp";
 import { Utils } from 'vscode-uri';
+import { VSCodeWindow } from '../context';
 
 
 export type NodeContext = {
+    window: VSCodeWindow;
     inputsClient: IInputsClient;
     byteStreamClient: IByteStreamClient;
     notifyFileChanges(...events: vscode.FileChangeEvent[]): void

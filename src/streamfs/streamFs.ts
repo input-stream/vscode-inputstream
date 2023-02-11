@@ -55,6 +55,7 @@ export class StreamFs implements vscode.FileSystemProvider {
         ctx.add(window.registerFileDecorationProvider(this));
 
         const nodeContext = {
+            window,
             inputsClient,
             byteStreamClient,
             notifyFileChanges: this._fireSoon.bind(this),

@@ -17,10 +17,10 @@
 			"outFiles": [
 				"${workspaceFolder}/out/src/**/*.js"
 			],
-			"env": {
-				"GRPC_VERBOSITY": "DEBUG",
-				"GRPC_TRACE": "all"
-			},
+			// "env": {
+			// 	"GRPC_VERBOSITY": "DEBUG",
+			// 	"GRPC_TRACE": "all"
+			// },
 			"preLaunchTask": "${defaultBuildTask}"
 		},
 		{

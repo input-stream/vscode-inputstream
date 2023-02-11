@@ -23,13 +23,19 @@ export class UserNode extends DirNode<InputNode> {
 
     async getChildren(): Promise<InputNode[]> {
         if (!this.hasLoaded) {
-            const inputs = await this.loadInputs();
-            if (inputs) {
-                for (const input of inputs) {
-                    this.addInputNode(input);
+            try {
+                const inputs = await this.loadInputs();
+                if (inputs) {
+                    for (const input of inputs) {
+                        this.addInputNode(input);
+                    }
+                }
+                this.hasLoaded = true;
+            } catch (err) {
+                if (err instanceof Error) {
+                    this.ctx.window.showErrorMessage(`load failed: ${err.message} `);
                 }
             }
-            this.hasLoaded = true;
         }
         return super.getChildren();
     }

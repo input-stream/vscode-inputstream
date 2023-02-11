@@ -24,7 +24,7 @@ export class InputsGrpcClient extends AuthenticatingGrpcClient<InputsClient> imp
         client: InputsClient,
         ctx: ClientContext,
     ) {
-        super(client, ctx)
+        super(client, ctx);
     }
 
     listInputs(filter: InputFilterOptions): Promise<Input[] | undefined> {

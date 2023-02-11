@@ -16,7 +16,7 @@ export class ImagesGrpcClient extends AuthenticatingGrpcClient<ImagesClient> imp
         client: ImagesClient,
         ctx: ClientContext,
     ) {
-        super(client, ctx)
+        super(client, ctx);
     }
 
     searchImages(request: SearchImagesRequest): Promise<SearchImagesResponse> {

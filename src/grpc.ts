@@ -2,10 +2,9 @@ import * as grpc from '@grpc/grpc-js';
 import * as loader from '@grpc/proto-loader';
 import * as vscode from 'vscode';
 
-import { createClientCallRetryInterceptor } from './interceptors';
+import { ButtonName } from './views';
 
-// TOOD: pcj: re-enable client interceptor once you fix the server streaming
-const ENABLE_CLIENT_INTERCEPTORS = false;
+const perCallAuthorizationBearer = false;
 
 export function loadProtoPackage<T>(protofile: string): T {
     const protoPackage = loader.loadSync(protofile, {
@@ -33,7 +32,6 @@ export type TokenRefresher = () => Promise<string | undefined>;
 export interface ClientContext {
     accessToken: TokenSupplier,
     refreshAccessToken: TokenRefresher,
-    options?: grpc.ClientOptions,
 }
 
 export function createDeadline(seconds = 15): grpc.Deadline {
@@ -54,25 +52,25 @@ export function createCredentials(address: string, supplyToken: TokenSupplier): 
     if (!channelCreds._isSecure()) {
         return channelCreds;
     }
-    const callCreds = grpc.credentials.createFromMetadataGenerator((_params, callback) => {
-        const md = new grpc.Metadata({
-            waitForReady: true,
-        });
-        const bearer = supplyToken();
-        if (bearer) {
-            md.add('Authorization', `Bearer ${bearer}`);
-        }
-        callback(null, md);
-    });
-    const creds = grpc.credentials.combineChannelCredentials(channelCreds, callCreds);
-    return creds;
+    // const callCreds = grpc.credentials.createFromMetadataGenerator((_params, callback) => {
+    //     const md = new grpc.Metadata({
+    //         waitForReady: true,
+    //     });
+    //     const bearer = supplyToken();
+    //     if (bearer) {
+    //         md.add('Authorization', `Bearer ${bearer}`);
+    //     }
+    //     callback(null, md);
+    // });
+    // const creds = grpc.credentials.combineChannelCredentials(channelCreds, callCreds);
+    return channelCreds;
 }
 
 export function createClientOptions(token: TokenRefresher, options?: grpc.ClientOptions): grpc.ClientOptions {
     const opts: grpc.ClientOptions = options ? options : {};
-    if (ENABLE_CLIENT_INTERCEPTORS) {
-        opts.interceptors = [createClientCallRetryInterceptor(token)];
-    }
+    // if (true) {
+    //     opts.interceptors = [createClientCallRetryInterceptor(token)];
+    // }
     return opts;
 }
 
@@ -80,7 +78,7 @@ export class AuthenticatingGrpcClient<T extends grpc.Client> implements vscode.D
 
     constructor(
         protected client: T,
-        private ctx: ClientContext,
+        private ctx?: ClientContext | undefined,
     ) {
     }
 
@@ -90,10 +88,65 @@ export class AuthenticatingGrpcClient<T extends grpc.Client> implements vscode.D
 
     protected createCallMetadata(): grpc.Metadata {
         const md = new grpc.Metadata();
-        const token = this.ctx.accessToken();
-        if (token) {
-            md.add('Authorization', `Bearer ${this.ctx.accessToken()}`);
+        if (perCallAuthorizationBearer && this.ctx) {
+            const token = this.ctx.accessToken();
+            if (token) {
+                if (md.get('Authorization').length === 0) {
+                    md.add('Authorization', `Bearer ${this.ctx.accessToken()}`);
+                }
+            }
         }
         return md;
     }
+
+    /**
+     * Execute a grpc unary call having response type S.  If the call fails,
+     * user will be prompted to retry up to the limit (defaults to 2).
+     *
+     * @param fn The function to invoke during an attempt.  Should return the
+     * response type or fail to a grpc.ServiceError.
+     * @param limit Max number of retries.
+     */
+    async unaryCall<S>(desc: string, fn: () => Promise<S>, limit = 2, silent = false): Promise<S> {
+        try {
+            return await fn();
+        } catch (e) {
+            const err = e as grpc.ServiceError;
+
+            // Reached terminal attempt, report error and bail
+            if (limit === 0) {
+                if (!silent) {
+                    vscode.window.showErrorMessage(`${desc}: ${err.message} (operation will not be retried)`);
+                }
+                throw err;
+            }
+
+            // Attempt to refresh the token if we are unauthenticated
+            if (err.code === grpc.status.UNAUTHENTICATED) {
+                if (this.ctx) {
+                    try {
+                        await this.ctx.refreshAccessToken();
+                        return this.unaryCall(desc, fn, Math.max(0, limit - 1));
+                    } catch (e2) {
+                        if (!silent) {
+                            vscode.window.showWarningMessage('Could not refresh access token: ' + JSON.stringify(e2));
+                        }
+                    }
+                }
+            }
+
+            // Prompt user to retry
+            if (!silent) {
+                const action = await vscode.window.showInformationMessage(
+                    `${desc} failed: ${err.message} (${limit} attempts remaining)`,
+                    ButtonName.Retry, ButtonName.Cancel);
+                if (action !== ButtonName.Retry) {
+                    throw err;
+                }
+            }
+
+            return this.unaryCall(desc, fn, Math.max(0, limit - 1), silent);
+        }
+    }
+
 }

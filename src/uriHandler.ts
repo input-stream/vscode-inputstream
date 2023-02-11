@@ -25,6 +25,8 @@ export class UriHandler implements vscode.UriHandler {
                 return this.handleEditUri(uri);
             case '/create':
                 return this.handleCreateUri(uri);
+            case '/open':
+                return this.handleOpenUri(uri);
         }
     }
 
@@ -37,6 +39,11 @@ export class UriHandler implements vscode.UriHandler {
             return;
         }
         return this.commands.executeCommand(CommandName.JwtLogin, token);
+    }
+
+    private async handleOpenUri(uri: vscode.Uri): Promise<void> {
+        // return this.commands.executeCommand(CommandName.ViewInputstreamExplorer);
+        return this.commands.executeCommand(BuiltInCommandName.Open, 'stream:/');
     }
 
     private async handleEditUri(uri: vscode.Uri): Promise<void> {

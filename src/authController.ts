@@ -38,7 +38,7 @@ export class AuthController {
     }
 
     public async refreshAccessToken(): Promise<string> {
-        const apiToken = this.restoreApiToken();
+        let apiToken = this.restoreApiToken();
         const response = await this.client.deviceLogin(apiToken);
         if (response.accessToken && response.user) {
             await this.login(response.accessToken!, response.user!);
