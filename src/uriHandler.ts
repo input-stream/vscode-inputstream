@@ -64,4 +64,3 @@ export class UriHandler implements vscode.UriHandler {
     }
 
 }
-

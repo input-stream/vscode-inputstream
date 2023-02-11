@@ -62,11 +62,6 @@
         "commands": [
             {
                 "category": "Stream",
-                "command": "input.stream.openExtensionSetting",
-                "title": "Goto Extension Setting"
-            },
-            {
-                "category": "Stream",
                 "command": "input.stream.inputExplorer.refresh",
                 "title": "Refresh Pages",
                 "icon": "$(refresh)"
@@ -164,10 +159,6 @@
         ],
         "menus": {
             "commandPalette": [
-                {
-                    "command": "input.stream.openExtensionSetting",
-                    "when": "false"
-                },
                 {
                     "command": "input.stream.input.replace",
                     "when": "false"

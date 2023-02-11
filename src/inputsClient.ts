@@ -1,5 +1,4 @@
 import * as grpc from '@grpc/grpc-js';
-import * as vscode from 'vscode';
 
 import { FieldMask } from './proto/google/protobuf/FieldMask';
 import { Input } from './proto/build/stack/inputstream/v1beta1/Input';
@@ -8,7 +7,7 @@ import { InputsClient } from './proto/build/stack/inputstream/v1beta1/Inputs';
 import { ListInputsResponse } from './proto/build/stack/inputstream/v1beta1/ListInputsResponse';
 import { RemoveInputResponse } from './proto/build/stack/inputstream/v1beta1/RemoveInputResponse';
 import { UpdateInputResponse } from './proto/build/stack/inputstream/v1beta1/UpdateInputResponse';
-import { AuthenticatingGrpcClient, ClientContext, createDeadline } from './grpc';
+import { createDeadline, GrpcClient } from './grpc';
 
 
 export interface IInputsClient {
@@ -19,12 +18,11 @@ export interface IInputsClient {
     removeInput(id: string): Promise<RemoveInputResponse>;
 }
 
-export class InputsGrpcClient extends AuthenticatingGrpcClient<InputsClient> implements IInputsClient {
+export class InputsGrpcClient extends GrpcClient<InputsClient> implements IInputsClient {
     constructor(
         client: InputsClient,
-        ctx: ClientContext,
     ) {
-        super(client, ctx);
+        super(client);
     }
 
     listInputs(filter: InputFilterOptions): Promise<Input[] | undefined> {
@@ -34,7 +32,6 @@ export class InputsGrpcClient extends AuthenticatingGrpcClient<InputsClient> imp
                     filter: filter,
                     wantPrivate: true,
                 },
-                this.createCallMetadata(),
                 { deadline: createDeadline() },
                 (err: grpc.ServiceError | null, resp?: ListInputsResponse) => {
                     if (err) {
@@ -50,7 +47,6 @@ export class InputsGrpcClient extends AuthenticatingGrpcClient<InputsClient> imp
         return new Promise<Input>((resolve, reject) => {
             this.client.createInput(
                 { input },
-                this.createCallMetadata(),
                 { deadline: createDeadline() },
                 (err: grpc.ServiceError | null, resp?: Input) => {
                     if (err) {
@@ -66,7 +62,6 @@ export class InputsGrpcClient extends AuthenticatingGrpcClient<InputsClient> imp
         return new Promise<Input>((resolve, reject) => {
             this.client.getInput(
                 { filter, mask },
-                this.createCallMetadata(),
                 { deadline: createDeadline() },
                 (err: grpc.ServiceError | null, resp?: Input) => {
                     if (err) {
@@ -82,7 +77,6 @@ export class InputsGrpcClient extends AuthenticatingGrpcClient<InputsClient> imp
         return new Promise((resolve, reject) => {
             this.client.UpdateInput(
                 { input, mask },
-                this.createCallMetadata(),
                 { deadline: createDeadline() },
                 (err: grpc.ServiceError | null, resp?: UpdateInputResponse) => {
                     if (err) {
@@ -98,7 +92,6 @@ export class InputsGrpcClient extends AuthenticatingGrpcClient<InputsClient> imp
         return new Promise<RemoveInputResponse>((resolve, reject) => {
             this.client.removeInput(
                 { id },
-                this.createCallMetadata(),
                 { deadline: createDeadline() },
                 (err: grpc.ServiceError | null, resp?: RemoveInputResponse) => {
                     if (err) {

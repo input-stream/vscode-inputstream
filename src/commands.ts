@@ -26,19 +26,6 @@ export enum CommandName {
     Login = 'input.stream.login',
     Logout = 'input.stream.logout',
     ViewInputstreamExplorer = 'workbench.view.extension.inputstream-explorer',
-    OpenSetting = 'input.stream.openExtensionSetting',
-}
-
-/**
- * Options for the OpenSetting command
- */
-type OpenSettingCommandOptions = {
-    // The query string
-    q: string,
-};
-
-export function openExtensionSetting(options: OpenSettingCommandOptions): Thenable<any> {
-    return commands.executeCommand(BuiltInCommandName.OpenSettings, options?.q);
 }
 
 /**

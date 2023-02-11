@@ -1,6 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
-import { AuthenticatingGrpcClient, ClientContext, createDeadline } from './grpc';
 
+import { AuthenticatingGrpcClient, ClientContext, createDeadline } from './grpc';
 import { ByteStreamClient } from './proto/google/bytestream/ByteStream';
 import { QueryWriteStatusRequest } from './proto/google/bytestream/QueryWriteStatusRequest';
 import { QueryWriteStatusResponse } from './proto/google/bytestream/QueryWriteStatusResponse';

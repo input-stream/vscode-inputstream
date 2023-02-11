@@ -4,7 +4,7 @@ import { ProfileExplorer } from './profileExplorer';
 import { API } from './api';
 import { AuthGrpcClient } from './authClient';
 import { ByteStreamGrpcClient } from './byteStreamClient';
-import { CommandName, openExtensionSetting } from './commands';
+import { CommandName } from './commands';
 import { ConfigName, createInputStreamConfiguration } from './configurations';
 import { Context } from './context';
 import { createAuthServiceClient, createInputsClient, createBytestreamClient, createImagesClient } from './clients';
@@ -33,8 +33,6 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 		},
 		extensionUri: extensionCtx.extensionUri,
 	};
-
-	ctx.add(vscode.commands.registerCommand(CommandName.OpenSetting, openExtensionSetting));
 
 	const cfg = createInputStreamConfiguration(extensionCtx.asAbsolutePath.bind(extensionCtx), config);
 
@@ -66,8 +64,8 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 	const imagesClient = createImagesClient(inputStreamProtos, cfg.inputstream.address, clientCtx);
 
 	const bytestreamGrpcClient = ctx.add(new ByteStreamGrpcClient(byteStreamClient, clientCtx));
-	const inputsGrpcClient = ctx.add(new InputsGrpcClient(inputsClient, clientCtx));
-	const imagesGrpcClient = ctx.add(new ImagesGrpcClient(imagesClient, clientCtx));
+	const inputsGrpcClient = ctx.add(new InputsGrpcClient(inputsClient));
+	const imagesGrpcClient = ctx.add(new ImagesGrpcClient(imagesClient));
 
 	new ImageSearch(ctx, vscode.commands, vscode.window, imagesGrpcClient);
 	new UriHandler(ctx, vscode.window, vscode.commands);

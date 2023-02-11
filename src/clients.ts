@@ -6,7 +6,6 @@ import { InputsClient } from './proto/build/stack/inputstream/v1beta1/Inputs';
 import { ProtoGrpcType as AuthProtoType } from './proto/auth';
 import { ProtoGrpcType as ByteStreamProtoType } from './proto/bytestream';
 import { ProtoGrpcType as InputStreamProtoType } from './proto/inputstream';
-import { AuthorizationBearerInterceptor } from './authorizationBearerInterceptor';
 
 
 export function createAuthServiceClient(proto: AuthProtoType, address: string): AuthServiceClient {
@@ -16,23 +15,18 @@ export function createAuthServiceClient(proto: AuthProtoType, address: string): 
 
 export function createBytestreamClient(proto: ByteStreamProtoType, address: string, ctx: ClientContext): ByteStreamClient {
     const creds = createCredentials(address, ctx.accessToken);
-    // NOTE: client interceptor does not work with streaming calls
+    // NOTE: client interceptor does not work with streaming calls (or does it?)
     return new proto.google.bytestream.ByteStream(address, creds);
 }
 
 export function createImagesClient(proto: InputStreamProtoType, address: string, ctx: ClientContext): ImagesClient {
     const creds = createCredentials(address, ctx.accessToken);
-    return new proto.build.stack.inputstream.v1beta1.Images(address, creds, {});
+    const options = createClientOptions(ctx);
+    return new proto.build.stack.inputstream.v1beta1.Images(address, creds, options);
 }
 
 export function createInputsClient(proto: InputStreamProtoType, address: string, ctx: ClientContext): InputsClient {
     const creds = createCredentials(address, ctx.accessToken);
-    const maxRetries = 1;
-    const authInteceptor = new AuthorizationBearerInterceptor(maxRetries,
-        ctx.accessToken,
-        ctx.refreshAccessToken);
-    const options = createClientOptions(ctx.refreshAccessToken, {
-        interceptors: [authInteceptor.entrypoint]
-    });
+    const options = createClientOptions(ctx);
     return new proto.build.stack.inputstream.v1beta1.Inputs(address, creds, options);
 }

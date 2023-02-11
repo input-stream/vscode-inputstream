@@ -72,7 +72,7 @@ export class AuthController {
     }
 
     private async logout(): Promise<void> {
-        // await this.clearApiToken();
+        await this.clearApiToken();
         await this.clearAccessToken();
         await this.clearUser();
         await this.setContext(ContextName.LoggedIn, false);
