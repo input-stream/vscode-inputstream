@@ -1,5 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
+import { Delayer } from 'vscode-common/out/async';
 
 import { AuthServiceClient } from './proto/build/stack/auth/v1beta1/AuthService';
 import { DeviceLoginResponse } from './proto/build/stack/auth/v1beta1/DeviceLoginResponse';
@@ -8,7 +9,6 @@ import { LoginRequest } from './proto/build/stack/auth/v1beta1/LoginRequest';
 import { LoginResponse } from './proto/build/stack/auth/v1beta1/LoginResponse';
 import { VSCodeEnv } from './context';
 
-
 export interface IAuthClient {
     readonly client: AuthServiceClient;
     login(request: LoginRequest): Promise<LoginResponse>;
@@ -16,11 +16,13 @@ export interface IAuthClient {
 }
 
 export class AuthGrpcClient implements vscode.Disposable {
+    private throttle: Delayer<void>;
 
     constructor(
         private env: VSCodeEnv,
         public client: AuthServiceClient,
     ) {
+        this.throttle = new Delayer(250); // 250ms
     }
 
     public login(request: LoginRequest): Promise<LoginResponse> {
@@ -43,7 +45,7 @@ export class AuthGrpcClient implements vscode.Disposable {
             });
 
             let completed: DeviceLoginResponse | undefined;
-            let didOpenOauthURL = false;
+            let didTriggerOauthURL = false;
 
             call.on('status', (status: grpc.StatusObject) => {
                 if (status.code !== grpc.status.OK) {
@@ -61,9 +63,12 @@ export class AuthGrpcClient implements vscode.Disposable {
                 if (response.completed) {
                     completed = response;
                 } else {
-                    if (!didOpenOauthURL && response.oauthUrl) {
-                        this.env.openExternal(vscode.Uri.parse(response.oauthUrl));
-                        didOpenOauthURL = true;
+                    if (!didTriggerOauthURL && response.oauthUrl) {
+                        const oauthUrl = response.oauthUrl;
+                        this.throttle.trigger(async () => {
+                            this.env.openExternal(vscode.Uri.parse(oauthUrl));
+                            didTriggerOauthURL = true;
+                        });
                     }
                 }
             });
