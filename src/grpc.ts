@@ -74,7 +74,6 @@ export class GrpcClient<T extends grpc.Client> implements vscode.Disposable {
 }
 
 export class AuthenticatingGrpcClient<T extends grpc.Client> extends GrpcClient<T> {
-
     constructor(
         client: T,
         private ctx?: ClientContext | undefined,

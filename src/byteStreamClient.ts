@@ -16,7 +16,6 @@ export interface IByteStreamClient {
 }
 
 export class ByteStreamGrpcClient extends AuthenticatingGrpcClient<ByteStreamClient> implements IByteStreamClient {
-
     constructor(
         client: ByteStreamClient,
         ctx: ClientContext,
