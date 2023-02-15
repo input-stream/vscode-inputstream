@@ -13,7 +13,7 @@ import { ViewName, ContextValue, ThemeIconTestingPassed } from './views';
 /**
  * Renders a view for user inputs.
  */
-export class InputsExplorer extends TreeController<Input> {
+export class InputsExplorer extends TreeController<InputItem> {
     private user: User | undefined;
 
     constructor(
@@ -27,11 +27,18 @@ export class InputsExplorer extends TreeController<Input> {
         ctx.add(this.view.onDidChangeVisibility(this.handleVisibilityChange, this));
 
         ctx.add(commands.registerCommand(CommandName.InputEdit, this.handleCommandInputEdit, this));
+        ctx.add(commands.registerCommand(CommandName.InputRevealInExplorer, this.handleCommandInputRevealInExplorer, this));
     }
 
-    private handleCommandInputEdit(item: vscode.TreeItem) {
+    private handleCommandInputEdit(item: InputItem) {
         if (item.resourceUri) {
             this.commands.executeCommand(BuiltInCommandName.Open, item.resourceUri);
+        }
+    }
+
+    private handleCommandInputRevealInExplorer(item: InputItem) {
+        if (item.resourceUri) {
+            this.commands.executeCommand(BuiltInCommandName.RevealInExplorer, item.resourceUri);
         }
     }
 
@@ -51,15 +58,15 @@ export class InputsExplorer extends TreeController<Input> {
         }
     }
 
-    public async getParent(input?: Input): Promise<Input | undefined> {
+    public async getParent(input?: InputItem): Promise<InputItem | undefined> {
         return undefined;
     }
 
-    public getTreeItem(input: Input): vscode.TreeItem {
-        return new InputItem(input);
+    public getTreeItem(item: InputItem): vscode.TreeItem {
+        return item;
     }
 
-    async getRootItems(): Promise<Input[] | undefined> {
+    async getRootItems(): Promise<InputItem[] | undefined> {
         if (!this.client) {
             return undefined;
         }
@@ -73,7 +80,7 @@ export class InputsExplorer extends TreeController<Input> {
             if (!inputs) {
                 return undefined;
             }
-            return inputs;
+            return inputs.map(input => new InputItem(input));
         } catch (err) {
             if (err instanceof Error) {
                 this.window.showErrorMessage(`list failed: ${err.message}`);

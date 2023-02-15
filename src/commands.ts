@@ -8,6 +8,7 @@ export enum BuiltInCommandName {
     Open = 'vscode.open',
     OpenFolder = 'vscode.openFolder',
     OpenSettings = 'workbench.action.openSettings',
+    RevealInExplorer = 'revealInExplorer',
 }
 
 export enum CommandName {
@@ -18,6 +19,7 @@ export enum CommandName {
     InputDelete = 'input.stream.input.delete',
     InputReplace = 'input.stream.input.replace',
     InputEdit = 'input.stream.input.edit',
+    InputRevealInExplorer = 'input.stream.input.revealInExplorer',
     InputPublish = 'input.stream.input.publish',
     InputUnpublish = 'input.stream.input.unpublish',
     InputView = 'input.stream.input.view',

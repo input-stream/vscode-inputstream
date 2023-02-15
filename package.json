@@ -2,7 +2,7 @@
     "name": "vscode-inputstream",
     "displayName": "vscode-inputstream",
     "description": "Streamlined developer publishing",
-    "version": "0.9.0",
+    "version": "0.10.0",
     "publisher": "stackbuild",
     "license": "Apache-2.0",
     "icon": "stackb-full.png",
@@ -113,6 +113,12 @@
             },
             {
                 "category": "Stream",
+                "command": "input.stream.input.revealInExplorer",
+                "title": "Reveal Page In File Explorer...",
+                "icon": "$(go-to-file)"
+            },
+            {
+                "category": "Stream",
                 "command": "input.stream.input.watch",
                 "title": "Watch Page Changes...",
                 "icon": "$(eye-watch)"
@@ -165,6 +171,10 @@
                 },
                 {
                     "command": "input.stream.input.edit",
+                    "when": "false"
+                },
+                {
+                    "command": "input.stream.input.revealInExplorer",
                     "when": "false"
                 },
                 {
@@ -228,11 +238,16 @@
                     "group": "navigation@1"
                 }
             ],
-            "": [
+            "view/item/context": [
+                {
+                    "command": "input.stream.input.revealInExplorer",
+                    "when": "view == input.stream.inputExplorer && viewItem == input",
+                    "group": "inline@0"
+                },
                 {
                     "command": "input.stream.input.edit",
                     "when": "view == input.stream.inputExplorer && viewItem == input",
-                    "group": "inline@0"
+                    "group": "inline@1"
                 }
             ],
             "explorer/context": [
@@ -281,7 +296,7 @@
             "activitybar": [
                 {
                     "id": "inputstream-explorer",
-                    "title": "Stream 0.9.0",
+                    "title": "Stream 0.10.0",
                     "icon": "media/astronaut.svg"
                 }
             ]
