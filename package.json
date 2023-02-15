@@ -308,7 +308,7 @@
         "vscode:prepublish:webpack": "npm run clean && webpack --mode production",
         "vscode:prepublish": "npm run clean && npm run compile",
         "vscode-package": "vsce package --out out/extension.vsix",
-        "install": "npm run vscode-package && code --install-extension out/extension.vsix",
+        "install-extension": "npm run vscode-package && code --install-extension out/extension.vsix",
         "uninstall": "code --uninstall-extension stackbuild.vscode-inputstream",
         "webpack": "npm run clean && webpack --mode development",
         "watch": "tsc -watch -p ./",
