@@ -4,10 +4,8 @@ import { ProtoGrpcType as AuthProtoType } from './proto/auth';
 import { AuthServer } from './authServer';
 import { Context } from './context';
 import { describe, it } from "@jest/globals";
-import { DeviceLoginResponse } from './proto/build/stack/auth/v1beta1/DeviceLoginResponse';
 import { expect } from "chai";
 import { AuthController } from './authController';
-import { newTimestamp } from './dates';
 import { User } from './proto/build/stack/auth/v1beta1/User';
 import { VSCodeEnv, VSCodeCommands, VSCodeWindow } from './context';
 import { loadProtoPackage } from './grpc';
@@ -16,6 +14,7 @@ import { AuthGrpcClient } from './authClient';
 
 describe('AuthController', () => {
     const proto = loadProtoPackage<AuthProtoType>('proto/auth.proto');
+
     let globalState: vscode.Memento;
     let auths: AuthServer;
     let controller: AuthController;
@@ -26,6 +25,7 @@ describe('AuthController', () => {
     let openExternal: jest.Mock<Promise<boolean>, any>;
     let registerCommand: jest.Mock<vscode.Disposable, any>;
     let showErrorMessage: jest.Mock<Promise<any>, any>;
+    let authGrpcClient: AuthGrpcClient;
 
     beforeEach(async () => {
         registerCommand = jest.fn();
@@ -64,8 +64,13 @@ describe('AuthController', () => {
 
         auths = new AuthServer();
         const client = await auths.connect();
-        const authGrpcClient = new AuthGrpcClient(env, client);
+        authGrpcClient = new AuthGrpcClient(env, client);
         controller = new AuthController(ctx, commands, window, globalState, authGrpcClient);
+    });
+
+    afterEach(() => {
+        authGrpcClient.dispose();
+        auths.server.forceShutdown();
     });
 
     it('constructor', () => {
