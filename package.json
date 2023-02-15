@@ -26,12 +26,8 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:input.stream.login",
-        "onCommand:input.stream.loginToken",
         "onFileSystem:stream",
-        "onUri",
-        "onView:input.stream.accountExplorer",
-        "onView:input.stream.inputExplorer"
+        "onUri"
     ],
     "engines": {
         "vscode": "^1.74.0"
@@ -54,7 +50,7 @@
                 "input.stream.api.address": {
                     "type": "string",
                     "default": "api.input.stream:443",
-                    "description": "Address of the API server"
+                    "description": "Address of the API server (api.input.stream:443, 0.0.0.0:1081)"
                 },
                 "input.stream.baseDir": {
                     "type": "string",
@@ -64,11 +60,6 @@
             }
         },
         "commands": [
-            {
-                "category": "Stream",
-                "command": "input.stream.openExtensionSetting",
-                "title": "Goto Extension Setting"
-            },
             {
                 "category": "Stream",
                 "command": "input.stream.inputExplorer.refresh",
@@ -116,6 +107,12 @@
             },
             {
                 "category": "Stream",
+                "command": "input.stream.input.edit",
+                "title": "Edit Page...",
+                "icon": "$(edit)"
+            },
+            {
+                "category": "Stream",
                 "command": "input.stream.input.watch",
                 "title": "Watch Page Changes...",
                 "icon": "$(eye-watch)"
@@ -133,14 +130,20 @@
             },
             {
                 "category": "Stream",
-                "command": "input.stream.loginToken",
-                "title": "Login with Token"
+                "command": "input.stream.jwtLogin",
+                "title": "Login With JWT"
             },
             {
                 "category": "Stream",
                 "command": "input.stream.login",
                 "title": "Login",
                 "icon": "$(log-in)"
+            },
+            {
+                "category": "Stream",
+                "command": "input.stream.logout",
+                "title": "Logout",
+                "icon": "$(log-out)"
             }
         ],
         "keybindings": [
@@ -157,20 +160,23 @@
         "menus": {
             "commandPalette": [
                 {
-                    "command": "input.stream.openExtensionSetting",
-                    "when": "false"
-                },
-                {
                     "command": "input.stream.input.replace",
                     "when": "false"
                 },
                 {
-                    "command": "input.stream.loginToken",
+                    "command": "input.stream.input.edit",
                     "when": "false"
                 },
                 {
-                    "command": "input.stream.login",
-                    "when": "true"
+                    "command": "input.stream.jwtLogin",
+                    "when": "false"
+                },
+                {
+                    "command": "input.stream.login"
+                },
+                {
+                    "command": "input.stream.logout",
+                    "when": "input.stream.loggedIn"
                 },
                 {
                     "command": "input.stream.input.create",
@@ -213,8 +219,20 @@
                 },
                 {
                     "command": "input.stream.login",
-                    "when": "view == input.stream.accountExplorer",
+                    "when": "view == input.stream.profileExplorer",
                     "group": "navigation@0"
+                },
+                {
+                    "command": "input.stream.logout",
+                    "when": "view == input.stream.profileExplorer && input.stream.loggedIn",
+                    "group": "navigation@1"
+                }
+            ],
+            "": [
+                {
+                    "command": "input.stream.input.edit",
+                    "when": "view == input.stream.inputExplorer && viewItem == input",
+                    "group": "inline@0"
                 }
             ],
             "explorer/context": [
@@ -277,28 +295,28 @@
                     "contextualTitle": "Input List"
                 },
                 {
-                    "id": "input.stream.accountExplorer",
-                    "name": "Account",
+                    "id": "input.stream.profileExplorer",
+                    "name": "Profile",
                     "icon": "media/astronaut.svg",
-                    "contextualTitle": "Account Details"
+                    "contextualTitle": "Profile Details"
                 }
             ]
         }
     },
-    "main": "./out/extension.js",
+    "main": "./out/src/extension.js",
     "scripts": {
         "vscode:prepublish:webpack": "npm run clean && webpack --mode production",
         "vscode:prepublish": "npm run clean && npm run compile",
         "vscode-package": "vsce package --out out/extension.vsix",
         "install-extension": "npm run vscode-package && code --install-extension out/extension.vsix",
-        "uninstall-extension": "code --uninstall-extension stackbuild.vscode-inputstream",
+        "uninstall": "code --uninstall-extension stackbuild.vscode-inputstream",
         "webpack": "npm run clean && webpack --mode development",
         "watch": "tsc -watch -p ./",
         "compile": "tsc -p ./",
         "lint": "eslint src --ext ts --ignore-pattern 'src/proto/**/*.ts' --fix",
         "pretest": "npm run compile && npm run lint",
         "testRun": "node ./out/test/runTest.js",
-        "test": "jest",
+        "test": "jest --detectOpenHandles",
         "clean": "rimraf out/",
         "genproto": "node ./node_modules/@grpc/proto-loader/build/bin/proto-loader-gen-types.js --defaults --oneofs --verbose --includeComments -O ./src/proto --grpcLib @grpc/grpc-js proto/*.proto"
     },
@@ -311,6 +329,7 @@
         "luxon": "1.24.1",
         "protobufjs": "6.10.1",
         "vscode-common": "1.50.0",
+        "vscode-uri": "3.0.7",
         "vscode-extension-telemetry": "^0.1.6"
     },
     "devDependencies": {

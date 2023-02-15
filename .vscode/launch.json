@@ -12,11 +12,15 @@
 			"runtimeExecutable": "${execPath}",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--disable-extensions"
+				// "--disable-extensions"
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/src/**/*.js"
 			],
+			// "env": {
+			// 	"GRPC_VERBOSITY": "DEBUG",
+			// 	"GRPC_TRACE": "all"
+			// },
 			"preLaunchTask": "${defaultBuildTask}"
 		},
 		{
