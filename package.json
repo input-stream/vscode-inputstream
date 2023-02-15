@@ -228,7 +228,7 @@
                     "group": "navigation@1"
                 }
             ],
-            "": [
+            "view/item/context": [
                 {
                     "command": "input.stream.input.edit",
                     "when": "view == input.stream.inputExplorer && viewItem == input",
