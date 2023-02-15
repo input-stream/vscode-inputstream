@@ -17,7 +17,7 @@ import { AuthController } from './authController';
 import { ProtoGrpcType as AuthProtoType } from './proto/auth';
 import { ProtoGrpcType as ByteStreamProtoType } from './proto/bytestream';
 import { ProtoGrpcType as InputStreamProtoType } from './proto/inputstream';
-import { StreamFsController } from './streamfs/streamFscontroller';
+import { StreamFsController } from './streamfs/streamFsController';
 import { UriHandler } from './uriHandler';
 import { User } from './proto/build/stack/auth/v1beta1/User';
 
