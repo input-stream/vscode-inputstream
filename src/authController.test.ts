@@ -74,63 +74,15 @@ describe('AuthController', () => {
         expect(registerCommand.mock.calls[1][0]).to.equal("input.stream.logout");
     });
 
-    it('refreshAccessToken throws error if no saved token exists', async () => {
-        try {
-            await controller.refreshAccessToken();
-        } catch (e) {
-            expect((e as unknown as Error).message).to.equal('refresh token is not available, please login');
-        }
-    });
-
-    it('refreshAccessToken uses saved token from memento if exists', async () => {
-        //
-        // Given
-        // 
-        let loginUser: User | undefined;
-        controller.onDidAuthUserChange.event((user: User | undefined) => {
-            loginUser = user;
-        });
-        auths.service.users.set('foo-jwt', { login: 'foo' });
-
-        const savedResponse: DeviceLoginResponse = {
-            apiToken: 'foo-jwt',
-        };
-        await globalState.update(
-            'input.stream.api.DeviceLoginResponse',
-            savedResponse,
-        );
-
-        // 
-        // When
-        //
-        const accessToken = await controller.refreshAccessToken();
-
-        //
-        // Then
-        //
-        expect(openExternal.mock.calls).to.have.length(1);
-        const urlToOpen = openExternal.mock.calls[0][0] as vscode.Uri;
-        expect(urlToOpen.toString()).to.equal('https://input.stream/github_login');
-
-        expect(accessToken).to.equal('<accessToken!>');
-        expect(loginUser).to.deep.equal({ login: 'foo' });
-    });
-
     describe('restore', () => {
-        it('should return false if no previously stored data is present', async () => {
+        it('should return false if no previously stored token or user is present', async () => {
             const didRestore = await controller.restoreLogin();
             expect(didRestore).to.be.false;
         });
-        it('should return false if the previously stored data has expired', async () => {
-            const savedResponse: DeviceLoginResponse = {
-                expiresAt: newTimestamp(-60), // one minute ago
-            };
-            await globalState.update('input.stream.api.DeviceLoginResponse', savedResponse);
-
-            const gotToken = await controller.restoreLogin();
-
-            expect(gotToken).to.be.undefined;
-            expect(globalState.get('input.stream.api.DeviceLoginResponse')).to.be.undefined;
+        it('should return false if no previously stored token is present', async () => {
+            await globalState.update('input.stream.accessToken', 'abc123');
+            const didRestore = await controller.restoreLogin();
+            expect(didRestore).to.be.false;
         });
         it('should return true if the previously stored data exists', async () => {
             const user: User = { login: 'pcj' };
