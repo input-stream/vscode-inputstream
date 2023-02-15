@@ -23,6 +23,15 @@ export enum Scheme {
 }
 
 export function getInputURI(input: Input): vscode.Uri {
+    if (!input.login) {
+        throw new TypeError(`input.login is a mandatory field`);
+    }
+    if (!input.id) {
+        throw new TypeError(`input.id is a mandatory field`);
+    }
+    if (!input.titleSlug) {
+        throw new TypeError(`input.titleSlug is a mandatory field`);
+    }
     const url = `${Scheme.Stream}:/${input.owner}/${input.id}/${input.titleSlug}.md`;
     return vscode.Uri.parse(url);
 }
@@ -34,19 +43,43 @@ export function isInput(input: unknown): input is Input {
 export const streamRootUri = vscode.Uri.parse(`${Scheme.Stream}:/`);
 
 export function makeUserNodeUri(user: User): vscode.Uri {
-    return childUri(streamRootUri, user.login!);
+    if (!user.login) {
+        throw new TypeError(`user.login is a mandatory field`);
+    }
+    return childUri(streamRootUri, user.login);
 }
 
 export function makeInputNodeUri(input: Input): vscode.Uri {
-    return childUri(streamRootUri, input.login!, input.title!);
+    if (!input.login) {
+        throw new TypeError(`input.login is a mandatory field`);
+    }
+    if (!input.title) {
+        throw new TypeError(`input.title is a mandatory field`);
+    }
+    return childUri(streamRootUri, input.login, input.title);
 }
 
 export function makeInputFileNodeUri(input: Input, file: File): vscode.Uri {
-    return childUri(streamRootUri, input.login!, input.title!, file.name!);
+    if (!input.login) {
+        throw new TypeError(`input.login is a mandatory field`);
+    }
+    if (!input.title) {
+        throw new TypeError(`input.title is a mandatory field`);
+    }
+    if (!file.name) {
+        throw new TypeError(`file.name is a mandatory field`);
+    }
+    return childUri(streamRootUri, input.login, input.title, file.name);
 }
 
 export function makeInputContentFileNodeUri(input: Input): vscode.Uri {
-    return childUri(streamRootUri, input.login!, input.title!, makeInputContentName(input));
+    if (!input.login) {
+        throw new TypeError(`input.login is a mandatory field`);
+    }
+    if (!input.title) {
+        throw new TypeError(`input.title is a mandatory field`);
+    }
+    return childUri(streamRootUri, input.login, input.title, makeInputContentName(input));
 }
 
 export function makeInputContentName(input: Input): string {
@@ -75,10 +108,22 @@ export function makeBytestreamDownloadResourceName(sha256: string, size: number)
 }
 
 export function makeInputExternalViewUrl(input: Input): vscode.Uri {
+    if (!input.login) {
+        throw new TypeError(`input.login is a mandatory field`);
+    }
+    if (!input.titleSlug) {
+        throw new TypeError(`input.titleSlug is a mandatory field`);
+    }
     return vscode.Uri.parse(`https://input.stream/@${input.login}/${input.titleSlug}/view`);
 }
 
 export function makeInputExternalWatchUrl(input: Input): vscode.Uri {
+    if (!input.login) {
+        throw new TypeError(`input.login is a mandatory field`);
+    }
+    if (!input.titleSlug) {
+        throw new TypeError(`input.titleSlug is a mandatory field`);
+    }
     return vscode.Uri.parse(`https://input.stream/@${input.login}/${input.titleSlug}/view/watch`);
 }
 

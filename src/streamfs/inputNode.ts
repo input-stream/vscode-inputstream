@@ -24,6 +24,10 @@ export interface IFileUploader {
 }
 
 export class InputNode extends DirNode<FileNode> {
+    // wantFileProgress can be set to false to avoid vscode runtime dependency
+    // code during testing. 
+    wantFileProgress = true;
+
     constructor(
         protected ctx: NodeContext,
         protected user: User,
@@ -212,8 +216,7 @@ export class InputNode extends DirNode<FileNode> {
         const sha256 = sha256Bytes(buffer);
         const resourceName = makeBytestreamUploadResourceName(this.input.id!, sha256, size);
 
-        const wantFileProgress = true;
-        if (wantFileProgress) {
+        if (this.wantFileProgress) {
             await vscode.window.withProgress<void>({
                 location: vscode.ProgressLocation.Notification,
                 title: `Uploading ${file.name}...`,

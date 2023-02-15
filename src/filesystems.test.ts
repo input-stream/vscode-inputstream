@@ -206,8 +206,21 @@ describe('filesystems', () => {
                     error: string,
                 }
             } = {
+                "no login": {
+                    input: {
+                    },
+                    error: "input.login is a mandatory field",
+                },
+                "no title": {
+                    input: {
+                        login: 'pcj'
+                    },
+                    error: "input.title is a mandatory field",
+                },
                 "no status": {
                     input: {
+                        login: 'pcj',
+                        title: 'My Title',
                     },
                     error: "content status not supported: undefined",
                 },
