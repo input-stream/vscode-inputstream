@@ -27,11 +27,18 @@ export class InputsExplorer extends TreeController<InputItem> {
         ctx.add(this.view.onDidChangeVisibility(this.handleVisibilityChange, this));
 
         ctx.add(commands.registerCommand(CommandName.InputEdit, this.handleCommandInputEdit, this));
+        ctx.add(commands.registerCommand(CommandName.InputRevealInExplorer, this.handleCommandInputRevealInExplorer, this));
     }
 
     private handleCommandInputEdit(item: InputItem) {
         if (item.resourceUri) {
             this.commands.executeCommand(BuiltInCommandName.Open, item.resourceUri);
+        }
+    }
+
+    private handleCommandInputRevealInExplorer(item: InputItem) {
+        if (item.resourceUri) {
+            this.commands.executeCommand(BuiltInCommandName.RevealInExplorer, item.resourceUri);
         }
     }
 

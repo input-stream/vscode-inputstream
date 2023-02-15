@@ -75,7 +75,7 @@ export class StreamFsController {
         const profile = this.fs.root.addChild(
             new StaticDirectoryNode(childUri(this.fs.root.uri, '.profile')));
         profile.addChild(
-            StaticFileNode.fromJson(childUri(profile.uri, 'config.json'), {
+            StaticFileNode.fromJson(childUri(profile.uri, 'user.json'), {
                 "name": user.name,
                 "avatarUrl": user.avatarUrl,
                 "splashUrl": user.splashUrl,
@@ -90,7 +90,7 @@ export class StreamFsController {
     }
 
     private async installWorkspaceFolder(workspace: VSCodeWorkspace, commands: VSCodeCommands): Promise<void> {
-        const name = 'Stream';
+        const name = 'https://input.stream';
 
         const folders = workspace.workspaceFolders || [];
         const found = folders.find((f: vscode.WorkspaceFolder) => f.name === name);
@@ -121,7 +121,7 @@ export class StreamFsController {
         const content = Buffer.from(JSON.stringify({ folders: folderData }, null, 4));
         await vscode.workspace.fs.writeFile(fileUri, content);
 
-        commands.executeCommand(BuiltInCommandName.Open, fileUri);
+        commands.executeCommand(BuiltInCommandName.OpenFolder, fileUri);
     }
 
     private async handleCommandInputCreate() {

@@ -10,8 +10,6 @@ import {
 import { File } from './proto/build/stack/inputstream/v1beta1/File';
 import { childUri } from './uris';
 
-export const activeCodeWorkspaceName = 'active.code-workspace';
-
 export const MAX_CLIENT_BODY_SIZE = 10 * 1024 * 1024; // upload size limit
 
 export enum FolderName {

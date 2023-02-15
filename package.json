@@ -113,6 +113,12 @@
             },
             {
                 "category": "Stream",
+                "command": "input.stream.input.revealInExplorer",
+                "title": "Reveal Page In File Explorer...",
+                "icon": "$(go-to-file)"
+            },
+            {
+                "category": "Stream",
                 "command": "input.stream.input.watch",
                 "title": "Watch Page Changes...",
                 "icon": "$(eye-watch)"
@@ -165,6 +171,10 @@
                 },
                 {
                     "command": "input.stream.input.edit",
+                    "when": "false"
+                },
+                {
+                    "command": "input.stream.input.revealInExplorer",
                     "when": "false"
                 },
                 {
@@ -230,9 +240,14 @@
             ],
             "view/item/context": [
                 {
-                    "command": "input.stream.input.edit",
+                    "command": "input.stream.input.revealInExplorer",
                     "when": "view == input.stream.inputExplorer && viewItem == input",
                     "group": "inline@0"
+                },
+                {
+                    "command": "input.stream.input.edit",
+                    "when": "view == input.stream.inputExplorer && viewItem == input",
+                    "group": "inline@1"
                 }
             ],
             "explorer/context": [
