@@ -44,9 +44,7 @@ export type InputStreamServerConfiguration = {
     // address of the api server
     address: string,
     // base URL where the website lives
-    baseURL: string,
-    // base directory where to store files
-    baseDir: string,
+    baseURL: string
 };
 
 /**
@@ -76,10 +74,8 @@ export function createInputStreamConfiguration(
             asAbsolutePath('./proto/inputstream.proto')),
         address: config.get<string>(ConfigSection.ApiAddress,
             'api.input.stream:443'),
-        baseURL: resolveHome(config.get<string>(ConfigSection.BaseURL,
-            'https://input.stream')),
-        baseDir: resolveHome(config.get<string>(ConfigSection.BaseDir,
-            '~/.inputstream')),
+        baseURL: config.get<string>(ConfigSection.BaseURL,
+            'https://input.stream'),
     };
 
     const auth = {
@@ -104,11 +100,4 @@ export function createInputStreamConfiguration(
     };
 
     return cfg;
-}
-
-export function resolveHome(filepath: string) {
-    if (filepath[0] === '~') {
-        return path.join(process.env.HOME!, filepath.slice(1));
-    }
-    return filepath;
 }

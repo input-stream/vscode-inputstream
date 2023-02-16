@@ -52,11 +52,6 @@
                     "type": "string",
                     "default": "api.input.stream:443",
                     "description": "Address of the API server (api.input.stream:443, 0.0.0.0:1081)"
-                },
-                "input.stream.baseDir": {
-                    "type": "string",
-                    "default": "~/.inputstream",
-                    "description": "Base directory to stage input files"
                 }
             }
         },
