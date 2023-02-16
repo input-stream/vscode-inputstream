@@ -4,7 +4,6 @@ import { ProfileExplorer } from './profileExplorer';
 import { API } from './api';
 import { AuthGrpcClient } from './authClient';
 import { ByteStreamGrpcClient } from './byteStreamClient';
-import { CommandName } from './commands';
 import { ConfigName, createInputStreamConfiguration } from './configurations';
 import { Context } from './context';
 import { createAuthServiceClient, createInputsClient, createBytestreamClient, createImagesClient } from './clients';
