@@ -18,7 +18,7 @@ export interface IInputsClient {
     removeInput(id: string): Promise<RemoveInputResponse>;
 }
 
-export class InputsGrpcClient extends GrpcClient<InputsClient> implements IInputsClient {
+export class InputsGrpcNodeClient extends GrpcClient<InputsClient> implements IInputsClient {
     constructor(
         client: InputsClient,
     ) {
@@ -101,6 +101,33 @@ export class InputsGrpcClient extends GrpcClient<InputsClient> implements IInput
                     }
                 });
         });
+    }
+
+}
+
+export class InputsGrpcWebClient implements IInputsClient {
+    constructor(
+    ) {
+    }
+
+    listInputs(filter: InputFilterOptions): Promise<Input[] | undefined> {
+        throw new Error('unimplemented');
+    }
+
+    createInput(input: Input): Promise<Input | undefined> {
+        throw new Error('unimplemented');
+    }
+
+    getInput(filter: InputFilterOptions, mask?: FieldMask): Promise<Input | undefined> {
+        throw new Error('unimplemented');
+    }
+
+    updateInput(input: Input, mask: FieldMask): Promise<UpdateInputResponse> {
+        throw new Error('unimplemented');
+    }
+
+    removeInput(id: string): Promise<RemoveInputResponse> {
+        throw new Error('unimplemented');
     }
 
 }

@@ -10,7 +10,7 @@ import { NodeContext } from "./node";
 import { InputNode } from "./inputNode";
 import { FileEntry } from "./fileEntry";
 import { InputFileNode } from "./inputFileNode";
-import { InputsGrpcClient } from "../inputsClient";
+import { InputsGrpcNodeClient } from "../inputsClient";
 import { sha256Bytes } from "../filesystems";
 import { VSCodeWindow } from "../context";
 import { TextEditor } from "vscode";
@@ -49,7 +49,7 @@ describe('InputFileNode', () => {
         };
 
         ctx = {
-            inputsClient: new InputsGrpcClient(inputs.client),
+            inputsClient: new InputsGrpcNodeClient(inputs.client),
             byteStreamClient: bytestream.client,
             notifyFileChanges: jest.fn(),
             window: window,

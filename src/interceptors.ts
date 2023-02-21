@@ -46,11 +46,7 @@ class AuthorizationBearerIntercept implements FullRequester, FullListener {
     }
 
     private log(message?: any, ...optionalParams: any[]): void {
-        console.log(`AuthorizationBearerInterceptor[${this.id}][${this.options.method_definition.path}]: ${message}`, ...optionalParams);
-    }
-
-    private warn(message?: any, ...optionalParams: any[]): void {
-        console.warn(`AuthorizationBearerInterceptor[${this.id}][${this.options.method_definition.path}]: ${message}`, ...optionalParams);
+        // console.log(`AuthorizationBearerInterceptor[${this.id}][${this.options.method_definition.path}]: ${message}`, ...optionalParams);
     }
 
     public call(): grpc.InterceptingCall {

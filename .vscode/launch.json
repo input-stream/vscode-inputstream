@@ -12,7 +12,7 @@
 			"runtimeExecutable": "${execPath}",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
-				// "--disable-extensions"
+				"--disable-extensions"
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/src/**/*.js"
@@ -24,17 +24,22 @@
 			"preLaunchTask": "${defaultBuildTask}"
 		},
 		{
-			"name": "debug-starlark",
-			"type": "node",
+			"name": "Run Extension (Web)",
+			"type": "pwa-extensionHost",
+			"debugWebWorkerHost": true,
 			"request": "launch",
-			"cwd": "${workspaceFolder}",
-			"program": "${workspaceFolder}/out/starlark/debug/debugAdapter.js",
 			"args": [
-				"--server=7300"
+				"--disable-extensions",
+				"--extensionDevelopmentPath=${workspaceRoot}",
+				"--extensionDevelopmentKind=web"
 			],
 			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
-			]
-		},
+				"${workspaceFolder}/out/src/**/*.js"
+			],
+			"preLaunchTask": {
+				"type": "npm",
+				"script": "esbuild"
+			}
+		}
 	]
 }

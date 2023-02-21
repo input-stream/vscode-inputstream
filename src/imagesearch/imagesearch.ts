@@ -1,9 +1,9 @@
-import * as grpc from '@grpc/grpc-js';
+// import * as grpc from '@grpc/grpc-js';
 import * as vscode from 'vscode';
 import { Duration } from 'luxon';
 import { event } from 'vscode-common';
 
-import { ImagesGrpcClient } from '../imagesClient';
+import { IImagesClient } from '../imagesClient';
 import { ImageSearchPanel as ImageSearchWebview, ImageSearchRenderProvider, Message } from './webview';
 import { ImageSearchRenderer } from './renderer';
 import { SearchImage } from '../proto/build/stack/inputstream/v1beta1/SearchImage';
@@ -30,7 +30,7 @@ export class ImageSearch {
         private ctx: Context,
         commands: VSCodeCommands,
         private window: VSCodeWindow,
-        private client: ImagesGrpcClient,
+        private client: IImagesClient,
     ) {
         ctx.add(this.onDidSearchImageClick);
         ctx.add(this.onDidSearchImageClick.event(this.handleCommandSearchImageClick, this));

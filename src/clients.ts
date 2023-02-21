@@ -7,7 +7,6 @@ import { ProtoGrpcType as AuthProtoType } from './proto/auth';
 import { ProtoGrpcType as ByteStreamProtoType } from './proto/bytestream';
 import { ProtoGrpcType as InputStreamProtoType } from './proto/inputstream';
 
-
 export function createAuthServiceClient(proto: AuthProtoType, address: string): AuthServiceClient {
     const creds = createChannelCredentials(address);
     return new proto.build.stack.auth.v1beta1.AuthService(address, creds);

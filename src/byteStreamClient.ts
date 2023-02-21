@@ -15,7 +15,7 @@ export interface IByteStreamClient {
     write(onResponse: (error?: grpc.ServiceError | null, out?: WriteResponse | undefined) => void, extraMd?: grpc.Metadata): grpc.ClientWritableStream<WriteRequest>;
 }
 
-export class ByteStreamGrpcClient extends AuthenticatingGrpcClient<ByteStreamClient> implements IByteStreamClient {
+export class ByteStreamGrpcNodeClient extends AuthenticatingGrpcClient<ByteStreamClient> implements IByteStreamClient {
     constructor(
         client: ByteStreamClient,
         ctx: ClientContext,
@@ -47,5 +47,23 @@ export class ByteStreamGrpcClient extends AuthenticatingGrpcClient<ByteStreamCli
                     }
                 });
         });
+    }
+}
+
+export class ByteStreamGrpcWebClient implements IByteStreamClient {
+    constructor(
+    ) {
+    }
+
+    read(request: ReadRequest): grpc.ClientReadableStream<ReadResponse> {
+        throw new Error('unimplemented');
+    }
+
+    write(onResponse: (error?: grpc.ServiceError | null, out?: WriteResponse | undefined) => void): grpc.ClientWritableStream<WriteRequest> {
+        throw new Error('unimplemented');
+    }
+
+    queryWriteStatus(req: QueryWriteStatusRequest): Promise<QueryWriteStatusResponse> {
+        throw new Error('unimplemented');
     }
 }

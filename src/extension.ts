@@ -3,14 +3,14 @@ import * as vscode from 'vscode';
 import { ProfileExplorer } from './profileExplorer';
 import { API } from './api';
 import { AuthGrpcClient } from './authClient';
-import { ByteStreamGrpcClient } from './byteStreamClient';
+import { ByteStreamGrpcNodeClient, ByteStreamGrpcWebClient, IByteStreamClient } from './byteStreamClient';
 import { ConfigName, createInputStreamConfiguration } from './configurations';
 import { Context } from './context';
 import { createAuthServiceClient, createInputsClient, createBytestreamClient, createImagesClient } from './clients';
 import { ImageSearch } from './imagesearch/imagesearch';
-import { ImagesGrpcClient } from './imagesClient';
+import { IImagesClient, ImagesGrpcNodeClient, ImagesGrpcWebClient } from './imagesClient';
 import { InputsExplorer } from './inputsExplorer';
-import { InputsGrpcClient } from './inputsClient';
+import { IInputsClient, InputsGrpcNodeClient, InputsGrpcWebClient } from './inputsClient';
 import { ClientContext, loadProtoPackage } from './grpc';
 import { AuthController } from './authController';
 import { ProtoGrpcType as AuthProtoType } from './proto/auth';
@@ -19,12 +19,12 @@ import { ProtoGrpcType as InputStreamProtoType } from './proto/inputstream';
 import { StreamFsController } from './streamfs/streamFsController';
 import { UriHandler } from './uriHandler';
 import { User } from './proto/build/stack/auth/v1beta1/User';
+import * as isgwa from "inputstream-grcpweb-api";
 
 const api = new API();
 
 export function activate(extensionCtx: vscode.ExtensionContext) {
 	const config = vscode.workspace.getConfiguration(ConfigName);
-
 	const ctx: Context = {
 		add<T extends vscode.Disposable>(d: T): T {
 			extensionCtx.subscriptions.push(d);
@@ -36,8 +36,6 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 	const cfg = createInputStreamConfiguration(extensionCtx.asAbsolutePath.bind(extensionCtx), config);
 
 	const authProtos = loadProtoPackage<AuthProtoType>(cfg.auth.protofile);
-	const byteStreamProtos = loadProtoPackage<ByteStreamProtoType>(cfg.bytestream.protofile);
-	const inputStreamProtos = loadProtoPackage<InputStreamProtoType>(cfg.inputstream.protofile);
 
 	const authGrpcClient = ctx.add(
 		new AuthGrpcClient(
@@ -58,13 +56,28 @@ export function activate(extensionCtx: vscode.ExtensionContext) {
 		refreshAccessToken: () => authController.refreshAccessToken(),
 	};
 
-	const byteStreamClient = createBytestreamClient(byteStreamProtos, cfg.bytestream.address, clientCtx);
-	const inputsClient = createInputsClient(inputStreamProtos, cfg.inputstream.address, clientCtx);
-	const imagesClient = createImagesClient(inputStreamProtos, cfg.inputstream.address, clientCtx);
+	let bytestreamGrpcClient: IByteStreamClient;
+	let inputsGrpcClient: IInputsClient;
+	let imagesGrpcClient: IImagesClient;
 
-	const bytestreamGrpcClient = ctx.add(new ByteStreamGrpcClient(byteStreamClient, clientCtx));
-	const inputsGrpcClient = ctx.add(new InputsGrpcClient(inputsClient));
-	const imagesGrpcClient = ctx.add(new ImagesGrpcClient(imagesClient));
+	debugger;
+
+	if (vscode.env.uiKind == vscode.UIKind.Web) {
+		const client = isgwa.newGrpcWebInputStreamClient('fake-token');
+		bytestreamGrpcClient = new ByteStreamGrpcWebClient();
+		inputsGrpcClient = new InputsGrpcWebClient();
+		imagesGrpcClient = new ImagesGrpcWebClient(client);
+	} else {
+		const byteStreamProtos = loadProtoPackage<ByteStreamProtoType>(cfg.bytestream.protofile);
+		const inputStreamProtos = loadProtoPackage<InputStreamProtoType>(cfg.inputstream.protofile);
+
+		bytestreamGrpcClient = ctx.add(new ByteStreamGrpcNodeClient(
+			createBytestreamClient(byteStreamProtos, cfg.bytestream.address, clientCtx), clientCtx));
+		inputsGrpcClient = ctx.add(new InputsGrpcNodeClient(
+			createInputsClient(inputStreamProtos, cfg.inputstream.address, clientCtx)));
+		imagesGrpcClient = ctx.add(new ImagesGrpcNodeClient(
+			createImagesClient(inputStreamProtos, cfg.inputstream.address, clientCtx)));
+	}
 
 	new ImageSearch(ctx, vscode.commands, vscode.window, imagesGrpcClient);
 	new UriHandler(ctx, vscode.window, vscode.commands);

@@ -313,9 +313,11 @@
             ]
         }
     },
+    "browser": "./out/main.js",
     "main": "./out/main.js",
     "scripts": {
         "vscode:prepublish": "npm run esbuild-base -- --minify",
+        "esbuild-web": "node esbuild.mjs",
         "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
         "esbuild": "npm run esbuild-base -- --sourcemap",
         "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
@@ -328,6 +330,7 @@
         "pretest": "npm run compile && npm run lint",
         "testRun": "node ./out/test/runTest.js",
         "test": "jest --detectOpenHandles",
+        "web": "vscode-test-web --open-devtools --browserType=chromium --extensionDevelopmentPath=.",
         "clean": "rimraf out/",
         "genproto": "node ./node_modules/@grpc/proto-loader/build/bin/proto-loader-gen-types.js --defaults --oneofs --verbose --includeComments -O ./src/proto --grpcLib @grpc/grpc-js proto/*.proto"
     },
@@ -337,6 +340,7 @@
         "fs-extra": "9.0.1",
         "google-auth-library": "6.1.0",
         "image-size": "1.0.2",
+        "inputstream-grcpweb-api": "file:../../stackb/bezel/bazel-bin/stream/module/api/inputstream-grcpweb-api-0.2.0.tgz",
         "luxon": "1.24.1",
         "protobufjs": "6.10.1",
         "vscode-common": "1.50.0",
@@ -361,9 +365,11 @@
         "@types/vscode": "^1.73.0",
         "@typescript-eslint/eslint-plugin": "^5.48.2",
         "@typescript-eslint/parser": "^5.48.2",
+        "@vscode/test-web": "^0.0.34",
         "chai": "4.2.0",
         "chai-string": "1.5.0",
         "esbuild": "^0.17.8",
+        "esbuild-plugin-polyfill-node": "^0.1.4",
         "eslint": "^8.32.0",
         "eslint-config-prettier": "^8.6.0",
         "eslint-plugin-import": "^2.26.0",
