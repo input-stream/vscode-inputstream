@@ -166,7 +166,7 @@ export class StreamFsController {
 
         try {
             const inputNode = await userNode.createInput(request);
-            this.commands.executeCommand(BuiltInCommandName.Open, inputNode.uri);
+            this.commands.executeCommand(BuiltInCommandName.Open, makeInputContentFileNodeUri(inputNode.input));
         } catch (err) {
             if (err instanceof Error) {
                 vscode.window.showErrorMessage(`Could not create: ${err.message}`);
