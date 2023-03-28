@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.11.4 (March 28, 2023)
+
+- Support for uploading audio files (.mp3, .wav, .ogg)
+
+## 0.11.x (Q1 2023)
+
+- Major rewrite
+
 ## 0.6.0 (Jan 24, 2021)
 
 - Switch to FileSystemProvider.

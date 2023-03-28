@@ -144,10 +144,16 @@ export function getContentTypeForExtension(ext: string): string | undefined {
             return 'image/jpeg';
         case '.jpg':
             return 'image/jpeg';
+        case '.mp3':
+            return 'audio/mpeg';
+        case '.ogg':
+            return 'audio/ogg';
         case '.png':
             return 'image/png';
         case '.svg':
             return 'image/svg+xml';
+        case '.wav':
+            return 'audio/wav';
         case '.webp':
             return 'image/webp';
     }
