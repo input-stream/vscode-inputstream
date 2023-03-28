@@ -22,6 +22,9 @@ describe('filesystems', () => {
             ".png": { want: "image/png", ext: ".png" },
             ".svg": { want: "image/svg+xml", ext: ".svg" },
             ".webp": { want: "image/webp", ext: ".webp" },
+            ".wav": { want: "audio/wav", ext: ".wav" },
+            ".ogg": { want: "audio/ogg", ext: ".ogg" },
+            ".mp3": { want: "audio/mpeg", ext: ".mp3" },
         };
         for (const name in testCases) {
             const tc = testCases[name];
