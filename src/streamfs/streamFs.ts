@@ -19,6 +19,8 @@ export const defaultSelectPredicate = (child: Entry) => { return false; };
 export const inputNodePredicate = (child: Entry) => child instanceof InputNode;
 export const userNodePredicate = (child: Entry) => child instanceof UserNode;
 
+const debug = false;
+
 interface FileUploader {
     upload(source: vscode.Uri, target: vscode.Uri, options: { overwrite: boolean }): Thenable<void>;
 }
@@ -91,7 +93,7 @@ export class StreamFs implements vscode.FileSystemProvider {
                 continue;
             }
             let child: Entry | undefined;
-            // console.log(`lookup '${part}' in ${uri.path}`, entry);
+            // this.log(`lookup '${part}' in ${uri.path}`, entry);
             if (entry instanceof DirNode) {
                 child = await entry.getChild(part);
             }
@@ -138,10 +140,10 @@ export class StreamFs implements vscode.FileSystemProvider {
     public async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
         try {
             const info = await this.lookup(uri, false);
-            console.log(`stat ok:`, uri);
+            this.log(`stat ok:`, uri);
             return info;
         } catch (e) {
-            console.log(`stat error:`, uri, (e as Error).message);
+            this.log(`stat error:`, uri, (e as Error).message);
             throw e;
         }
     }
@@ -156,7 +158,7 @@ export class StreamFs implements vscode.FileSystemProvider {
         for (const child of await entry.getChildren()) {
             result.push([child.name, child.type]);
         }
-        console.log(`readDirectory:`, uri.toString(), `(${result.length} entries)`);
+        this.log(`readDirectory:`, uri.toString(), `(${result.length} entries)`);
         return result;
 
     }
@@ -169,7 +171,7 @@ export class StreamFs implements vscode.FileSystemProvider {
      * @returns 
      */
     public async writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): Promise<void> {
-        console.log(`writeFile:`, uri);
+        this.log(`writeFile:`, uri);
 
         const basename = Utils.basename(uri);
         const parent = await this.lookupParentDirectory(uri);
@@ -200,7 +202,7 @@ export class StreamFs implements vscode.FileSystemProvider {
      * @returns 
      */
     async readFile(uri: vscode.Uri): Promise<Uint8Array> {
-        console.log(`readFile:`, uri);
+        this.log(`readFile:`, uri);
         const file = await this.lookupAsFile(uri, false);
         return file.getData();
     }
@@ -210,7 +212,7 @@ export class StreamFs implements vscode.FileSystemProvider {
      * @param uri 
      */
     public async createDirectory(uri: vscode.Uri): Promise<void> {
-        console.log(`createDirectory:`, uri);
+        this.log(`createDirectory:`, uri);
 
         const basename = Utils.basename(uri);
         const dirname = Utils.dirname(uri);
@@ -227,7 +229,7 @@ export class StreamFs implements vscode.FileSystemProvider {
      * @param options 
      */
     public async rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean }): Promise<void> {
-        console.log(`rename:`, oldUri, newUri);
+        this.log(`rename:`, oldUri, newUri);
 
         if (!options.overwrite && await this.lookup(newUri, true)) {
             throw vscode.FileSystemError.FileExists(newUri);
@@ -254,7 +256,7 @@ export class StreamFs implements vscode.FileSystemProvider {
      * @param uri 
      */
     public async delete(uri: vscode.Uri): Promise<void> {
-        console.log(`delete:`, uri);
+        this.log(`delete:`, uri);
 
         const dirname = Utils.dirname(uri);
         const parent = await this.lookupAsDirectory(dirname, false);
@@ -271,7 +273,7 @@ export class StreamFs implements vscode.FileSystemProvider {
      * @returns 
      */
     public watch(_resource: vscode.Uri): vscode.Disposable {
-        console.log(`watch:`, _resource);
+        this.log(`watch:`, _resource);
         // ignore, fires for all changes...
         return new vscode.Disposable(() => { });
     }
@@ -284,7 +286,7 @@ export class StreamFs implements vscode.FileSystemProvider {
      * @returns 
      */
     public copy(source: vscode.Uri, target: vscode.Uri, options: { overwrite: boolean }): Thenable<void> {
-        console.log(`copy:`, source, target);
+        this.log(`copy:`, source, target);
         if (target.authority === 'img.input.stream') {
             return this.uploader.upload(source, target, options);
         }
@@ -302,6 +304,12 @@ export class StreamFs implements vscode.FileSystemProvider {
             this._emitter.fire(this._bufferedEvents);
             this._bufferedEvents.length = 0;
         }, 5);
+    }
+
+    private log(msg: string, ...args: any[]) {
+        if (debug) {
+            console.log(msg, ...args);
+        }
     }
 
 }

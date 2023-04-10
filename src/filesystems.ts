@@ -81,8 +81,8 @@ export function makeInputContentFileNodeUri(input: Input): vscode.Uri {
 }
 
 export function makeInputContentName(input: Input): string {
-    const status: InputStatus = input.status!;
     let name = input.titleSlug!;
+    const status: InputStatus = input.status!;
     switch (status) {
         case InputStatus.STATUS_DRAFT:
             name += ".draft";
