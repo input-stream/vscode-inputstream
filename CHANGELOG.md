@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.11.5 (Apr 9, 2023)
+
+- Bugfix for "Edit in VSCode" manu option
+
 ## 0.11.4 (March 28, 2023)
 
 - Support for uploading audio files (.mp3, .wav, .ogg)
