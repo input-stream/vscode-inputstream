@@ -23,6 +23,7 @@ export function toFileSystemError(
     case "EEXIST":
       return FileSystemError.FileExists(uri);
     case "EPERM":
+    /* fallthrough */
     case "EACCES":
       return FileSystemError.NoPermissions(uri);
     default:

@@ -4,6 +4,7 @@ import { CancelRequester, CloseRequester, FullRequester, MessageRequester, Metad
 import { FullListener, InterceptingListener, MessageListener, MetadataListener, StatusListener } from '@grpc/grpc-js/build/src/call-interface';
 import { ClientContext } from './grpc';
 
+const debug = false;
 
 export class AuthorizationBearerInterceptor {
     private static counter = 0;
@@ -46,7 +47,9 @@ class AuthorizationBearerIntercept implements FullRequester, FullListener {
     }
 
     private log(message?: any, ...optionalParams: any[]): void {
-        console.log(`AuthorizationBearerInterceptor[${this.id}][${this.options.method_definition.path}]: ${message}`, ...optionalParams);
+        if (debug) {
+            console.log(`AuthorizationBearerInterceptor[${this.id}][${this.options.method_definition.path}]: ${message}`, ...optionalParams);
+        }
     }
 
     private warn(message?: any, ...optionalParams: any[]): void {

@@ -2,8 +2,9 @@ import * as vscode from 'vscode';
 
 import { BuiltInCommandName, CommandName } from './commands';
 import { Context, VSCodeCommands, VSCodeWindow } from './context';
-import { makeInputNodeUri } from './filesystems';
+import { makeInputContentFileNodeUri } from './filesystems';
 import { parseQuery } from './uris';
+import { Input, _build_stack_inputstream_v1beta1_Input_Status as InputStatus } from "./proto/build/stack/inputstream/v1beta1/Input";
 
 export class UriHandler implements vscode.UriHandler {
     constructor(
@@ -27,6 +28,8 @@ export class UriHandler implements vscode.UriHandler {
                 return this.handleCreateUri(uri);
             case '/open':
                 return this.handleOpenUri(uri);
+            default:
+                console.warn(`vscode uri handler: unknown handler "${uri.path}" (skipping)`);
         }
     }
 
@@ -50,13 +53,31 @@ export class UriHandler implements vscode.UriHandler {
         const query = parseQuery(uri);
         const login = query['login'];
         if (!login) {
+            console.warn(`malformed /edit uri: missing param "login"`);
             return;
         }
         const title = query['title'];
         if (!title) {
+            console.warn(`malformed /edit uri: missing param "title"`);
             return;
         }
-        return this.commands.executeCommand(BuiltInCommandName.Open, makeInputNodeUri({ login, title }));
+        const titleSlug = query['titleSlug'];
+        if (!titleSlug) {
+            console.warn(`malformed /edit uri: missing param "titleSlug"`);
+            return;
+        }
+        const status = parseInt(query['status']) as InputStatus;
+        if (!status) {
+            console.warn(`malformed /edit uri: missing param "status"`);
+            return;
+        }
+        const input: Input = {
+            login,
+            title,
+            titleSlug,
+            status,
+        };
+        return this.commands.executeCommand(BuiltInCommandName.Open, makeInputContentFileNodeUri(input));
     }
 
     private async handleCreateUri(uri: vscode.Uri): Promise<void> {
